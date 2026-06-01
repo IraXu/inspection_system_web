@@ -82,6 +82,7 @@ const handleSave = () => {
     
     const data: AIInspectionTask = {
       id: editingId.value || String(Date.now()),
+      taskNo: `AI${Date.now()}`, 
       name: formName.value.trim(),
       planId: formPlanId.value!,
       planName: plan?.name || '',
