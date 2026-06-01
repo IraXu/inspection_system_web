@@ -2,13 +2,13 @@
  * @Author: AloofXu
  * @Date: 2026-05-25 18:24:27
  * @LastEditors: null
- * @LastEditTime: 2026-05-29 18:11:59
+ * @LastEditTime: 2026-06-01 13:55:59
  * @FilePath: /web-prototype/src/router/index.ts
  */
 import { createRouter, createWebHistory } from 'vue-router'
 
 const router = createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
+  history: createWebHistory(),
   routes: [
     {
       path: '/',
@@ -28,7 +28,6 @@ const router = createRouter({
         // 待办事项
         { path: 'inspection/todos', name: 'TodoPage', component: () => import('@/views/TodoPage.vue'), meta: { title: '待办事项' } },
         // AI巡检
-        { path: 'inspection/ai/snapshot-plan', name: 'AISnapshotPlan', component: () => import('@/views/ai-inspection/SnapshotPlan.vue'), meta: { title: '抓拍计划' } },
         { path: 'inspection/ai/tasks', name: 'AIInspectionTask', component: () => import('@/views/ai-inspection/AIInspectionTask.vue'), meta: { title: 'AI巡检任务' } },
         { path: 'inspection/ai/results', name: 'AIAnalysisResult', component: () => import('@/views/ai-inspection/AIAnalysisResult.vue'), meta: { title: 'AI分析结果' } },
       ],
