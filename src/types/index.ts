@@ -172,43 +172,30 @@ export interface SpotCheckSession {
   items: InspectionResult[]
 }
 
-// ========== AI巡检 - 抓拍计划 ==========
-export interface SnapshotPeriod {
-  start: string   // HH:mm
-  end: string     // HH:mm
-}
+// ========== AI巡检 - 抓拍计划（已废弃，合并至 AIInspectionTask）==========
+// 保留类型以兼容，新功能请使用 AIInspectionTask
 
-export interface SnapshotPlan {
-  id: string
-  name: string
-  validFrom: string
-  validUntil: string
-  snapshotPeriods: SnapshotPeriod[]
-  frequency: number            // 抓拍频率（分钟）：15/30/60
-  cycleDays: number[]          // 执行周期：1-7 周一至周日
-  deviceIds: string[]
-  deviceNames: string[]
-  status: 'active' | 'paused' | 'expired'
-  creator: string
-  createdAt: string
-  updatedAt: string
-}
-
-// ========== AI巡检 - AI巡检任务 ==========
+// ========== AI巡检 - AI巡检任务（含抓拍配置）==========
 export interface AIInspectionTask {
   id: string
   name: string
   taskNo: string
-  planId: string
-  planName: string
   validFrom: string
   validUntil: string
+  // 抓拍配置
+  snapshotStart: string         // HH:mm 抓拍开始时间
+  snapshotEnd: string           // HH:mm 抓拍结束时间
+  frequency: number             // 抓拍频率（分钟）：5~30
+  cycleDays: number[]           // 执行周期：1-7 周一至周日
+  deviceIds: string[]
+  deviceNames: string[]
+  // AI分析配置
   algorithmIds: string[]
   algorithmNames: string[]
-  cycleDays: number[]
   autoCreateTicket: boolean
   assigneeId: string | null
   assigneeName: string | null
+  // 状态
   status: 'active' | 'paused' | 'completed'
   creator: string
   createdAt: string

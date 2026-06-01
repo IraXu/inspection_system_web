@@ -64,8 +64,8 @@ const primaryItems: PrimaryItem[] = [
     key: 'smart-inspection', icon:SlackOutlined, label: '智慧巡检', routePrefix: '/inspection',
     groups: [
       { key: 'inspection-template-group', label: '巡检模板', icon: XFilled, children: [
-        { key: '/inspection/templates', label: '巡检模板' },
         { key: '/inspection/items', label: '基础问题库' },
+        { key: '/inspection/templates', label: '巡检模板' },
       ]},
       { key: 'inspection-plan-group', label: '巡检计划', icon: XFilled, children: [
         { key: '/inspection/plan-config', label: '巡检计划配置' },
@@ -76,7 +76,6 @@ const primaryItems: PrimaryItem[] = [
         { key: '/inspection/spot-check', label: '视频点检' },
       ]},
       { key: 'ai-inspection-group', label: 'AI巡检', icon: XFilled, children: [
-        { key: '/inspection/ai/snapshot-plan', label: '抓拍计划' },
         { key: '/inspection/ai/tasks', label: 'AI巡检任务' },
         { key: '/inspection/ai/results', label: 'AI分析结果' },
       ]},
