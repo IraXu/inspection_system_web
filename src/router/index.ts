@@ -2,13 +2,13 @@
  * @Author: AloofXu
  * @Date: 2026-05-25 18:24:27
  * @LastEditors: null
- * @LastEditTime: 2026-06-01 13:55:59
+ * @LastEditTime: 2026-06-01 14:07:17
  * @FilePath: /web-prototype/src/router/index.ts
  */
 import { createRouter, createWebHistory } from 'vue-router'
 
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
       path: '/',
