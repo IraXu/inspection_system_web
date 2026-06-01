@@ -69,7 +69,52 @@ const handleSave = () => {
   if (!formCycleDays.value.length) { message.warning('请至少选择一个执行日'); return }
   if (formAutoTicket.value && !formAssignee.value.length) { message.warning('开启自动提单时请选择问题指派人'); return }
   saving.value = true
-  setTimeout(() => { const now = new Date().toISOString().replace('T', ' ').slice(0, 19); const vf = formValidRange.value[0]?.format?.('YYYY-MM-DD') || String(formValidRange.value[0] || ''); const vu = formValidRange.value[1]?.format?.('YYYY-MM-DD') || String(formValidRange.value[1] || ''); const plan = mockPlans.find(p => p.id === formPlanId.value); const algoNames = formAlgorithmIds.value.map(id => mockAlgorithms.find(x => x.id === id)?.name || id); const an = formAssignee.value ? mockPersonnel.find((_, i) => `p${i + 1}` === formAssignee.value) || formAssignee.value : null; const data: AIInspectionTask = { id: editingId.value || String(Date.now()), name: formName.value.trim(), planId: formPlanId.value!, planName: plan?.name || '', validFrom: vf, validUntil: vu, algorithmIds: [...formAlgorithmIds.value], algorithmNames: algoNames, cycleDays: [...formCycleDays.value], autoCreateTicket: formAutoTicket.value, assigneeId: formAssignee.value || null, assigneeName: an as string | null, status: 'active', creator: '当前用户', createdAt: editingId.value ? undefined! : now, updatedAt: now }; if (editingId.value) { const idx = tasks.value.findIndex(t => t.id === editingId.value); if (idx > -1) { data.createdAt = tasks.value[idx].createdAt; data.status = tasks.value[idx].status; tasks.value[idx] = data } message.success('AI巡检任务更新成功') } else { tasks.value.unshift(data); message.success('AI巡检任务创建成功') } filteredTasks.value = [...tasks.value]; modalVisible.value = false; saving.value = false }, 500)
+  setTimeout(() => {
+    const now = new Date().toISOString().replace('T', ' ').slice(0, 19);
+    const vf = formValidRange.value[0]?.format?.('YYYY-MM-DD') || String(formValidRange.value[0] || '');
+    const vu = formValidRange.value[1]?.format?.('YYYY-MM-DD') || String(formValidRange.value[1] || '');
+    const plan = mockPlans.find(p => p.id === formPlanId.value);
+    const algoNames = formAlgorithmIds.value.map(id => mockAlgorithms.find(x => x.id === id)?.name || id);
+    
+    // ✅ 修复：formAssignee 是数组，先取第一个值避免 string[] 与 string 类型冲突
+    const assigneeIdVal = formAssignee.value.length ? formAssignee.value[0] : null;
+    const an = assigneeIdVal ? mockPersonnel.find((_, i) => `p${i + 1}` === assigneeIdVal) || assigneeIdVal : null;
+    
+    const data: AIInspectionTask = {
+      id: editingId.value || String(Date.now()),
+      name: formName.value.trim(),
+      planId: formPlanId.value!,
+      planName: plan?.name || '',
+      validFrom: vf,
+      validUntil: vu,
+      algorithmIds: [...formAlgorithmIds.value],
+      algorithmNames: algoNames,
+      cycleDays: [...formCycleDays.value],
+      autoCreateTicket: formAutoTicket.value,
+      assigneeId: assigneeIdVal,
+      assigneeName: an,
+      status: 'active',
+      creator: '当前用户',
+      createdAt: editingId.value ? undefined! : now,
+      updatedAt: now
+    };
+    
+    if (editingId.value) {
+      const idx = tasks.value.findIndex(t => t.id === editingId.value);
+      if (idx > -1) {
+        data.createdAt = tasks.value[idx].createdAt;
+        data.status = tasks.value[idx].status;
+        tasks.value[idx] = data
+      }
+      message.success('AI巡检任务更新成功')
+    } else {
+      tasks.value.unshift(data);
+      message.success('AI巡检任务创建成功')
+    }
+    filteredTasks.value = [...tasks.value];
+    modalVisible.value = false;
+    saving.value = false
+  }, 500)
 }
 
 const toggleStatus = (task: AIInspectionTask) => { if (task.status === 'completed') return; task.status = (task.status === 'active' ? 'paused' : 'active') as AIInspectionTask['status']; task.updatedAt = new Date().toISOString().replace('T', ' ').slice(0, 19); message.success(task.status === 'active' ? '任务已启用' : '任务已暂停') }
@@ -82,20 +127,22 @@ const rowSelection = computed(() => ({ selectedRowKeys: selectedRowKeys.value, o
   <div class="ai-task">
     <div class="page-toolbar">
       <div class="toolbar-row">
-        <a-space wrap>
-          <a-input v-model:value="searchName" placeholder="任务名称" style="width:200px" allow-clear @pressEnter="doSearch"><template #prefix><SearchOutlined /></template></a-input>
-          <a-select v-model:value="searchAlgorithm" mode="multiple" placeholder="AI算法" style="width:200px" allow-clear :options="algoOpts" :max-tag-count="2" />
-          <a-select v-model:value="searchStatus" placeholder="任务状态" style="width:200px" allow-clear :options="[{ label:'执行中', value:'active' },{ label:'已暂停', value:'paused' },{ label:'已完成', value:'completed' }]" />
-          <a-button type="primary" @click="doSearch">查询</a-button>
-          <a-button @click="doReset">重置</a-button>
-        </a-space>
-      </div>
-      <div class="toolbar-row">
-        <a-space>
-          <a-button type="primary" @click="openAdd"><PlusOutlined /> 新建AI巡检任务</a-button>
-          <a-button danger @click="batchDelete" :disabled="!selectedRowKeys.length"><DeleteOutlined /> 批量删除</a-button>
-          <span v-if="selectedRowKeys.length" class="selected-count">已选 {{ selectedRowKeys.length }} 项</span>
-        </a-space>
+        <div class="toolbar-row">
+          <a-space wrap>
+            <a-input v-model:value="searchName" placeholder="任务名称" style="width:200px" allow-clear @pressEnter="doSearch"><template #prefix><SearchOutlined /></template></a-input>
+            <a-select v-model:value="searchAlgorithm" mode="multiple" placeholder="AI算法" style="width:200px" allow-clear :options="algoOpts" :max-tag-count="2" />
+            <a-select v-model:value="searchStatus" placeholder="任务状态" style="width:200px" allow-clear :options="[{ label:'执行中', value:'active' },{ label:'已暂停', value:'paused' },{ label:'已完成', value:'completed' }]" />
+            <a-button type="primary" @click="doSearch">查询</a-button>
+            <a-button @click="doReset">重置</a-button>
+          </a-space>
+        </div>
+        <div class="toolbar-row">
+          <a-space>
+            <a-button type="primary" @click="openAdd"><PlusOutlined /> 新建AI巡检任务</a-button>
+            <a-button danger @click="batchDelete" :disabled="!selectedRowKeys.length"><DeleteOutlined /> 批量删除</a-button>
+            <span v-if="selectedRowKeys.length" class="selected-count">已选 {{ selectedRowKeys.length }} 项</span>
+          </a-space>
+        </div>
       </div>
     </div>
 
