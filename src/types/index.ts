@@ -229,3 +229,43 @@ export interface AIAnalysisResult {
   orgName: string
   analyzedAt: string
 }
+
+// ========== 视频广场 ==========
+export interface VideoDevice {
+  id: string
+  name: string
+  online: boolean
+  regionPath: string[]
+  capabilities: {
+    ptz: boolean
+    intercom: boolean
+    light: boolean
+  }
+  streamType: 'main' | 'sub'
+  snapshot: string
+}
+
+export interface VideoGridCell {
+  deviceId: string | null
+  deviceName: string
+  status: 'empty' | 'connecting' | 'connected' | 'error'
+  paused: boolean
+  muted: boolean
+  flipped: boolean
+  streamType: 'main' | 'sub'
+  isRecording: boolean
+  recordDuration: number
+}
+
+export interface PatrolScheme {
+  name: string
+  deviceIds: string[]
+  duration: number
+}
+
+export interface RecordingSegment {
+  start: number
+  end: number
+  label: string
+}
+

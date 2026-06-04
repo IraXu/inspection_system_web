@@ -2,7 +2,7 @@
 import { ref, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import type { MenuProps } from 'antdv-next'
-import { DownOutlined, BankOutlined, LogoutOutlined, CheckOutlined, SlackOutlined, XFilled, FundFilled } from '@antdv-next/icons'
+import { DownOutlined, BankOutlined, LogoutOutlined, CheckOutlined, SlackOutlined, XFilled, FundFilled, VideoCameraFilled } from '@antdv-next/icons'
 import touxiangImg from '@/assets/touxiang.jpg'
 
 const router = useRouter()
@@ -58,6 +58,13 @@ const primaryItems: PrimaryItem[] = [
     groups: [],
     directItems: [
       { key: '/workbench', label: '工作台', icon: FundFilled },
+    ],
+  },
+  {
+    key: 'video-square', icon: VideoCameraFilled, label: '视频广场', routePrefix: '/video-square',
+    groups: [],
+    directItems: [
+      { key: '/video-square', label: '视频广场', icon: VideoCameraFilled },
     ],
   },
   {

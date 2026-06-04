@@ -2,7 +2,7 @@
  * @Author: AloofXu
  * @Date: 2026-05-25 18:24:27
  * @LastEditors: null
- * @LastEditTime: 2026-06-01 14:07:17
+ * @LastEditTime: 2026-06-04 16:21:49
  * @FilePath: /web-prototype/src/router/index.ts
  */
 import { createRouter, createWebHistory } from 'vue-router'
@@ -30,6 +30,8 @@ const router = createRouter({
         // AI巡检
         { path: 'inspection/ai/tasks', name: 'AIInspectionTask', component: () => import('@/views/ai-inspection/AIInspectionTask.vue'), meta: { title: 'AI巡检任务' } },
         { path: 'inspection/ai/results', name: 'AIAnalysisResult', component: () => import('@/views/ai-inspection/AIAnalysisResult.vue'), meta: { title: 'AI分析结果' } },
+        // 视频广场
+        { path: 'video-square', name: 'VideoSquare', component: () => import('@/views/video-square/VideoSquare.vue'), meta: { title: '视频广场' } },
       ],
     },
   ],
