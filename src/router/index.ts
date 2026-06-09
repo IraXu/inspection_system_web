@@ -2,7 +2,7 @@
  * @Author: AloofXu
  * @Date: 2026-05-25 18:24:27
  * @LastEditors: null
- * @LastEditTime: 2026-06-04 16:21:49
+ * @LastEditTime: 2026-06-09 15:28:08
  * @FilePath: /web-prototype/src/router/index.ts
  */
 import { createRouter, createWebHashHistory } from 'vue-router'
@@ -32,6 +32,10 @@ const router = createRouter({
         { path: 'inspection/ai/results', name: 'AIAnalysisResult', component: () => import('@/views/ai-inspection/AIAnalysisResult.vue'), meta: { title: 'AI分析结果' } },
         // 视频广场
         { path: 'video-square', name: 'VideoSquare', component: () => import('@/views/video-square/VideoSquare.vue'), meta: { title: '视频广场' } },
+        // 设备管理
+        { path: 'device/management', name: 'DeviceManagement', component: () => import('@/views/device-management/index.vue'), meta: { title: '设备管理' } },
+        // 系统管理
+        { path: 'system/management', name: 'SystemManagement', component: () => import('@/views/system-management/index.vue'), meta: { title: '系统管理' } },
       ],
     },
   ],

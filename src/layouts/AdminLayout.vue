@@ -2,7 +2,7 @@
 import { ref, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import type { MenuProps } from 'antdv-next'
-import { DownOutlined, BankOutlined, LogoutOutlined, CheckOutlined, SlackOutlined, XFilled, FundFilled, VideoCameraFilled } from '@antdv-next/icons'
+import { DownOutlined, BankOutlined, LogoutOutlined, CheckOutlined, SlackOutlined, XFilled, FundFilled, VideoCameraFilled, CloudServerOutlined, DeploymentUnitOutlined } from '@antdv-next/icons'
 import touxiangImg from '@/assets/touxiang.jpg'
 
 const router = useRouter()
@@ -68,7 +68,14 @@ const primaryItems: PrimaryItem[] = [
     ],
   },
   {
-    key: 'smart-inspection', icon:SlackOutlined, label: '智慧巡检', routePrefix: '/inspection',
+    key: 'device-management', icon: CloudServerOutlined, label: '设备管理', routePrefix: '/device',
+    groups: [],
+    directItems: [
+      { key: '/device/management', label: '设备管理', icon: CloudServerOutlined },
+    ],
+  },
+  {
+    key: 'smart-inspection', icon: SlackOutlined, label: '智慧巡检', routePrefix: '/inspection',
     groups: [
       { key: 'inspection-template-group', label: '巡检模板', icon: XFilled, children: [
         { key: '/inspection/items', label: '基础问题库' },
@@ -89,6 +96,13 @@ const primaryItems: PrimaryItem[] = [
     ],
     directItems: [
       { key: '/inspection/todos', label: '待办事项', icon: XFilled },
+    ],
+  },
+  {
+    key: 'system-management', icon: DeploymentUnitOutlined, label: '系统管理', routePrefix: '/system',
+    groups: [],
+    directItems: [
+      { key: '/system/management', label: '系统管理', icon: DeploymentUnitOutlined },
     ],
   },
 ]
