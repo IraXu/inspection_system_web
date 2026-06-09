@@ -5,10 +5,10 @@
  * @LastEditTime: 2026-06-04 16:21:49
  * @FilePath: /web-prototype/src/router/index.ts
  */
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHashHistory } from 'vue-router'
 
 const router = createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
+  history: createWebHashHistory(import.meta.env.BASE_URL),
   routes: [
     {
       path: '/',

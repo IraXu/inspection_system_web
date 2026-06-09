@@ -43,7 +43,11 @@ const beamTheme = {
             <div class="announce-body">
               <div class="announce-item">
                 <span class="announce-dot">●</span>
-                <span>原型部署至海外 Github Page 上，访问过慢请自行打开网络代理；</span>
+                <span>原型部署至海外 Github Page 上，访问过慢请自行打开网络代理</span>
+              </div>
+              <div class="announce-item">
+                <span class="announce-dot">●</span>
+                <span>SPA的history更改为hash模式，现在原型页面刷新不会404了🎉</span>
               </div>
               <div class="announce-item">
                 <span class="announce-dot">●</span>
