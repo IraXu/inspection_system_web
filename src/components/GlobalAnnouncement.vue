@@ -1,8 +1,47 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { SoundOutlined, CloseOutlined } from '@ant-design/icons-vue'
 
-const visible = ref(true)
+const STORAGE_KEY = 'global-announcement-closed'
+
+// 检查当前会话是否已关闭过公告
+const hasBeenClosed = sessionStorage.getItem(STORAGE_KEY) === '1'
+const visible = ref(!hasBeenClosed)
+const countdown = ref(5)
+
+let timer: ReturnType<typeof setTimeout> | null = null
+let interval: ReturnType<typeof setInterval> | null = null
+
+const closeAnnouncement = () => {
+  visible.value = false
+  sessionStorage.setItem(STORAGE_KEY, '1')
+  if (interval) {
+    clearInterval(interval)
+    interval = null
+  }
+}
+
+// 初次打开 5s 后自动关闭，同时每秒更新倒计时
+onMounted(() => {
+  if (!hasBeenClosed) {
+    interval = setInterval(() => {
+      countdown.value--
+      if (countdown.value <= 0) {
+        clearInterval(interval!)
+        interval = null
+      }
+    }, 1000)
+
+    timer = setTimeout(() => {
+      closeAnnouncement()
+    }, 5000)
+  }
+})
+
+onUnmounted(() => {
+  if (timer) clearTimeout(timer)
+  if (interval) clearInterval(interval)
+})
 
 const beamTheme = {
   components: {
@@ -28,6 +67,7 @@ const beamTheme = {
               <span class="announce-title">
                 <SoundOutlined class="announce-title-icon" />
                 WEB原型公告
+                <span class="countdown-badge">{{ countdown }}s</span>
               </span>
             </template>
             <template #extra>
@@ -35,7 +75,7 @@ const beamTheme = {
                 type="text"
                 size="small"
                 class="announce-close-btn"
-                @click="visible = false"
+                @click="closeAnnouncement"
               >
                 <template #icon><CloseOutlined /></template>
               </a-button>
@@ -107,6 +147,22 @@ const beamTheme = {
 
 .announce-title-icon {
   font-size: 15px;
+}
+
+.countdown-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 6px;
+  min-width: 28px;
+  height: 20px;
+  padding: 0 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #fff;
+  background: #1677ff;
+  border-radius: 10px;
+  line-height: 1;
 }
 
 .announce-close-btn {
