@@ -14,6 +14,7 @@ import {
   ReloadOutlined, CaretRightOutlined as CaretRight,
   LeftOutlined, RightOutlined, StarOutlined, EditOutlined,
   GlobalOutlined, SyncOutlined, UnorderedListOutlined,
+  BankOutlined, ApartmentOutlined, ShopOutlined,
 } from '@antdv-next/icons'
 
 // ========== Tab 状态 ==========
@@ -24,6 +25,7 @@ const activeTab = ref<TabKey>('live')
 interface TreeNode {
   key: string; title: string; count?: number; children?: TreeNode[]
   isDevice?: boolean; online?: boolean; deviceId?: string
+  nodeType?: 'enterprise' | 'organization' | 'store'
 }
 
 const rawRegionTree: TreeNode[] = [
@@ -192,15 +194,36 @@ const rawRegionTree: TreeNode[] = [
   },
 ]
 
+// 自动标注节点类型（企业 / 组织 / 门店），设备节点不受影响
+const annotateNodeTypes = (nodes: TreeNode[], isRoot = true): TreeNode[] => nodes.map(n => {
+  if (n.isDevice) return n
+  if (!n.children || n.children.length === 0) return n
+  const hasDeviceChildren = n.children.some(c => c.isDevice)
+  const nodeType: TreeNode['nodeType'] = isRoot
+    ? 'enterprise'
+    : hasDeviceChildren
+      ? 'store'
+      : 'organization'
+  return { ...n, nodeType, children: annotateNodeTypes(n.children, false) }
+})
+const annotatedRawTree = computed(() => annotateNodeTypes(rawRegionTree))
+
 // title 加 count 后缀（不做 emoji 处理，由 titleRender 统一渲染）
 const attachCountSuffix = (nodes: TreeNode[]): TreeNode[] => nodes.map(n => ({
   ...n,
   title: n.count !== undefined ? `${n.title}(${n.count})` : n.title,
   children: n.children ? attachCountSuffix(n.children) : undefined,
 }))
-const regionTree = computed(() => attachCountSuffix(rawRegionTree))
+const regionTree = computed(() => attachCountSuffix(annotatedRawTree.value))
 
-// 自定义树节点渲染：设备节点前加状态圆点，后加播放/轮巡状态图标
+// 层级图标映射
+const nodeTypeIconMap: Record<string, any> = {
+  enterprise: BankOutlined,
+  organization: ApartmentOutlined,
+  store: ShopOutlined,
+}
+
+// 自定义树节点渲染：设备节点前加状态圆点，后加播放/轮巡状态图标；组织层级前加对应图标
 const titleRender = (nodeData: any) => {
   if (nodeData.isDevice) {
     const deviceId = nodeData.deviceId as string
@@ -220,6 +243,14 @@ const titleRender = (nodeData: any) => {
       isPlaying ? h('span', { class: 'vs-tree-status vs-tree-playing', title: '播放中' }, [
         h(CaretRight, { class: 'vs-tree-play-icon' }),
       ]) : null,
+    ])
+  }
+  // 非设备节点：根据 nodeType 添加层级图标
+  const icon = nodeData.nodeType && nodeTypeIconMap[nodeData.nodeType]
+  if (icon) {
+    return h('span', { class: 'vs-tree-node' }, [
+      h(icon, { class: `vs-tree-node-icon vs-tree-icon-${nodeData.nodeType}` }),
+      h('span', { class: 'vs-tree-node-title' }, nodeData.title),
     ])
   }
   return nodeData.title
@@ -590,7 +621,7 @@ const patrolDeviceTree = computed(() => {
     }
     return result
   }
-  return filterOnline(rawRegionTree)
+  return filterOnline(annotatedRawTree.value)
 })
 
 // 搜索过滤后的设备选择树
@@ -1654,7 +1685,7 @@ watch(selectedCellIdx, (val) => {
                   :checked-keys="patrolTreeCheckedKeys"
                   :default-expanded-keys="['root']"
                   :field-names="{ children:'children', title:'title', key:'key' }"
-                  :title-render="(node: any) => node.isDevice ? h('span',{class:'vs-tree-device'},[h('span',{class:['vs-tree-dot','online']}),h('span',{class:'vs-tree-device-name'},node.title)]) : node.title"
+                  :title-render="(node: any) => node.isDevice ? h('span',{class:'vs-tree-device'},[h('span',{class:['vs-tree-dot','online']}),h('span',{class:'vs-tree-device-name'},node.title)]) : (node.nodeType && nodeTypeIconMap[node.nodeType] ? h('span',{class:'vs-tree-node'},[h(nodeTypeIconMap[node.nodeType],{class:`vs-tree-node-icon vs-tree-icon-${node.nodeType}`}),h('span',{class:'vs-tree-node-title'},node.title)]) : node.title)"
                   @check="onPatrolTreeCheck"
                   class="vpm-device-tree"
                 />
@@ -1748,6 +1779,11 @@ watch(selectedCellIdx, (val) => {
 .vs-tree-wrap :deep(.vs-tree-play-icon) { font-size:10px; }
 .vs-tree-wrap :deep(.vs-tree-replaying) { color:#1677ff; }
 .vs-tree-wrap :deep(.vs-tree-replay-icon) { font-size:12px; }
+
+/* 组织树层级图标 */
+.vs-tree-wrap :deep(.vs-tree-node) { display:inline-flex; align-items:baseline; gap:4px; }
+.vs-tree-wrap :deep(.vs-tree-node-icon) { font-size:12px; flex-shrink:0; color:#bfbfbf; transform:translateY(1px); }
+.vs-tree-wrap :deep(.vs-tree-node-title) { font-size:12px; color:#333; line-height:1; }
 
 /* ========== 中央内容区 ========== */
 .vs-content { flex:1; display:flex; flex-direction:column; overflow:hidden; position:relative; }
@@ -2219,4 +2255,7 @@ watch(selectedCellIdx, (val) => {
 .vpm-device-tree :deep(.vs-tree-dot) { width:6px; height:6px; border-radius:50%; background:#52c41a; flex-shrink:0; }
 .vpm-device-tree :deep(.vs-tree-dot.online) { background:#52c41a; }
 .vpm-device-tree :deep(.vs-tree-device-name) { font-size:12px; color:#555; }
+.vpm-device-tree :deep(.vs-tree-node) { display:inline-flex; align-items:baseline; gap:4px; }
+.vpm-device-tree :deep(.vs-tree-node-icon) { font-size:12px; flex-shrink:0; color:#bfbfbf; transform:translateY(1px); }
+.vpm-device-tree :deep(.vs-tree-node-title) { font-size:12px; color:#333; line-height:1; }
 </style>
