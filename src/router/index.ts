@@ -1,10 +1,3 @@
-/*
- * @Author: AloofXu
- * @Date: 2026-05-25 18:24:27
- * @LastEditors: null
- * @LastEditTime: 2026-06-09 18:50:17
- * @FilePath: /web-prototype/src/router/index.ts
- */
 import { createRouter, createWebHashHistory } from 'vue-router'
 
 const router = createRouter({
@@ -40,6 +33,8 @@ const router = createRouter({
         { path: 'device/management', name: 'DeviceManagement', component: () => import('@/views/device-management/index.vue'), meta: { title: '设备管理' } },
         // 系统管理
         { path: 'system/management', name: 'SystemManagement', component: () => import('@/views/system-management/index.vue'), meta: { title: '系统管理' } },
+        // 导航管理
+        { path: 'system/nav-management', name: 'NavManagement', component: () => import('@/views/nav-management/index.vue'), meta: { title: '导航管理' } },
       ],
     },
   ],

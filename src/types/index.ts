@@ -208,6 +208,21 @@ export interface SpotCheckRecord {
 // ========== AI巡检 - 抓拍计划（已废弃，合并至 AIInspectionTask）==========
 // 保留类型以兼容，新功能请使用 AIInspectionTask
 
+// ========== 导航管理 ==========
+export interface NavItem {
+  id: string
+  parentId: string | null
+  label: string
+  icon: string
+  routePath: string
+  sortOrder: number
+  visible: boolean
+  description: string            // 导航描述
+  openMode: 'inner' | 'blank'   // 打开方式
+  permission: string             // 权限标识
+  navType: 'dir' | 'menu' | 'action' | 'url'  // 导航类型
+}
+
 // ========== AI巡检 - AI巡检任务（含抓拍配置）==========
 export interface AIInspectionTask {
   id: string

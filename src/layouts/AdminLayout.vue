@@ -2,8 +2,9 @@
 import { ref, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import type { MenuProps } from 'antdv-next'
-import { DownOutlined, BankOutlined, LogoutOutlined, CheckOutlined, SlackOutlined, XFilled, FundFilled, VideoCameraFilled, CloudServerOutlined, DeploymentUnitOutlined, AlertFilled } from '@antdv-next/icons'
+import { DownOutlined, BankOutlined, LogoutOutlined, CheckOutlined, SlackOutlined, XFilled, FundFilled, VideoCameraFilled, CloudServerOutlined, DeploymentUnitOutlined, AlertFilled, UnorderedListOutlined } from '@antdv-next/icons'
 import touxiangImg from '@/assets/touxiang.jpg'
+
 const router = useRouter()
 const route = useRoute()
 
@@ -112,6 +113,13 @@ const primaryItems: PrimaryItem[] = [
       { key: '/system/management', label: '系统管理', icon: DeploymentUnitOutlined },
     ],
   },
+  {
+    key: 'nav-management', icon: UnorderedListOutlined, label: '导航管理', routePrefix: '/system/nav-management',
+    groups: [],
+    directItems: [
+      { key: '/system/nav-management', label: '导航管理', icon: UnorderedListOutlined },
+    ],
+  },
 ]
 
 const activePrimary = ref(primaryItems[0].key)
@@ -122,7 +130,8 @@ const openKeys = ref<string[]>([])
 
 watch(() => route.path, (path) => {
   selectedKeys.value = [path]
-  for (const p of primaryItems) {
+  const sorted = [...primaryItems].sort((a, b) => b.routePrefix.length - a.routePrefix.length)
+  for (const p of sorted) {
     if (path.startsWith(p.routePrefix)) {
       activePrimary.value = p.key
       openKeys.value = p.groups.filter(g => g.children.some(c => c.key === path)).map(g => g.key)
