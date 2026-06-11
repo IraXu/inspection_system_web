@@ -25,6 +25,8 @@ const router = createRouter({
         { path: 'inspection/online/execute', name: 'InspectionExecution', component: () => import('@/views/InspectionExecution.vue'), meta: { title: '在线巡检执行' } },
         { path: 'inspection/spot-check', name: 'SpotCheckStoreList', component: () => import('@/views/SpotCheckStoreList.vue'), meta: { title: '视频点检' } },
         { path: 'inspection/spot-check/execute', name: 'SpotCheckExecution', component: () => import('@/views/SpotCheckExecution.vue'), meta: { title: '视频点检执行' } },
+        // 视频点检记录
+        { path: 'inspection/spot-check-records', name: 'VideoSpotCheckRecords', component: () => import('@/views/VideoSpotCheckRecords.vue'), meta: { title: '视频点检记录' } },
         // 待办事项
         { path: 'inspection/todos', name: 'TodoPage', component: () => import('@/views/TodoPage.vue'), meta: { title: '待办事项' } },
         // AI巡检

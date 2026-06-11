@@ -172,6 +172,39 @@ export interface SpotCheckSession {
   items: InspectionResult[]
 }
 
+// ========== 视频点检记录 ==========
+export interface RecordDetail {
+  itemId: string
+  itemName: string
+  categoryName: string
+  result: 'pass' | 'fail'
+  problemDesc: string
+  standard: string
+  standardImages: string[]
+  screenshots: string[]
+}
+
+export interface SpotCheckRecord {
+  id: string
+  inspectionNo: string           // 点检编号
+  storeId: string
+  storeName: string
+  regionPath: string[]
+  templateId: string
+  templateName: string
+  method: 'online' | 'spot'     // 在线巡检 / 视频点检
+  executor: string
+  executedAt: string
+  totalItems: number
+  qualifiedCount: number
+  unqualifiedCount: number
+  screenshotCount: number
+  issueId: string | null
+  issueStatus: 'none' | 'pending' | 'rectifying' | 'completed'
+  assignee?: string
+  details: RecordDetail[]
+}
+
 // ========== AI巡检 - 抓拍计划（已废弃，合并至 AIInspectionTask）==========
 // 保留类型以兼容，新功能请使用 AIInspectionTask
 

@@ -94,6 +94,7 @@ const primaryItems: PrimaryItem[] = [
       { key: 'daily-inspection-group', label: '日常巡检', icon: XFilled, children: [
         { key: '/inspection/online', label: '在线巡检' },
         { key: '/inspection/spot-check', label: '视频点检' },
+        { key: '/inspection/spot-check-records', label: '视频点检记录' },
       ]},
       { key: 'ai-inspection-group', label: 'AI巡检', icon: XFilled, children: [
         { key: '/inspection/ai/tasks', label: 'AI巡检任务' },

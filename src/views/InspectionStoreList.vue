@@ -94,7 +94,9 @@ const goExecute = (store: any) => {
   if (!store.hasDevice) return
   router.push(`/inspection/online/execute?taskId=${store.taskId}`)
 }
-const viewHistory = (store: any) => {}
+const viewHistory = (store: any) => {
+  router.push(`/inspection/task-list?storeId=${store.id}`)
+}
 const goSpotCheck = () => router.push('/inspection/spot-check')
 </script>
 

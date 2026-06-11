@@ -97,7 +97,9 @@ const goSpotCheck = (store: any) => {
   if (!store.hasDevice) return
   router.push(`/inspection/spot-check/execute?storeId=${store.id}&storeName=${encodeURIComponent(store.name)}`)
 }
-const viewHistory = (store: any) => {}
+const viewHistory = (store: any) => {
+  router.push(`/inspection/spot-check-records?storeId=${store.id}&storeName=${encodeURIComponent(store.name)}`)
+}
 </script>
 
 <template>
