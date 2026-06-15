@@ -113,6 +113,7 @@ const primaryItems: PrimaryItem[] = [
       { key: '/system/management', label: '系统管理', icon: DeploymentUnitOutlined },
     ],
   },
+  /*
   {
     key: 'nav-management', icon: UnorderedListOutlined, label: '导航管理', routePrefix: '/system/nav-management',
     groups: [],
@@ -120,6 +121,7 @@ const primaryItems: PrimaryItem[] = [
       { key: '/system/nav-management', label: '导航管理', icon: UnorderedListOutlined },
     ],
   },
+  */
 ]
 
 const activePrimary = ref(primaryItems[0].key)

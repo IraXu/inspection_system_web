@@ -240,6 +240,7 @@ export interface AIInspectionTask {
   // AI分析配置
   algorithmIds: string[]
   algorithmNames: string[]
+  confidenceThreshold: number    // 置信度阈值（0-100），AI分析检测项置信度≥此值才会告警
   autoCreateTicket: boolean
   assigneeId: string | null
   assigneeName: string | null
