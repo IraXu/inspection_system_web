@@ -335,6 +335,8 @@ export interface ScheduledBroadcastTask {
   audioName: string
   enabled: boolean
   lastExecutedAt?: string
+  updatedAt: string
+  lastOperator: string
   createdAt: string
   creator: string
 }

@@ -122,7 +122,7 @@ const editingId = ref<string | null>(null)
 
 const form = reactive({
   name: '',
-  dateRange: null as [string, string] | null,
+  dateRange: null as any,
   timeSlots: [{ id: String(Date.now()), time: '' }] as TimeSlot[],
   selectedDeviceIds: [] as string[],
   audioId: null as string | null,
@@ -348,7 +348,6 @@ const timeOptions = Array.from({length: 48}, (_, i) => {
 </template>
 
 <style scoped>
-.sb-page { }
 .tb { margin-bottom:16px; }
 
 .modal-tree-wrap {
