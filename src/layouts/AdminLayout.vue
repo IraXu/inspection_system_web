@@ -2,7 +2,7 @@
 import { ref, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import type { MenuProps } from 'antdv-next'
-import { DownOutlined, BankOutlined, LogoutOutlined, CheckOutlined, SlackOutlined, XFilled, FundFilled, VideoCameraFilled, CloudServerOutlined, DeploymentUnitOutlined, AlertFilled, UnorderedListOutlined } from '@antdv-next/icons'
+import { DownOutlined, BankOutlined, LogoutOutlined, CheckOutlined, SlackOutlined, XFilled, FundFilled, VideoCameraFilled, CloudServerOutlined, DeploymentUnitOutlined, AlertFilled, NotificationOutlined } from '@antdv-next/icons'
 import touxiangImg from '@/assets/touxiang.jpg'
 
 const router = useRouter()
@@ -107,6 +107,20 @@ const primaryItems: PrimaryItem[] = [
     ],
   },
   {
+    key: 'cloud-broadcast', icon: NotificationOutlined, label: '云广播', routePrefix: '/cloud-broadcast',
+    groups: [
+      { key: 'cb-broadcast-group', label: '广播管理', icon: XFilled, children: [
+        { key: '/cloud-broadcast/realtime', label: '实时广播' },
+        { key: '/cloud-broadcast/scheduled', label: '定时广播' },
+        { key: '/cloud-broadcast/event', label: '事件广播' },
+        { key: '/cloud-broadcast/records', label: '广播记录' },
+      ]},
+      { key: 'cb-resource-group', label: '广播资源', icon: XFilled, children: [
+        { key: '/cloud-broadcast/media', label: '媒体资源库' },
+      ]},
+    ],
+  },
+  {
     key: 'system-management', icon: DeploymentUnitOutlined, label: '系统管理', routePrefix: '/system',
     groups: [],
     directItems: [
@@ -132,6 +146,7 @@ const openKeys = ref<string[]>([])
 
 watch(() => route.path, (path) => {
   selectedKeys.value = [path]
+  // 按 routePrefix 长度降序匹配，确保 /system/nav-management 优先于 /system
   const sorted = [...primaryItems].sort((a, b) => b.routePrefix.length - a.routePrefix.length)
   for (const p of sorted) {
     if (path.startsWith(p.routePrefix)) {

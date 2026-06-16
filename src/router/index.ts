@@ -31,9 +31,14 @@ const router = createRouter({
         { path: 'alert-center', name: 'AlertCenter', component: () => import('@/views/alert-center/index.vue'), meta: { title: '告警中心' } },
         // 设备管理
         { path: 'device/management', name: 'DeviceManagement', component: () => import('@/views/device-management/index.vue'), meta: { title: '设备管理' } },
+        // 云广播
+        { path: 'cloud-broadcast/realtime', name: 'RealTimeBroadcast', component: () => import('@/views/cloud-broadcast/RealTimeBroadcast.vue'), meta: { title: '实时广播' } },
+        { path: 'cloud-broadcast/scheduled', name: 'ScheduledBroadcast', component: () => import('@/views/cloud-broadcast/ScheduledBroadcast.vue'), meta: { title: '定时广播' } },
+        { path: 'cloud-broadcast/event', name: 'EventBroadcast', component: () => import('@/views/cloud-broadcast/EventBroadcast.vue'), meta: { title: '事件广播' } },
+        { path: 'cloud-broadcast/records', name: 'BroadcastRecords', component: () => import('@/views/cloud-broadcast/BroadcastRecords.vue'), meta: { title: '广播记录' } },
+        { path: 'cloud-broadcast/media', name: 'MediaLibrary', component: () => import('@/views/cloud-broadcast/MediaLibrary.vue'), meta: { title: '媒体资源库' } },
         // 系统管理
         { path: 'system/management', name: 'SystemManagement', component: () => import('@/views/system-management/index.vue'), meta: { title: '系统管理' } },
-        // 导航管理
         { path: 'system/nav-management', name: 'NavManagement', component: () => import('@/views/nav-management/index.vue'), meta: { title: '导航管理' } },
       ],
     },

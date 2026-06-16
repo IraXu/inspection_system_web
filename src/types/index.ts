@@ -279,6 +279,141 @@ export interface AIAnalysisResult {
   analyzedAt: string
 }
 
+// ========== 云广播 ==========
+
+/** 广播设备 */
+export interface BroadcastDevice {
+  id: string
+  name: string
+  deviceNo: string
+  online: boolean
+  playing: boolean           // 是否正在播放
+  regionPath: string[]
+  storeName: string
+}
+
+/** 媒体音频 */
+export interface MediaAudio {
+  id: string
+  name: string
+  categoryId: string
+  categoryName: string
+  duration: number           // 秒
+  fileSize: number           // bytes
+  format: string             // mp3/wav/aac/flac
+  bitrate?: number
+  sampleRate?: number
+  source: 'upload' | 'record' | 'tts'
+  url: string
+  createdAt: string
+  referencedBy: string[]     // 被引用的广播任务ID列表
+}
+
+/** 音频分类 */
+export interface AudioCategory {
+  id: string
+  name: string
+  audioCount: number
+}
+
+/** 定时广播时间段 */
+export interface TimeSlot {
+  id: string
+  time: string               // HH:mm
+}
+
+/** 定时广播任务 */
+export interface ScheduledBroadcastTask {
+  id: string
+  name: string
+  dateRange: [string, string]  // 开始日期 ~ 结束日期
+  timeSlots: TimeSlot[]
+  deviceIds: string[]
+  deviceNames: string[]
+  deviceCount: number
+  audioId: string
+  audioName: string
+  enabled: boolean
+  lastExecutedAt?: string
+  createdAt: string
+  creator: string
+}
+
+/** 事件类型 */
+export type EventType = 'alarm' | 'ai_event' | 'device_event' | 'manual'
+
+/** 事件广播规则 */
+export interface EventBroadcastRule {
+  id: string
+  name: string
+  eventType: EventType
+  eventTypeLabel: string
+  deviceIds: string[]
+  deviceNames: string[]
+  deviceCount: number
+  audioId: string
+  audioName: string
+  enabled: boolean
+  createdAt: string
+  creator: string
+}
+
+/** 应急广播方案 */
+export interface EmergencyPlan {
+  id: string
+  name: string
+  deviceIds: string[]
+  deviceNames: string[]
+  deviceCount: number
+  audioId: string
+  audioName: string
+}
+
+/** 广播执行状态 */
+export type BroadcastStatus = 'queued' | 'executing' | 'completed' | 'partial_failed' | 'failed' | 'interrupted' | 'cancelled'
+
+/** 广播类型 */
+export type BroadcastType = 'realtime' | 'scheduled' | 'event'
+
+/** 设备执行结果 */
+export interface DeviceBroadcastResult {
+  deviceId: string
+  deviceName: string
+  status: 'success' | 'failed'
+  reason?: string
+  startedAt?: string
+  endedAt?: string
+}
+
+/** 广播记录 */
+export interface BroadcastRecord {
+  id: string
+  broadcastType: BroadcastType
+  broadcastTypeLabel: string
+  initiator: string            // 发起人/触发源
+  targetDeviceCount: number
+  successCount: number
+  failCount: number
+  audioName: string
+  status: BroadcastStatus
+  startedAt: string
+  endedAt?: string
+  deviceResults: DeviceBroadcastResult[]
+}
+
+/** 事件触发日志 */
+export interface EventTriggerLog {
+  id: string
+  triggeredAt: string
+  eventType: EventType
+  eventTypeLabel: string
+  ruleId: string
+  ruleName: string
+  status: BroadcastStatus
+  successCount: number
+  failCount: number
+}
+
 // ========== 视频广场 ==========
 export interface VideoDevice {
   id: string
