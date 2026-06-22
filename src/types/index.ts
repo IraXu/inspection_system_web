@@ -68,10 +68,10 @@ export interface InspectionTask {
   templateName: string           // 巡检模版
   inspectionMode: string         // 巡检方式
   relatedPlan: string            // 关联计划
-  planStatus: string             // 计划状态
+  planStatus: 'not_started' | 'in_progress' | 'ended'  // 计划状态，与巡检计划.status一致
   pushTime: string               // 任务推送时间
   pushStatus: string             // 推送状态
-  executionStatus: 'pending' | 'executing' | 'executed'
+  executionStatus: 'pending' | 'executing' | 'executed' | 'overdue'
   validUntil: string             // 任务有效期
   actualPersonnel: string        // 实际巡检人
   inspectionNo: string           // 巡检编号

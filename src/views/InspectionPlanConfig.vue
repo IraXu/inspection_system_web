@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, h } from 'vue'
 import { message, Modal } from 'antdv-next'
-import { PlusOutlined, DeleteOutlined, ExclamationCircleOutlined } from '@antdv-next/icons'
+import { PlusOutlined, DeleteOutlined, ExclamationCircleOutlined, QuestionCircleOutlined } from '@antdv-next/icons'
 import type { InspectionPlan, StorePersonnelTemplate } from '@/types'
 
 // ========== Mock ==========
@@ -20,6 +20,11 @@ const mockTemplates = ['门店基础巡检','明星店铺综合巡检','陈列�
 // ========== 列表 ==========
 const plans = ref([...mockPlans])
 const statusMap: Record<string,{label:string;color:string}> = { not_started:{label:'未开始',color:'processing'}, in_progress:{label:'进行中',color:'success'}, ended:{label:'已结束',color:'error'} }
+const statusDescriptions = [
+  { key: 'not_started', label: '未开始', desc: '当前时间早于任务生成时间或有效期开始时间' },
+  { key: 'in_progress', label: '进行中', desc: '当前时间在有效期内，循环任务执行中或单次任务待执行' },
+  { key: 'ended', label: '已结束', desc: '超过有效期结束时间或单次任务已过期' },
+]
 const cycleLabel: Record<string,string> = { once:'单次', daily:'每日', weekly:'每周', monthly:'每月' }
 const modeLabel: Record<string,string> = { online:'在线巡检', offline:'线下巡检' }
 
@@ -128,6 +133,19 @@ const handleDelete=(plan:InspectionPlan)=>{Modal.confirm({title:'是否删除该
   <div class="plan-config">
     <div class="page-header"><a-button type="primary" @click="openAddDrawer"><PlusOutlined /> 新增计划</a-button></div>
     <a-table :columns="columns" :data-source="plans" row-key="id" :scroll="{x:1110}" :pagination="{pageSize:10,showTotal:(t:number)=>`共 ${t} 条`,showSizeChanger:true,pageSizeOptions:['10','20','50','100']}" size="middle">
+      <template #headerCell="{column}">
+        <template v-if="column.key==='status'">
+          状态
+          <a-popover title="计划状态说明" placement="bottom">
+            <template #content>
+              <div v-for="s in statusDescriptions" :key="s.key" style="margin-bottom:6px">
+                <a-tag :color="statusMap[s.key]?.color" style="margin-right:6px">{{s.label}}</a-tag>{{s.desc}}
+              </div>
+            </template>
+            <QuestionCircleOutlined style="color:#999;cursor:pointer;margin-left:4px;font-size:13px" />
+          </a-popover>
+        </template>
+      </template>
       <template #bodyCell="{column,record}">
         <template v-if="column.key==='status'"><a-tag :color="statusMap[record.status]?.color">{{statusMap[record.status]?.label}}</a-tag></template>
         <template v-else-if="column.key==='cycle'">{{record.cycleMode==='once'?'单次':`循环/${cycleLabel[record.cycleType]}`||'-'}}</template>
