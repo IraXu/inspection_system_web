@@ -122,13 +122,13 @@ const columns = [
 const taskScroll = { x: columns.reduce((s,c)=>s+(c.width as number||120),0) }
 
 const handleDeleteTask = (task:InspectionTask) => {
-  if(task.executionStatus!=='pending'){message.error('该任务已执行/已超时/已完成，无法删除');return}
+  if(task.executionStatus!=='pending'){message.error('该任务已执行/进行中/已超时，无法删除');return}
   tasks.value=tasks.value.filter(t=>t.id!==task.id);message.success('任务已删除')
 }
 const handleBatchDelete = () => {
   if(!rowSelection.selectedRowKeys.length){message.warning('请先选择任务');return}
   const sel=tasks.value.filter(t=>rowSelection.selectedRowKeys.includes(t.id))
-  if(sel.some(t=>t.executionStatus!=='pending')){message.error('所选任务中包含已执行/已超时的任务，无法批量删除');return}
+  if(sel.some(t=>t.executionStatus!=='pending')){message.error('所选任务中包含已执行/进行中/已超时的任务，无法批量删除');return}
   tasks.value=tasks.value.filter(t=>!rowSelection.selectedRowKeys.includes(t.id))
   rowSelection.selectedRowKeys=[];message.success('批量删除成功')
 }

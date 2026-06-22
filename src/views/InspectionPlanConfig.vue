@@ -126,7 +126,12 @@ const formatCycleDays = (plan: InspectionPlan) => {
 }
 
 // ========== 删除 ==========
-const handleDelete=(plan:InspectionPlan)=>{Modal.confirm({title:'是否删除该巡检计划？',icon:()=>h(ExclamationCircleOutlined),content:'已执行的巡检任务将永久保留，仅待执行任务会被清理。',okText:'继续',cancelText:'取消',okButtonProps:{danger:true},onOk:()=>{plans.value=plans.value.filter(p=>p.id!==plan.id);message.success('巡检计划已删除')}})}
+const getDeleteContent = (plan: InspectionPlan) => {
+  if (plan.status === 'not_started') return '该计划尚未开始，删除后配置将被移除。'
+  if (plan.status === 'in_progress') return '该计划正在执行中，已执行的巡检任务将永久保留，仅待执行任务会被清理。'
+  return '该计划已结束，删除后配置将被移除，历史任务数据永久保留。'
+}
+const handleDelete=(plan:InspectionPlan)=>{Modal.confirm({title:'是否删除该巡检计划？',icon:()=>h(ExclamationCircleOutlined),content:getDeleteContent(plan),okText:'继续',cancelText:'取消',okButtonProps:{danger:true},onOk:()=>{plans.value=plans.value.filter(p=>p.id!==plan.id);message.success('巡检计划已删除')}})}
 </script>
 
 <template>
