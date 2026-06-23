@@ -47,12 +47,30 @@ const im:Record<P,{plan:number,done:number,rate:number}>={thisWeek:{plan:24,done
 const li=async()=>{iL.value=true;try{await new Promise(r=>setTimeout(r,350));const x=im[pd.value];ins.plan=x.plan;ins.done=x.done;ins.rate=x.rate}finally{iL.value=false}}
 
 interface A{id:string;thumb:string;etype:string;opath:string;dev:string;time:string;isNew:boolean}
-const al=ref<A[]>([]); const aL=ref(false); let t2:any=null
+const al=ref<A[]>([]); const aL=ref(false); const liveRef=ref(false); let t2:any=null
 const cc=['#e6f4ff','#fff7e6','#f6ffed','#fff0f6','#f0f5ff']
-const ap=[{thumb:cc[0],etype:'视频流中断',opath:'华东区 / 南京 / 新街口店',dev:'门口高清摄像头-CAM-001'},{thumb:cc[1],etype:'镜头遮挡',opath:'华东区 / 上海 / 徐汇店',dev:'仓库红外摄像头-CAM-012'},{thumb:cc[2],etype:'画面模糊',opath:'华东区 / 南京 / 新街口店',dev:'收银台全景摄像头-CAM-007'},{thumb:cc[3],etype:'夜视异常',opath:'华北区 / 北京 / 朝阳店',dev:'停车场出入口摄像头-CAM-023'},{thumb:cc[4],etype:'存储不足',opath:'华东区 / 上海 / 徐汇店',dev:'货架巡查摄像头-CAM-015'}]
-const la=async()=>{aL.value=true;try{await new Promise(r=>setTimeout(r,600));const n=new Date();al.value=ap.slice(0,5).map((x,i)=>({...x,id:'a'+Date.now()+i,time:new Date(n.getTime()-(4-i)*90000).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'}),isNew:false}))}finally{aL.value=false}}
+const ap=[{thumb:cc[0],etype:'视频流中断',opath:'华东区 / 南京 / 新街口店',dev:'门口高清摄像头-CAM-001'},{thumb:cc[1],etype:'镜头遮挡',opath:'华东区 / 上海 / 徐汇店',dev:'仓库红外摄像头-CAM-012'},{thumb:cc[2],etype:'画面模糊',opath:'华东区 / 南京 / 新街口店',dev:'收银台全景摄像头-CAM-007'},{thumb:cc[3],etype:'夜视异常',opath:'华北区 / 北京 / 朝阳店',dev:'停车场出入口摄像头-CAM-023'},{thumb:cc[4],etype:'存储不足',opath:'华东区 / 上海 / 徐汇店',dev:'货架巡查摄像头-CAM-015'},{thumb:cc[0],etype:'移动侦测',opath:'华南区 / 深圳 / 福田店',dev:'大堂全景摄像头-CAM-031'},{thumb:cc[1],etype:'区域入侵',opath:'西南区 / 成都 / 春熙店',dev:'后门监控摄像头-CAM-045'},{thumb:cc[2],etype:'声音异常',opath:'华东区 / 杭州 / 西湖店',dev:'仓库角落摄像头-CAM-056'},{thumb:cc[3],etype:'设备离线',opath:'华北区 / 天津 / 和平店',dev:'电梯口摄像头-CAM-078'},{thumb:cc[4],etype:'温度过高',opath:'华中区 / 武汉 / 光谷店',dev:'机房监控摄像头-CAM-089'}]
+const la=async()=>{aL.value=true;try{await new Promise(r=>setTimeout(r,600));const n=new Date();al.value=ap.slice(0,10).map((x,i)=>({...x,id:'a'+Date.now()+i,time:new Date(n.getTime()-(9-i)*90000).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'}),isNew:false})).reverse()}finally{aL.value=false}}
 
-onMounted(async()=>{t1=setInterval(()=>now.value=new Date(),1000);await Promise.all([lt(),ld(),li(),la()])})
+// 模拟实时告警推送：每10秒顶部插入新告警，末尾被顶掉，状态闪烁
+const newAlertTypes = ['移动侦测','区域入侵','声音异常','设备离线','温度过高','视频丢失','镜头遮挡','画面模糊']
+const simulateNewAlert = () => {
+  liveRef.value = true; setTimeout(()=>liveRef.value=false,1500)
+  const n = new Date()
+  const newAlert: A = {
+    id: 'a'+Date.now(),
+    thumb: cc[Math.floor(Math.random()*cc.length)],
+    etype: newAlertTypes[Math.floor(Math.random()*newAlertTypes.length)],
+    opath: ap[Math.floor(Math.random()*ap.length)].opath,
+    dev: '摄像头-CAM-'+String(Math.floor(Math.random()*900)+100),
+    time: n.toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'}),
+    isNew: true
+  }
+  al.value = [newAlert, ...al.value.slice(0,9)]
+  setTimeout(() => { const idx = al.value.findIndex(x=>x.id===newAlert.id); if(idx!==-1) al.value[idx] = {...al.value[idx],isNew:false} }, 2000)
+}
+
+onMounted(async()=>{t1=setInterval(()=>now.value=new Date(),1000);await Promise.all([lt(),ld(),li(),la()]);t2=setInterval(simulateNewAlert,10000)})
 onUnmounted(()=>{clearInterval(t1);clearInterval(t2)})
 </script>
 
@@ -125,7 +143,7 @@ onUnmounted(()=>{clearInterval(t1);clearInterval(t2)})
     <a-row :gutter="12" class="r">
       <a-col :span="24">
         <a-card :bordered="false" class="c">
-          <template #title><span><BellFilled style="color:#fa8c16;margin-right:4px"/>告警推送</span></template>
+          <template #title><span><BellFilled style="color:#fa8c16;margin-right:4px"/>告警推送</span><a-tag color="success" size="small" class="live-tag"><span class="live" :class="{on:liveRef}">实时</span></a-tag></template>
           <template #extra><a-button size="small" type="text" :loading="aL" @click="la"><ReloadOutlined/></a-button><a-button size="small" type="link" @click="router.push('/alert-center')">查看全部 <ArrowRightOutlined/></a-button></template>
           <a-skeleton v-if="aL" active :paragraph="{rows:3}"/>
           <a-empty v-else-if="al.length===0" description="暂无告警"/>
@@ -225,11 +243,23 @@ onUnmounted(()=>{clearInterval(t1);clearInterval(t2)})
 .lk:hover { color:#4096ff; }
 
 .alist { display:flex; flex-direction:column; }
-.ar { display:flex; align-items:flex-start; gap:12px; padding:10px 0; cursor:pointer; }
+.ar { display:flex; align-items:flex-start; gap:12px; padding:10px 0; cursor:pointer; position:relative; }
 .ar+.ar { border-top:1px solid #f9f9f9; }
 .ar:hover { margin:0 -8px; padding-left:8px; padding-right:8px; background:#fafafa; }
-.ar.flash { animation:fl .6s ease-in-out 3; background:#fff7e6; }
-@keyframes fl { 0%,100%{background:#fff7e6} 50%{background:#fffbe6} }
+.ar.flash { animation: alertPop 2s ease-out; z-index:1; }
+.ar.flash::before { content:''; position:absolute; left:0; top:4px; bottom:4px; width:3px; border-radius:2px; background:#fa8c16; animation: alertBar .5s ease-out forwards; }
+@keyframes alertPop {
+  0% { transform:scale(1.03); background:linear-gradient(90deg,#fff7e6,#fffbe6); box-shadow:0 0 20px rgba(250,140,22,.25),inset 0 0 20px rgba(250,140,22,.06); border-radius:6px; margin:0 -6px; padding:10px 6px; }
+  15% { transform:scale(1); background:#fff7e6; box-shadow:0 0 12px rgba(250,140,22,.15); margin:0 -6px; padding:10px 6px; }
+  40% { background:#fffbe6; box-shadow:0 0 4px rgba(250,140,22,.06); margin:0 -4px; padding:10px 4px; }
+  70% { background:transparent; box-shadow:none; margin:0; padding:10px 0; }
+  100% { background:transparent; box-shadow:none; margin:0; padding:10px 0; border-radius:0; }
+}
+@keyframes alertBar {
+  0% { opacity:1; transform:scaleY(0); }
+  40% { opacity:1; transform:scaleY(1); }
+  100% { opacity:0; transform:scaleY(1); }
+}
 .ath { width:48px; height:36px; border-radius:4px; flex-shrink:0; object-fit:cover; }
 .ab { flex:1; min-width:0; }
 .ah { display:flex; align-items:center; gap:8px; }
@@ -237,6 +267,13 @@ onUnmounted(()=>{clearInterval(t1);clearInterval(t2)})
 .atm { font-size:12px; color:#bbb; margin-left:auto; flex-shrink:0; }
 .aa { font-size:12px; color:#999; margin-top:4px; }
 .aarr { font-size:12px; color:#ccc; flex-shrink:0; margin-top:4px; }
+
+.live { font-size:11px; color:#52c41a; }
+.live::before { content:'● '; animation:liveDot 1.2s ease-in-out infinite; }
+.live.on { animation:livePulse .5s ease-out; }
+.live-tag { margin-left:6px; padding:0 8px; line-height:20px; }
+@keyframes liveDot { 0%,100%{opacity:1} 50%{opacity:.2} }
+@keyframes livePulse { 0%{transform:scale(1.3)} 100%{transform:scale(1)} }
 
 @media (max-width:768px) { .wb { padding:10px 12px 14px; } .gt { flex-wrap:wrap; } .ga { display:none; } }
 </style>
