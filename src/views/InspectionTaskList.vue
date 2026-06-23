@@ -20,9 +20,9 @@ const tasks = ref<InspectionTask[]>([...mockTasks])
 // ========== 状态映射 ==========
 const planStatusMap: Record<string,{label:string;color:string}> = { not_started:{label:'未开始',color:'processing'}, in_progress:{label:'进行中',color:'success'}, ended:{label:'已结束',color:'error'} }
 const planStatusDescriptions = [
-  { key: 'not_started', label: '未开始', desc: '当前时间早于任务生成时间或有效期开始时间' },
-  { key: 'in_progress', label: '进行中', desc: '当前时间在有效期内，循环任务执行中或单次任务待执行' },
-  { key: 'ended', label: '已结束', desc: '超过有效期结束时间或单次任务已过期' },
+  { key: 'not_started', label: '未开始', desc: '当前时间早于首次任务生成时间' },
+  { key: 'in_progress', label: '进行中', desc: '当前时间在计划周期内，循环任务正常生成中或单次任务待执行' },
+  { key: 'ended', label: '已结束', desc: '超过计划周期结束时间且所有任务终态，不再生成新任务' },
 ]
 const pushStatusMap: Record<string,{label:string;color:string}> = { 待推送:{label:'待推送',color:'default'}, 已推送:{label:'已推送',color:'success'} }
 const pushStatusDescriptions = [
@@ -34,7 +34,7 @@ const execStatusDescriptions = [
   { key: 'pending', label: '待执行', desc: '任务已生成，等待巡检人开始执行' },
   { key: 'executing', label: '进行中', desc: '巡检人已开始执行巡检，正在检查中' },
   { key: 'executed', label: '已执行', desc: '巡检人已完成巡检并提交结果' },
-  { key: 'overdue', label: '已超时', desc: '超过任务有效期仍未执行，任务已过期' },
+  { key: 'overdue', label: '已超时', desc: '超过截止时间（生成时间+执行时限）仍未执行。超时任务仍可补执行' },
 ]
 const issueStatusMap: Record<string,{label:string;color:string}> = { 无:{label:'无',color:'default'}, 待整改:{label:'待整改',color:'warning'}, 待审核:{label:'待审核',color:'processing'}, 已完成:{label:'已完成',color:'success'} }
 const issueStatusDescriptions = [
@@ -110,7 +110,7 @@ const columns = [
   { title:'任务推送时间',dataIndex:'pushTime',key:'pushTime',width:170 },
   { title:'推送状态',key:'pushStatus',width:90 },
   { title:'任务执行状态',key:'executionStatus',width:110 },
-  { title:'任务有效期',dataIndex:'validUntil',key:'validUntil',width:170 },
+  { title:'截止时间',dataIndex:'validUntil',key:'validUntil',width:170 },
   { title:'实际巡检人',dataIndex:'actualPersonnel',key:'actualPersonnel',width:110 },
   { title:'巡检编号',dataIndex:'inspectionNo',key:'inspectionNo',width:170 },
   { title:'巡检时间',dataIndex:'inspectionTime',key:'inspectionTime',width:170 },
