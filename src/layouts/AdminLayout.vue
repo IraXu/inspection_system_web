@@ -359,7 +359,7 @@ const handlePrimaryClick = (item: PrimaryItem) => {
   border-color:#91caff;
 }
 
-.content-area { margin:0; padding:20px; background:#f0f2f5; min-height:calc(100vh - 48px); }
+.content-area { margin:0; padding:8px; background:#f0f2f5; min-height:calc(100vh - 48px); }
 </style>
 
 <!-- 下拉面板样式（非 scoped，因为 overlay 被 teleport 到 body） -->
