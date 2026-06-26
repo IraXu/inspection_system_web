@@ -38,7 +38,11 @@ const router = createRouter({
         { path: 'cloud-broadcast/records', name: 'BroadcastRecords', component: () => import('@/views/cloud-broadcast/BroadcastRecords.vue'), meta: { title: '广播记录' } },
         { path: 'cloud-broadcast/media', name: 'MediaLibrary', component: () => import('@/views/cloud-broadcast/MediaLibrary.vue'), meta: { title: '媒体资源库' } },
         // 系统管理
-        { path: 'system/management', name: 'SystemManagement', component: () => import('@/views/system-management/index.vue'), meta: { title: '系统管理' } },
+        { path: 'system/organization', name: 'OrganizationStructure', component: () => import('@/views/system-management/UnderConstruction.vue'), meta: { title: '组织架构' } },
+        { path: 'system/members', name: 'EnterpriseMembers', component: () => import('@/views/system-management/UnderConstruction.vue'), meta: { title: '企业成员' } },
+        { path: 'system/roles', name: 'RoleManagement', component: () => import('@/views/system-management/UnderConstruction.vue'), meta: { title: '角色管理' } },
+        { path: 'system/logs', name: 'SystemLogs', component: () => import('@/views/system-management/UnderConstruction.vue'), meta: { title: '系统日志' } },
+        { path: 'system/enterprise-center', name: 'EnterpriseCenter', component: () => import('@/views/system-management/EnterpriseCenter.vue'), meta: { title: '企业中心' } },
         { path: 'system/nav-management', name: 'NavManagement', component: () => import('@/views/nav-management/index.vue'), meta: { title: '导航管理' } },
       ],
     },

@@ -124,7 +124,11 @@ const primaryItems: PrimaryItem[] = [
     key: 'system-management', icon: DeploymentUnitOutlined, label: '系统管理', routePrefix: '/system',
     groups: [],
     directItems: [
-      { key: '/system/management', label: '系统管理', icon: DeploymentUnitOutlined },
+      { key: '/system/organization', label: '组织架构', icon: XFilled },
+      { key: '/system/members', label: '企业成员', icon: XFilled },
+      { key: '/system/roles', label: '角色管理', icon: XFilled },
+      { key: '/system/logs', label: '系统日志', icon: XFilled },
+      { key: '/system/enterprise-center', label: '企业中心', icon: XFilled },
     ],
   },
   /*

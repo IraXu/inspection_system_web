@@ -17,9 +17,9 @@ const org = { name:'南京Dream信息技术有限公司', role:'系统管理员'
 const ent = { name:'南京Dream信息技术有限公司', phone:'025-8888-6666', address:'南京市玄武区珠江路88号新世界中心A座18层' }
 
 const steps = [
-  { t:'新建组织', d:'创建您的第一个组织架构', to:'/system/management' },
-  { t:'新建角色', d:'为组织设置角色和权限', to:'/system/management' },
-  { t:'新建成员', d:'添加团队成员到组织中', to:'/system/management' },
+  { t:'新建组织', d:'创建您的第一个组织架构', to:'/system/organization' },
+  { t:'新建角色', d:'为组织设置角色和权限', to:'/system/roles' },
+  { t:'新建成员', d:'添加团队成员到组织中', to:'/system/members' },
   { t:'添加设备', d:'录入并绑定巡检设备', to:'/device/management' },
 ]
 const done = reactive([true,true,true,false])
@@ -133,7 +133,7 @@ onUnmounted(()=>{clearInterval(t1);clearInterval(t2)})
           <a-skeleton v-if="iL" active :paragraph="{rows:2}"/>
           <a-empty v-else-if="ins.plan===0" description="暂无计划"/>
           <div v-else class="iw" @click="router.push('/inspection/task-list')">
-            <div class="icw"><div class="ics"><div class="ic ic-blue"><span class="icv">{{ ins.plan }}</span><span class="icl">计划总数</span></div><div class="ic ic-green"><span class="icv">{{ ins.done }}</span><span class="icl">已执行</span></div><div class="ic ic-rate"><span class="icv">{{ ins.rate }}%</span><span class="icl">完成率</span><div class="icbar"><span class="icbf" :style="{width:ins.rate+'%'}"/></div></div></div></div>
+            <div class="icw"><div class="ics"><div class="ic ic-blue"><span class="icv">{{ ins.plan }}</span><span class="icl">任务总数</span></div><div class="ic ic-green"><span class="icv">{{ ins.done }}</span><span class="icl">已执行</span></div><div class="ic ic-rate"><span class="icv">{{ ins.rate }}%</span><span class="icl">完成率</span><div class="icbar"><span class="icbf" :style="{width:ins.rate+'%'}"/></div></div></div></div>
             <div class="ft"><span class="lk">查看全部任务 <ArrowRightOutlined/></span></div>
           </div>
         </a-card>

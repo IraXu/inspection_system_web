@@ -1,11 +1,16 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
+
+const route = useRoute()
+const moduleTitle = computed(() => (route.meta.title as string) || '该模块')
 </script>
 
 <template>
   <div class="uc-page">
     <a-result
       status="info"
-      title="系统管理"
+      :title="moduleTitle"
       sub-title="该模块web原型正在建设中，可先查看 Axure 原型"
     >
       <template #extra>
