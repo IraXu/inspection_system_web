@@ -36,8 +36,8 @@ const camPlaceholders = [alertPlaceholder,alertPlaceholder,alertPlaceholder,aler
 const td = reactive({a:0,b:0,c:0}); const tL=ref(false)
 const lt = async()=>{tL.value=true;try{await new Promise(r=>setTimeout(r,500));td.a=12;td.b=5;td.c=3}finally{tL.value=false}}
 
-const dv = reactive({on:0,off:0,total:0,rate:0}); const dL=ref(false)
-const ld = async()=>{dL.value=true;try{await new Promise(r=>setTimeout(r,400));dv.on=128;dv.off=12;dv.total=140;dv.rate=91}finally{dL.value=false}}
+const dv = reactive({on:0,sleep:0,off:0,total:0,rate:0}); const dL=ref(false)
+const ld = async()=>{dL.value=true;try{await new Promise(r=>setTimeout(r,400));dv.on=128;dv.sleep=5;dv.off=7;dv.total=140;dv.rate=91}finally{dL.value=false}}
 const dc = computed(()=>dv.rate>=90?'#52c41a':dv.rate>=70?'#faad14':'#ff4d4f')
 
 type P='thisWeek'|'lastWeek'|'thisMonth'
@@ -121,7 +121,7 @@ onUnmounted(()=>{clearInterval(t1);clearInterval(t2)})
           <a-empty v-else-if="dv.total===0" description="暂无设备"/>
           <div v-else class="dw" @click="router.push('/device/management')">
             <div class="dcw"><a-progress type="circle" :percent="dv.rate" :stroke-color="dc" :size="90" :stroke-width="8"><template #format="v">{{ v }}%</template></a-progress>
-            <div class="dns"><span><i class="dd on"/>在线 <b>{{ dv.on }}</b></span><span><i class="dd off"/>离线 <b>{{ dv.off }}</b></span><span>共 <b>{{ dv.total }}</b> 台</span></div></div>
+            <div class="dns"><span><i class="dd on"/>在线 <b>{{ dv.on }}</b></span><span><i class="dd sleep"/>休眠 <b>{{ dv.sleep }}</b></span><span><i class="dd off"/>离线 <b>{{ dv.off }}</b></span><span>共 <b>{{ dv.total }}</b> 台</span></div></div>
             <div class="ft"><span class="lk">查看详情 <ArrowRightOutlined/></span></div>
           </div>
         </a-card>
@@ -217,7 +217,7 @@ onUnmounted(()=>{clearInterval(t1);clearInterval(t2)})
 .dns span { display:flex; align-items:center; gap:6px; font-size:13px; color:#666; }
 .dns b { font-size:16px; font-weight:700; color:#111; }
 .dd { width:8px; height:8px; border-radius:50%; }
-.dd.on { background:#52c41a; } .dd.off { background:#ff4d4f; }
+.dd.on { background:#52c41a; } .dd.sleep { background:#faad14; } .dd.off { background:#ff4d4f; }
 
 .ih { display:flex; align-items:center; gap:10px; }
 .it { display:flex; gap:0; }
