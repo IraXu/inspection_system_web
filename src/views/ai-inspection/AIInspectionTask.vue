@@ -31,11 +31,11 @@ const mockAlgorithms = [
 const mockPersonnel = ['张三', '李四', '王五', '赵六', '孙七']
 
 const mockTasks: AIInspectionTask[] = [
-  { id: '1', name: '门店A日常AI巡检', taskNo: 'AI20260505-001', validFrom: '2026-05-01', validUntil: '2026-12-31', snapshotStart: '08:00', snapshotEnd: '20:00', frequency: 30, cycleDays: [1,2,3,4,5], deviceIds: ['d1','d2','d3'], deviceNames: ['xx相机','xx相机','xx相机'], algorithmIds: ['alg1','alg2','alg3'], algorithmNames: ['地面整洁度识别','物品摆放规范检测','安全通道占用检测'], confidenceThreshold: 80, autoCreateTicket: true, assigneeId: 'p1', assigneeName: '张三', status: 'active', creator: '管理员', createdAt: '2026-05-05 09:00:00', updatedAt: '2026-05-25 10:00:00' },
-  { id: '2', name: '门店B大厅AI巡检', taskNo: 'AI20260516-002', validFrom: '2026-05-15', validUntil: '2026-11-30', snapshotStart: '06:00', snapshotEnd: '22:00', frequency: 15, cycleDays: [1,2,3,4,5,6,7], deviceIds: ['d5','d6'], deviceNames: ['xx相机','xx相机'], algorithmIds: ['alg4','alg5'], algorithmNames: ['灭火器在位检测','灯光设备状态检测'], confidenceThreshold: 75, autoCreateTicket: false, assigneeId: null, assigneeName: null, status: 'active', creator: '管理员', createdAt: '2026-05-16 14:00:00', updatedAt: '2026-05-26 08:00:00' },
-  { id: '3', name: '门店A后场AI巡检', taskNo: 'AI20260520-003', validFrom: '2026-06-01', validUntil: '2026-09-30', snapshotStart: '09:00', snapshotEnd: '18:00', frequency: 10, cycleDays: [1,3,5], deviceIds: ['d4'], deviceNames: ['xx相机'], algorithmIds: ['alg6'], algorithmNames: ['卫生死角识别'], confidenceThreshold: 85, autoCreateTicket: true, assigneeId: 'p2', assigneeName: '李四', status: 'paused', creator: '管理员', createdAt: '2026-05-20 15:00:00', updatedAt: '2026-05-27 09:00:00' },
-  { id: '4', name: '门店C展示区巡检', taskNo: 'AI20260301-004', validFrom: '2026-03-01', validUntil: '2026-05-28', snapshotStart: '09:00', snapshotEnd: '18:00', frequency: 10, cycleDays: [1,2,3,4,5], deviceIds: ['d8','d9'], deviceNames: ['xx相机','xx相机'], algorithmIds: ['alg1','alg2'], algorithmNames: ['地面整洁度识别','物品摆放规范检测'], confidenceThreshold: 70, autoCreateTicket: false, assigneeId: null, assigneeName: null, status: 'completed', creator: '管理员', createdAt: '2026-03-01 08:00:00', updatedAt: '2026-05-28 18:00:00' },
-  { id: '5', name: '门店D卫生专项巡检', taskNo: 'AI20260510-005', validFrom: '2026-05-01', validUntil: '2026-10-31', snapshotStart: '07:00', snapshotEnd: '21:00', frequency: 20, cycleDays: [2,4,6], deviceIds: ['d10'], deviceNames: ['xx相机'], algorithmIds: ['alg1','alg6'], algorithmNames: ['地面整洁度识别','卫生死角识别'], confidenceThreshold: 90, autoCreateTicket: true, assigneeId: 'p3', assigneeName: '王五', status: 'active', creator: '管理员', createdAt: '2026-05-10 10:00:00', updatedAt: '2026-05-25 16:00:00' },
+  { id: '1', name: '门店A日常AI巡检', taskNo: 'AI20260505-001', validFrom: '2026-05-01', validUntil: '2026-12-31', snapshotStart: '08:00', snapshotEnd: '20:00', frequency: 30, cycleDays: [1,2,3,4,5], deviceIds: ['d1','d2','d3'], deviceNames: ['xx相机','xx相机','xx相机'], algorithmIds: ['alg1','alg2','alg3'], algorithmNames: ['地面整洁度识别','物品摆放规范检测','安全通道占用检测'], confidenceThreshold: 80, autoCreateTicket: true, assigneeId: 'p1', assigneeName: '张三', reviewerId: 'p4', reviewerName: '赵六', status: 'active', creator: '管理员', createdAt: '2026-05-05 09:00:00', updatedAt: '2026-05-25 10:00:00' },
+  { id: '2', name: '门店B大厅AI巡检', taskNo: 'AI20260516-002', validFrom: '2026-05-15', validUntil: '2026-11-30', snapshotStart: '06:00', snapshotEnd: '22:00', frequency: 15, cycleDays: [1,2,3,4,5,6,7], deviceIds: ['d5','d6'], deviceNames: ['xx相机','xx相机'], algorithmIds: ['alg4','alg5'], algorithmNames: ['灭火器在位检测','灯光设备状态检测'], confidenceThreshold: 75, autoCreateTicket: false, assigneeId: null, assigneeName: null, reviewerId: null, reviewerName: null, status: 'active', creator: '管理员', createdAt: '2026-05-16 14:00:00', updatedAt: '2026-05-26 08:00:00' },
+  { id: '3', name: '门店A后场AI巡检', taskNo: 'AI20260520-003', validFrom: '2026-06-01', validUntil: '2026-09-30', snapshotStart: '09:00', snapshotEnd: '18:00', frequency: 10, cycleDays: [1,3,5], deviceIds: ['d4'], deviceNames: ['xx相机'], algorithmIds: ['alg6'], algorithmNames: ['卫生死角识别'], confidenceThreshold: 85, autoCreateTicket: true, assigneeId: 'p2', assigneeName: '李四', reviewerId: 'p5', reviewerName: '孙七', status: 'paused', creator: '管理员', createdAt: '2026-05-20 15:00:00', updatedAt: '2026-05-27 09:00:00' },
+  { id: '4', name: '门店C展示区巡检', taskNo: 'AI20260301-004', validFrom: '2026-03-01', validUntil: '2026-05-28', snapshotStart: '09:00', snapshotEnd: '18:00', frequency: 10, cycleDays: [1,2,3,4,5], deviceIds: ['d8','d9'], deviceNames: ['xx相机','xx相机'], algorithmIds: ['alg1','alg2'], algorithmNames: ['地面整洁度识别','物品摆放规范检测'], confidenceThreshold: 70, autoCreateTicket: false, assigneeId: null, assigneeName: null, reviewerId: null, reviewerName: null, status: 'completed', creator: '管理员', createdAt: '2026-03-01 08:00:00', updatedAt: '2026-05-28 18:00:00' },
+  { id: '5', name: '门店D卫生专项巡检', taskNo: 'AI20260510-005', validFrom: '2026-05-01', validUntil: '2026-10-31', snapshotStart: '07:00', snapshotEnd: '21:00', frequency: 20, cycleDays: [2,4,6], deviceIds: ['d10'], deviceNames: ['xx相机'], algorithmIds: ['alg1','alg6'], algorithmNames: ['地面整洁度识别','卫生死角识别'], confidenceThreshold: 90, autoCreateTicket: true, assigneeId: 'p3', assigneeName: '王五', reviewerId: 'p1', reviewerName: '张三', status: 'active', creator: '管理员', createdAt: '2026-05-10 10:00:00', updatedAt: '2026-05-25 16:00:00' },
 ]
 
 // ========== 列表状态 ==========
@@ -84,6 +84,7 @@ const formDeviceIds = ref<string[]>([]); const deviceSelectedRowKeys = ref<strin
 const formAlgorithmIds = ref<string[]>([])
 const formConfidenceThreshold = ref<number>(80)
 const formAutoTicket = ref(false); const formAssignee = ref<string[]>([])
+const formReviewer = ref<string[]>([])
 
 // 设备选择
 const deviceTreeSearch = ref(''); const deviceTreeSelected = ref('org-1')
@@ -101,9 +102,9 @@ const deviceStatusMap: Record<string, { label: string; color: string }> = { onli
 const deviceTableColumns = [{ title: '设备名称', dataIndex: 'name', key: 'name', align: 'center' as const }, { title: '设备状态', key: 'status', width: 90, align: 'center' as const }]
 const paginatedDevices = computed(() => { const s = (devicePage.value - 1) * devicePageSize.value; return deviceTableData.value.slice(s, s + devicePageSize.value) })
 
-const resetForm = () => { formName.value = ''; formValidRange.value = null; formSnapshotStart.value = ''; formSnapshotEnd.value = ''; formFrequency.value = null; formCycleDays.value = []; formDeviceIds.value = []; deviceSelectedRowKeys.value = []; formAlgorithmIds.value = []; formConfidenceThreshold.value = 80; formAutoTicket.value = false; formAssignee.value = []; deviceTableData.value = mockAllDevices; deviceTreeSelected.value = 'org-1'; deviceTreeSearch.value = ''; devicePage.value = 1 }
+const resetForm = () => { formName.value = ''; formValidRange.value = null; formSnapshotStart.value = ''; formSnapshotEnd.value = ''; formFrequency.value = null; formCycleDays.value = []; formDeviceIds.value = []; deviceSelectedRowKeys.value = []; formAlgorithmIds.value = []; formConfidenceThreshold.value = 80; formAutoTicket.value = false; formAssignee.value = []; formReviewer.value = []; deviceTableData.value = mockAllDevices; deviceTreeSelected.value = 'org-1'; deviceTreeSearch.value = ''; devicePage.value = 1 }
 const openAdd = () => { drawerTitle.value = '新建AI巡检任务'; editingId.value = null; resetForm(); drawerVisible.value = true }
-const openEdit = (task: AIInspectionTask) => { if (task.status === 'completed') return; drawerTitle.value = '编辑AI巡检任务'; editingId.value = task.id; formName.value = task.name; formValidRange.value = null; formSnapshotStart.value = task.snapshotStart ? dayjs(task.snapshotStart, 'HH:mm') : ''; formSnapshotEnd.value = task.snapshotEnd ? dayjs(task.snapshotEnd, 'HH:mm') : ''; formFrequency.value = task.frequency; formCycleDays.value = [...task.cycleDays]; formDeviceIds.value = [...task.deviceIds]; deviceSelectedRowKeys.value = [...task.deviceIds]; formAlgorithmIds.value = [...task.algorithmIds]; formConfidenceThreshold.value = task.confidenceThreshold ?? 80; formAutoTicket.value = task.autoCreateTicket; formAssignee.value = task.assigneeId ? [task.assigneeId] : []; deviceTableData.value = mockAllDevices; devicePage.value = 1; drawerVisible.value = true }
+const openEdit = (task: AIInspectionTask) => { if (task.status === 'completed') return; drawerTitle.value = '编辑AI巡检任务'; editingId.value = task.id; formName.value = task.name; formValidRange.value = null; formSnapshotStart.value = task.snapshotStart ? dayjs(task.snapshotStart, 'HH:mm') : ''; formSnapshotEnd.value = task.snapshotEnd ? dayjs(task.snapshotEnd, 'HH:mm') : ''; formFrequency.value = task.frequency; formCycleDays.value = [...task.cycleDays]; formDeviceIds.value = [...task.deviceIds]; deviceSelectedRowKeys.value = [...task.deviceIds]; formAlgorithmIds.value = [...task.algorithmIds]; formConfidenceThreshold.value = task.confidenceThreshold ?? 80; formAutoTicket.value = task.autoCreateTicket; formAssignee.value = task.assigneeId ? [task.assigneeId] : []; formReviewer.value = task.reviewerId ? [task.reviewerId] : []; deviceTableData.value = mockAllDevices; devicePage.value = 1; drawerVisible.value = true }
 
 const handleSave = () => {
   if (!formName.value.trim()) { message.warning('请输入任务名称'); return }
@@ -115,6 +116,7 @@ const handleSave = () => {
   if (!formDeviceIds.value.length) { message.warning('请至少选择一台设备'); return }
   if (!formAlgorithmIds.value.length) { message.warning('请至少选择一个AI算法'); return }
   if (formAutoTicket.value && !formAssignee.value.length) { message.warning('开启自动提单时请选择问题指派人'); return }
+  if (formAutoTicket.value && !formReviewer.value.length) { message.warning('开启自动提单时请选择问题审核人'); return }
   saving.value = true
   setTimeout(() => {
     const now = new Date().toISOString().replace('T', ' ').slice(0, 19)
@@ -123,6 +125,7 @@ const handleSave = () => {
     const dns = formDeviceIds.value.map(id => mockAllDevices.find(d => d.id === id)?.name || id)
     const algoNames = formAlgorithmIds.value.map(id => mockAlgorithms.find(x => x.id === id)?.name || id)
     const an = formAssignee.value.length ? mockPersonnel.find((_, i) => `p${i + 1}` === formAssignee.value[0]) || formAssignee.value[0] : null
+    const rn = formReviewer.value.length ? mockPersonnel.find((_, i) => `p${i + 1}` === formReviewer.value[0]) || formReviewer.value[0] : null
     const data: AIInspectionTask = {
       id: editingId.value || String(Date.now()),
       name: formName.value.trim(),
@@ -136,6 +139,8 @@ const handleSave = () => {
       autoCreateTicket: formAutoTicket.value,
       assigneeId: formAssignee.value.length ? formAssignee.value[0] : null,
       assigneeName: an,
+      reviewerId: formReviewer.value.length ? formReviewer.value[0] : null,
+      reviewerName: rn,
       status: 'active', creator: '当前用户',
       createdAt: editingId.value ? undefined! : now, updatedAt: now,
     }
@@ -262,6 +267,10 @@ const rowSelection = computed(() => ({ selectedRowKeys: selectedRowKeys.value, o
         </a-form-item>
         <a-form-item label="自动提单"><a-switch v-model:checked="formAutoTicket" /> <span style="margin-left:8px;color:#999;font-size:12px">{{ formAutoTicket ? '异常时自动生成整改单' : '异常时需人工处理' }}</span></a-form-item>
         <a-form-item v-if="formAutoTicket" label="问题指派" required><a-select v-model:value="formAssignee" mode="multiple" placeholder="选择问题指派人" style="width:100%" :options="mockPersonnel.map((p,i) => ({ label: p, value: `p${i+1}` }))" /></a-form-item>
+        <a-form-item v-if="formAutoTicket" label="问题审核指派" required>
+          <a-select v-model:value="formReviewer" mode="multiple" placeholder="选择问题审核人" style="width:100%" :options="mockPersonnel.map((p,i) => ({ label: p, value: `p${i+1}` }))" />
+          <div style="color:#999;font-size:12px;margin-top:4px">整改完成后，问题将指派给以上人员进行审核确认</div>
+        </a-form-item>
       </a-form>
       <template #footer>
         <a-space>

@@ -100,19 +100,22 @@ const problemStatusMap: Record<string, { label: string; color: string }> = {
 
 // ========== 手动操作 ==========
 const mockRectifiers = ['张三', '李四', '王五', '赵六']
+const mockReviewers = ['张三', '李四', '王五', '赵六', '孙七']
 const ticketModalVisible = ref(false)
 const ticketProblem = ref<AIProblem | null>(null)
 const selectedRectifier = ref<string[]>([])
+const selectedReviewer = ref<string[]>([])
 
 const openTicketModal = (problem: AIProblem) => {
-  ticketProblem.value = problem; selectedRectifier.value = []; ticketModalVisible.value = true
+  ticketProblem.value = problem; selectedRectifier.value = []; selectedReviewer.value = []; ticketModalVisible.value = true
 }
 const confirmTicket = () => {
   if (!selectedRectifier.value.length) { message.warning('请选择整改人'); return }
+  if (!selectedReviewer.value.length) { message.warning('请选择问题审核人'); return }
   if (ticketProblem.value) {
     ticketProblem.value.status = 'pending_rectify'
     ticketProblem.value.ticketId = 'RECT-' + Date.now().toString(36).toUpperCase()
-    message.success(`整改单 ${ticketProblem.value.ticketId} 已生成，指派给 ${selectedRectifier.value.join('、')}`)
+    message.success(`整改单 ${ticketProblem.value.ticketId} 已生成，指派给 ${selectedRectifier.value.join('、')}，审核人 ${selectedReviewer.value.join('、')}`)
   }
   ticketModalVisible.value = false
 }
@@ -264,6 +267,10 @@ const collapseQualified = (id: string) => {
       <a-form layout="vertical">
         <a-form-item label="选择整改人" required>
           <a-select v-model:value="selectedRectifier" mode="multiple" placeholder="请选择整改人" style="width:100%" :options="mockRectifiers.map(r => ({ label: r, value: r }))" />
+        </a-form-item>
+        <a-form-item label="问题审核指派" required>
+          <a-select v-model:value="selectedReviewer" mode="multiple" placeholder="请选择问题审核人" style="width:100%" :options="mockReviewers.map(r => ({ label: r, value: r }))" />
+          <div style="color:#999;font-size:12px;margin-top:4px">整改完成后，问题将指派给以上人员进行审核确认</div>
         </a-form-item>
       </a-form>
     </a-modal>

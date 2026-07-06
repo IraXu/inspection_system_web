@@ -59,6 +59,7 @@ const formCycleValidRange = ref<any>(null); const formCycleDuration = ref<number
 const formStoreRows = ref<{key:string;store:string;personnel:string[];template:string}[]>([{key:'1',store:'',personnel:[],template:''}])
 // 2.4
 const formAssignee = ref<string[]>([])
+const formReviewer = ref<string[]>([])
 
 const weekOpts = [{label:'周一',value:1},{label:'周二',value:2},{label:'周三',value:3},{label:'周四',value:4},{label:'周五',value:5},{label:'周六',value:6},{label:'周日',value:7}]
 const monthOpts = Array.from({length:31},(_,i)=>({label:`${i+1}号`,value:i+1}))
@@ -74,6 +75,7 @@ const resetForm = () => {
   formCycleValidRange.value=null;formCycleDuration.value=null
   formStoreRows.value=[{key:'1',store:'',personnel:[],template:''}]
   formAssignee.value=[]
+  formReviewer.value=[]
 }
 
 const openAddDrawer = () => { drawerMode.value='add';editingPlanId.value=null;resetForm();drawerVisible.value=true }
@@ -85,6 +87,8 @@ const openEditDrawer = (plan:InspectionPlan) => {
   else { formCycleType.value=plan.cycleType||'daily';formCycleTime.value=plan.executionTime||'';formCycleWeekDays.value=plan.cycleType==='weekly'?(plan.cycleDays||[]):[];formCycleMonthDays.value=plan.cycleType==='monthly'?(plan.cycleDays||[]):[];formCycleDuration.value=plan.duration?parseInt(plan.duration):null }
   formStoreRows.value=plan.storesPersonnelTemplates.map(s=>({key:s.key,store:s.storeName,personnel:[...s.personnelNames],template:s.templateName}))
   if(!formStoreRows.value.length) formStoreRows.value=[{key:'1',store:'',personnel:[],template:''}]
+  formAssignee.value=plan.assigneeNames||[]
+  formReviewer.value=plan.reviewerNames||[]
   drawerVisible.value=true
 }
 
@@ -102,9 +106,10 @@ const handleSave = () => {
     if(!formCycleDuration.value||formCycleDuration.value<=0){message.warning('请输入有效的执行时限');return}
   }
   if(!formAssignee.value.length){message.warning('请选择问题指派人');return}
+  if(!formReviewer.value.length){message.warning('请选择问题审核人');return}
   const now = new Date().toISOString().replace('T',' ').slice(0,19)
   const spt:StorePersonnelTemplate[]=formStoreRows.value.map(r=>({key:r.key,storeId:r.store,storeName:r.store,personnelIds:r.personnel,personnelNames:r.personnel,templateId:r.template,templateName:r.template}))
-  const data:any={name:formName.value,inspectionMode:formMode.value,description:formDesc.value,cycleMode:formCycleMode.value,storesPersonnelTemplates:spt,updatedAt:now}
+  const data:any={name:formName.value,inspectionMode:formMode.value,description:formDesc.value,cycleMode:formCycleMode.value,storesPersonnelTemplates:spt,assigneeIds:formAssignee.value,assigneeNames:formAssignee.value,reviewerIds:formReviewer.value,reviewerNames:formReviewer.value,updatedAt:now}
   if(formCycleMode.value==='once'){ data.executionTime=`${formOnceGenDate.value} ${formOnceGenTime.value}`;data.duration=`${formOnceDuration.value}小时` }
   else { data.cycleType=formCycleType.value;data.executionTime=formCycleTime.value;data.validUntil=formCycleValidRange.value?.[1]||'';data.duration=`${formCycleDuration.value}小时`;if(formCycleType.value==='weekly')data.cycleDays=formCycleWeekDays.value;if(formCycleType.value==='monthly')data.cycleDays=formCycleMonthDays.value }
   if(drawerMode.value==='edit'&&editingPlanId.value){const p=plans.value.find(x=>x.id===editingPlanId.value);if(p){Object.assign(p,data);message.success('巡检计划更新成功')}}
@@ -230,6 +235,12 @@ const handleDelete=(plan:InspectionPlan)=>{Modal.confirm({title:'是否删除该
           <a-select v-model:value="formAssignee" mode="multiple" placeholder="选择问题指派人" style="width:100%" :options="mockPersonnel.map(p=>({value:p,label:p}))" />
           <div style="color:#999;font-size:12px;margin-top:4px">巡检发现不合格项时，生成的整改工单默认指派给以上人员</div>
         </a-form-item>
+
+        <!-- 问题审核指派 -->
+        <a-form-item label="问题审核指派" required>
+          <a-select v-model:value="formReviewer" mode="multiple" placeholder="选择问题审核人" style="width:100%" :options="mockPersonnel.map(p=>({value:p,label:p}))" />
+          <div style="color:#999;font-size:12px;margin-top:4px">整改完成后，问题将指派给以上人员进行审核确认</div>
+        </a-form-item>
       </a-form>
       <template #footer><a-space style="float:right"><a-button @click="drawerVisible=false">取消</a-button><a-button type="primary" @click="handleSave">保存</a-button></a-space></template>
     </a-drawer>
@@ -246,6 +257,8 @@ const handleDelete=(plan:InspectionPlan)=>{Modal.confirm({title:'是否删除该
           <a-descriptions-item label="计划周期">{{detailPlan.validUntil||'-'}}</a-descriptions-item>
           <a-descriptions-item label="执行时限">{{detailPlan.duration||'-'}}</a-descriptions-item>
           <a-descriptions-item label="计划说明" :span="2">{{detailPlan.description||'-'}}</a-descriptions-item>
+          <a-descriptions-item label="问题指派人" :span="2">{{detailPlan.assigneeNames?.join('、')||'-'}}</a-descriptions-item>
+          <a-descriptions-item label="审核指派人" :span="2">{{detailPlan.reviewerNames?.join('、')||'-'}}</a-descriptions-item>
           <a-descriptions-item label="巡检门店配置" :span="2">
             <template v-if="detailPlan.storesPersonnelTemplates?.length">
               <a-tag v-for="s in detailPlan.storesPersonnelTemplates" :key="s.key" style="margin:2px">{{s.storeName}} / {{s.personnelNames.join('、')}} / {{s.templateName}}</a-tag>

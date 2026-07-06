@@ -52,6 +52,10 @@ export interface InspectionPlan {
   validUntil?: string
   duration?: string
   storesPersonnelTemplates: StorePersonnelTemplate[]
+  assigneeIds?: string[]         // 问题指派人ID列表
+  assigneeNames?: string[]       // 问题指派人名称列表
+  reviewerIds?: string[]         // 问题审核指派人ID列表
+  reviewerNames?: string[]       // 问题审核指派人名称列表
   creator: string
   createdAt: string
   updatedAt: string
@@ -244,6 +248,8 @@ export interface AIInspectionTask {
   autoCreateTicket: boolean
   assigneeId: string | null
   assigneeName: string | null
+  reviewerId: string | null       // 问题审核指派人ID
+  reviewerName: string | null     // 问题审核指派人名称
   // 状态
   status: 'active' | 'paused' | 'completed'
   creator: string
