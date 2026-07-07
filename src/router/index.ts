@@ -1,7 +1,7 @@
-import { createRouter, createWebHashHistory } from 'vue-router'
+import { createRouter, createWebHistory } from 'vue-router'
 
 const router = createRouter({
-  history: createWebHashHistory(import.meta.env.BASE_URL),
+  history: createWebHistory(),
   routes: [
     {
       path: '/',
@@ -31,6 +31,10 @@ const router = createRouter({
         { path: 'alert-center', name: 'AlertCenter', component: () => import('@/views/alert-center/index.vue'), meta: { title: '告警中心' } },
         // 设备管理
         { path: 'device/management', name: 'DeviceManagement', component: () => import('@/views/device-management/index.vue'), meta: { title: '设备管理' } },
+        { path: 'device/maintenance', name: 'DeviceMaintenance', component: () => import('@/views/system-management/UnderConstruction.vue'), meta: { title: '设备维护' } },
+        { path: 'device/service-mall', name: 'ServiceMall', component: () => import('@/views/system-management/UnderConstruction.vue'), meta: { title: '智能服务商城' } },
+        { path: 'device/service-records', name: 'ServiceRecords', component: () => import('@/views/system-management/UnderConstruction.vue'), meta: { title: '服务开通记录' } },
+        { path: 'device/install-records', name: 'InstallRecords', component: () => import('@/views/system-management/UnderConstruction.vue'), meta: { title: '设备装维记录' } },
         // 云广播
         { path: 'cloud-broadcast/realtime', name: 'RealTimeBroadcast', component: () => import('@/views/cloud-broadcast/RealTimeBroadcast.vue'), meta: { title: '实时广播' } },
         { path: 'cloud-broadcast/scheduled', name: 'ScheduledBroadcast', component: () => import('@/views/cloud-broadcast/ScheduledBroadcast.vue'), meta: { title: '定时广播' } },

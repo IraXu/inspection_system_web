@@ -78,7 +78,11 @@ const primaryItems: PrimaryItem[] = [
     key: 'device-management', icon: CloudServerOutlined, label: '设备管理', routePrefix: '/device',
     groups: [],
     directItems: [
-      { key: '/device/management', label: '设备管理', icon: CloudServerOutlined },
+      { key: '/device/management', label: '设备管理', icon: XFilled },
+      { key: '/device/maintenance', label: '设备维护', icon: XFilled },
+      { key: '/device/service-mall', label: '智能服务商城', icon: XFilled },
+      { key: '/device/service-records', label: '服务开通记录', icon: XFilled },
+      { key: '/device/install-records', label: '设备装维记录', icon: XFilled },
     ],
   },
   {
