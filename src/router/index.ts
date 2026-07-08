@@ -1,7 +1,7 @@
-import { createRouter, createWebHistory } from 'vue-router'
-
+import { createRouter, createWebHashHistory } from 'vue-router'
+ // 刷新方式变化
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHashHistory(import.meta.env.BASE_URL),
   routes: [
     {
       path: '/',
