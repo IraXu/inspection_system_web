@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, h, computed } from 'vue'
 import { message, Modal } from 'antdv-next'
-import { PlusOutlined, SearchOutlined, ExclamationCircleOutlined, DeleteOutlined, ClockCircleOutlined, CalendarOutlined } from '@antdv-next/icons'
+import { PlusOutlined, SearchOutlined, ExclamationCircleOutlined, DeleteOutlined, ClockCircleOutlined, CalendarOutlined, ThunderboltOutlined, RightOutlined } from '@antdv-next/icons'
 import dayjs from 'dayjs'
 import type { AIInspectionTask } from '@/types'
 
@@ -183,6 +183,27 @@ const rowSelection = computed(() => ({ selectedRowKeys: selectedRowKeys.value, o
       </div>
     </div>
 
+    <!-- 流程引导条 -->
+    <div class="flow-guide-bar">
+      <div class="flow-guide-content">
+        <ThunderboltOutlined style="color:#1677ff;font-size:16px;flex-shrink:0" />
+        <span class="flow-guide-text">AI巡检全流程：</span>
+        <a-tooltip title="选择设备、设置抓拍时段与频率、指定AI算法与置信度阈值、配置自动提单与指派人" placement="bottom" color="#fff" overlay-inner-style="color:#333;box-shadow:0 6px 16px rgba(0,0,0,.12);font-size:13px;line-height:1.6;max-width:320px">
+          <span class="flow-guide-step">① 创建任务</span>
+        </a-tooltip><RightOutlined class="flow-guide-arr"/>
+        <a-tooltip title="系统按策略 7×24h 定时触发设备抓拍，AI算法自动分析图片，根据置信度阈值判定异常与合格，异常可自动生成整改工单" placement="bottom" color="#fff" overlay-inner-style="color:#333;box-shadow:0 6px 16px rgba(0,0,0,.12);font-size:13px;line-height:1.6;max-width:320px">
+          <span class="flow-guide-step">② 自动执行</span>
+        </a-tooltip><RightOutlined class="flow-guide-arr"/>
+        <a-tooltip title="按任务卡片式查看分析结果：异常问题详情与截图、合格图片浏览、合格率统计，支持多维度筛选与搜索" placement="bottom" color="#fff" overlay-inner-style="color:#333;box-shadow:0 6px 16px rgba(0,0,0,.12);font-size:13px;line-height:1.6;max-width:320px">
+          <span class="flow-guide-step">③ 查看结果</span>
+        </a-tooltip><RightOutlined class="flow-guide-arr"/>
+        <a-tooltip title="整改人员根据工单到现场处理，整改完成后提交审核，审核通过问题闭环，全流程与待办事项无缝联动" placement="bottom" color="#fff" overlay-inner-style="color:#333;box-shadow:0 6px 16px rgba(0,0,0,.12);font-size:13px;line-height:1.6;max-width:320px">
+          <span class="flow-guide-step">④ 整改闭环</span>
+        </a-tooltip>
+        <span class="flow-guide-hint">— 7×24h 自动抓拍+AI分析，异常自动提单至待办事项</span>
+      </div>
+    </div>
+
     <a-table :columns="columns" :data-source="filteredTasks" :row-selection="rowSelection" row-key="id" :scroll="{ x: 1560 }" size="middle" :pagination="{ pageSize: 10, showTotal: (t: number) => `共 ${t} 条`, showSizeChanger: true, pageSizeOptions: ['10','20','50','100'] }">
       <template #headerCell="{ column }">
         <template v-if="column.key === 'status'">
@@ -334,5 +355,55 @@ const rowSelection = computed(() => ({ selectedRowKeys: selectedRowKeys.value, o
 .dp-right { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
 .dp-right :deep(.ant-table-wrapper) { flex: 1; overflow: auto; }
 .dp-pagination { display: flex; align-items: center; padding: 6px 12px; font-size: 12px; color: #999; border-top: 1px solid #f0f0f0; }
+
+/* 流程引导条 */
+.flow-guide-bar {
+  background: linear-gradient(90deg, #e6f4ff 0%, #f0f5ff 60%, #fafbfc 100%);
+  border: 1px solid #d6e8ff;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+.flow-guide-content {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  flex-wrap: wrap;
+}
+.flow-guide-text {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1677ff;
+  margin: 0 4px;
+}
+.flow-guide-step {
+  font-size: 12px;
+  color: #555;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: default;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: background .15s;
+}
+.flow-guide-step:hover {
+  background: #d6e8ff;
+}
+.flow-guide-arr {
+  font-size: 10px;
+  color: #bbb;
+  margin: 0 2px;
+}
+.flow-guide-hint {
+  font-size: 11px;
+  color: #999;
+  margin-left: 4px;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 </style>
 
