@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { ref, h, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { message, Modal } from 'antdv-next'
 import { PlusOutlined, SearchOutlined, ExclamationCircleOutlined, DeleteOutlined, ClockCircleOutlined, CalendarOutlined, ThunderboltOutlined, RightOutlined } from '@antdv-next/icons'
 import dayjs from 'dayjs'
-import type { AIInspectionTask } from '@/types'
+import type { AIInspectionTask, DevicePackageInfo } from '@/types'
 
 // ========== 模拟数据 ==========
 const mockOrgTree = [
@@ -29,6 +30,33 @@ const mockAlgorithms = [
 ]
 
 const mockPersonnel = ['张三', '李四', '王五', '赵六', '孙七']
+
+// ========== 设备套餐模拟数据 ==========
+const mockDevicePackages: Record<string, DevicePackageInfo> = {
+  d1: { deviceId: 'd1', cloudStorage: { id: 'cs1', name: '7天云存储', storageDays: 7, recordingMode: 'event', status: 'active', activatedAt: '2025-12-01', expiredAt: '2026-12-01', price: 299 }, aiAlgorithm: { id: 'aip1', name: '基础AI巡检包', algorithmIds: ['alg1','alg2','alg3'], algorithmNames: ['地面整洁度识别','物品摆放规范检测','安全通道占用检测'], status: 'active', activatedAt: '2025-12-01', expiredAt: '2026-12-01', price: 599 } },
+  d2: { deviceId: 'd2', cloudStorage: { id: 'cs2', name: '30天云存储', storageDays: 30, recordingMode: 'fullDay', status: 'active', activatedAt: '2026-01-15', expiredAt: '2027-01-15', price: 699 }, aiAlgorithm: { id: 'aip2', name: '高级AI巡检包', algorithmIds: ['alg1','alg2','alg3','alg4','alg5','alg6'], algorithmNames: ['地面整洁度识别','物品摆放规范检测','安全通道占用检测','灭火器在位检测','灯光设备状态检测','卫生死角识别'], status: 'active', activatedAt: '2026-01-15', expiredAt: '2027-01-15', price: 1299 } },
+  d3: { deviceId: 'd3', cloudStorage: { id: 'cs1', name: '7天云存储', storageDays: 7, recordingMode: 'event', status: 'expired', activatedAt: '2025-06-01', expiredAt: '2026-06-01', price: 299 }, aiAlgorithm: null },
+  d4: { deviceId: 'd4', cloudStorage: null, aiAlgorithm: { id: 'aip1', name: '基础AI巡检包', algorithmIds: ['alg1','alg2'], algorithmNames: ['地面整洁度识别','物品摆放规范检测'], status: 'active', activatedAt: '2025-08-20', expiredAt: '2026-08-20', price: 599 } },
+  d5: { deviceId: 'd5', cloudStorage: { id: 'cs2', name: '30天云存储', storageDays: 30, recordingMode: 'fullDay', status: 'active', activatedAt: '2026-03-01', expiredAt: '2027-03-01', price: 699 }, aiAlgorithm: { id: 'aip1', name: '基础AI巡检包', algorithmIds: ['alg4','alg5'], algorithmNames: ['灭火器在位检测','灯光设备状态检测'], status: 'active', activatedAt: '2026-03-01', expiredAt: '2027-03-01', price: 599 } },
+  d6: { deviceId: 'd6', cloudStorage: null, aiAlgorithm: null },
+  d7: { deviceId: 'd7', cloudStorage: { id: 'cs2', name: '30天云存储', storageDays: 30, recordingMode: 'fullDay', status: 'expired', activatedAt: '2025-05-01', expiredAt: '2026-05-01', price: 699 }, aiAlgorithm: { id: 'aip2', name: '高级AI巡检包', algorithmIds: ['alg1','alg2','alg3','alg4','alg5','alg6'], algorithmNames: ['地面整洁度识别','物品摆放规范检测','安全通道占用检测','灭火器在位检测','灯光设备状态检测','卫生死角识别'], status: 'expired', activatedAt: '2025-05-01', expiredAt: '2026-05-01', price: 1299 } },
+  d8: { deviceId: 'd8', cloudStorage: { id: 'cs1', name: '7天云存储', storageDays: 7, recordingMode: 'event', status: 'active', activatedAt: '2026-02-10', expiredAt: '2027-02-10', price: 299 }, aiAlgorithm: null },
+  d9: { deviceId: 'd9', cloudStorage: null, aiAlgorithm: { id: 'aip1', name: '基础AI巡检包', algorithmIds: ['alg1','alg6'], algorithmNames: ['地面整洁度识别','卫生死角识别'], status: 'expired', activatedAt: '2025-10-01', expiredAt: '2026-10-01', price: 599 } },
+  d10: { deviceId: 'd10', cloudStorage: { id: 'cs2', name: '30天云存储', storageDays: 30, recordingMode: 'fullDay', status: 'active', activatedAt: '2026-04-15', expiredAt: '2027-04-15', price: 699 }, aiAlgorithm: { id: 'aip2', name: '高级AI巡检包', algorithmIds: ['alg1','alg2','alg3','alg4','alg5','alg6'], algorithmNames: ['地面整洁度识别','物品摆放规范检测','安全通道占用检测','灭火器在位检测','灯光设备状态检测','卫生死角识别'], status: 'active', activatedAt: '2026-04-15', expiredAt: '2027-04-15', price: 1299 } },
+}
+
+// 校验设备AI算法套餐：返回未开通AI算法套餐的设备列表
+const validateDevicePackages = (deviceIds: string[]): { valid: boolean; invalidDevices: { id: string; name: string }[] } => {
+  const invalidDevices: { id: string; name: string }[] = []
+  for (const did of deviceIds) {
+    const pkg = mockDevicePackages[did]
+    if (!pkg || !pkg.aiAlgorithm || pkg.aiAlgorithm.status !== 'active') {
+      const deviceName = mockAllDevices.find(d => d.id === did)?.name || did
+      invalidDevices.push({ id: did, name: deviceName })
+    }
+  }
+  return { valid: invalidDevices.length === 0, invalidDevices }
+}
 
 const mockTasks: AIInspectionTask[] = [
   { id: '1', name: '门店A日常AI巡检', taskNo: 'AI20260505-001', validFrom: '2026-05-01', validUntil: '2026-12-31', snapshotStart: '08:00', snapshotEnd: '20:00', frequency: 30, cycleDays: [1,2,3,4,5], deviceIds: ['d1','d2','d3'], deviceNames: ['xx相机','xx相机','xx相机'], algorithmIds: ['alg1','alg2','alg3'], algorithmNames: ['地面整洁度识别','物品摆放规范检测','安全通道占用检测'], confidenceThreshold: 80, autoCreateTicket: true, assigneeId: 'p1', assigneeName: '张三', reviewerId: 'p4', reviewerName: '赵六', status: 'active', creator: '管理员', createdAt: '2026-05-05 09:00:00', updatedAt: '2026-05-25 10:00:00' },
@@ -98,6 +126,8 @@ const findOrgNode = (ns: any[], k: string): any => { for (const n of ns) { if (n
 const onDeviceTreeSelect = (ks: string[]) => { if (ks.length) { deviceTreeSelected.value = ks[0]; const o = findOrgNode(mockOrgTree, ks[0]); deviceTableData.value = mockAllDevices.filter(d => d.org === o?.title || ks[0] === 'org-1'); devicePage.value = 1 } }
 const syncDeviceSelection = () => { formDeviceIds.value = [...deviceSelectedRowKeys.value] }
 
+const router = useRouter()
+
 const deviceStatusMap: Record<string, { label: string; color: string }> = { online: { label: '在线', color: '#67C23A' }, offline: { label: '离线', color: '#F56C6C' }, sleep: { label: '休眠中', color: '#E6A23C' } }
 const deviceTableColumns = [{ title: '设备名称', dataIndex: 'name', key: 'name', align: 'center' as const }, { title: '设备状态', key: 'status', width: 90, align: 'center' as const }]
 const paginatedDevices = computed(() => { const s = (devicePage.value - 1) * devicePageSize.value; return deviceTableData.value.slice(s, s + devicePageSize.value) })
@@ -114,6 +144,37 @@ const handleSave = () => {
   if (!formFrequency.value) { message.warning('请设置抓拍频率'); return }
   if (!formCycleDays.value.length) { message.warning('请至少选择一个执行日'); return }
   if (!formDeviceIds.value.length) { message.warning('请至少选择一台设备'); return }
+  // 校验所选设备是否已开通AI算法套餐
+  const pkgValidation = validateDevicePackages(formDeviceIds.value)
+  if (!pkgValidation.valid) {
+    const invalidList = pkgValidation.invalidDevices.map(d => d.name).join('、')
+    Modal.warning({
+      title: 'AI算法套餐校验不通过',
+      width: 520,
+      content: h('div', { style: { lineHeight: '1.8' } }, [
+        h('p', { style: { marginBottom: '12px' } }, `以下 ${pkgValidation.invalidDevices.length} 台设备未开通AI算法套餐，无法创建AI巡检任务：`),
+        h('div', {
+          style: {
+            background: '#fffbe6', border: '1px solid #ffe58f', borderRadius: '6px',
+            padding: '10px 14px', marginBottom: '14px', color: '#ad6800', fontWeight: 500,
+          }
+        }, invalidList),
+        h('p', { style: { color: '#666' } }, [
+          '请前往 ',
+          h('a', {
+            style: { color: '#1677ff', cursor: 'pointer', fontWeight: 500 },
+            onClick: () => {
+              Modal.destroyAll()
+              router.push({ name: 'ServiceMall' })
+            }
+          }, '设备管理 → 智能服务商城'),
+          ' 为设备开通AI算法套餐。',
+        ]),
+      ]),
+      okText: '我知道了',
+    })
+    return
+  }
   if (!formAlgorithmIds.value.length) { message.warning('请至少选择一个AI算法'); return }
   if (formAutoTicket.value && !formAssignee.value.length) { message.warning('开启自动提单时请选择问题指派人'); return }
   if (formAutoTicket.value && !formReviewer.value.length) { message.warning('开启自动提单时请选择问题审核人'); return }

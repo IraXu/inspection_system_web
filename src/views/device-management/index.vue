@@ -6,6 +6,7 @@ import {
   ExclamationCircleOutlined, EnvironmentOutlined, DownloadOutlined, UploadOutlined,
 } from '@antdv-next/icons'
 import type { TableColumnsType } from 'antdv-next'
+import type { DevicePackageInfo, CloudStoragePackage, AIAlgorithmPackage } from '@/types'
 
 // ==========================================
 // 类型定义
@@ -156,6 +157,33 @@ const mockDevices: DeviceItem[] = [
   { id: 'd12', name: 'xx相机-二楼走廊', license: 'LIC-2024-A012', deviceType: 'AI摄像机', deviceModel: 'DS-2CD7A46G0/P-IZHS', firmwareVersion: 'v5.7.11', sdkVersion: 'v2.3.1', orgPath: ['root','huanan','gd','sz_city','sz-nanshan','sz-wanxiang'], orgPathLabel: '华南/广东/深圳/南山区/万象天地', status: 'online', location: '113.9528, 22.5180', platform: '海康威视' },
   { id: 'd13', name: 'xx相机-消防通道A', license: 'LIC-2024-A013', deviceType: 'WIFI摄像机', deviceModel: 'DS-2CD2T47G2-L', firmwareVersion: 'v5.7.11', sdkVersion: 'v2.3.1', orgPath: ['root','huadong','js','nj','qb','qb-hongyang'], orgPathLabel: '华东/江苏/南京/桥北商圈/弘扬广场', status: 'online', location: '118.7421, 32.0987', platform: '海康威视' },
 ]
+
+// ==========================================
+// Mock 设备套餐数据
+// ==========================================
+const mockDevicePackages: Record<string, DevicePackageInfo> = {
+  d1: { deviceId: 'd1', cloudStorage: { id: 'cs1', name: '7天云存储', storageDays: 7, recordingMode: 'event', status: 'active', activatedAt: '2025-12-01', expiredAt: '2026-12-01', price: 299 }, aiAlgorithm: { id: 'aip1', name: '基础AI巡检包', algorithmIds: ['alg1','alg2','alg3'], algorithmNames: ['地面整洁度识别','物品摆放规范检测','安全通道占用检测'], status: 'active', activatedAt: '2025-12-01', expiredAt: '2026-12-01', price: 599 } },
+  d2: { deviceId: 'd2', cloudStorage: { id: 'cs2', name: '30天云存储', storageDays: 30, recordingMode: 'fullDay', status: 'active', activatedAt: '2026-01-15', expiredAt: '2027-01-15', price: 699 }, aiAlgorithm: { id: 'aip2', name: '高级AI巡检包', algorithmIds: ['alg1','alg2','alg3','alg4','alg5','alg6'], algorithmNames: ['地面整洁度识别','物品摆放规范检测','安全通道占用检测','灭火器在位检测','灯光设备状态检测','卫生死角识别'], status: 'active', activatedAt: '2026-01-15', expiredAt: '2027-01-15', price: 1299 } },
+  d3: { deviceId: 'd3', cloudStorage: { id: 'cs1', name: '7天云存储', storageDays: 7, recordingMode: 'event', status: 'pending', activatedAt: '2026-07-20', expiredAt: '2027-07-20', price: 299 }, aiAlgorithm: null },
+  d4: { deviceId: 'd4', cloudStorage: null, aiAlgorithm: { id: 'aip1', name: '基础AI巡检包', algorithmIds: ['alg1','alg2'], algorithmNames: ['地面整洁度识别','物品摆放规范检测'], status: 'active', activatedAt: '2025-08-20', expiredAt: '2026-08-20', price: 599 } },
+  d5: { deviceId: 'd5', cloudStorage: { id: 'cs2', name: '30天云存储', storageDays: 30, recordingMode: 'fullDay', status: 'active', activatedAt: '2026-03-01', expiredAt: '2027-03-01', price: 699 }, aiAlgorithm: { id: 'aip1', name: '基础AI巡检包', algorithmIds: ['alg4','alg5'], algorithmNames: ['灭火器在位检测','灯光设备状态检测'], status: 'active', activatedAt: '2026-03-01', expiredAt: '2027-03-01', price: 599 } },
+  d6: { deviceId: 'd6', cloudStorage: null, aiAlgorithm: null },
+  d7: { deviceId: 'd7', cloudStorage: { id: 'cs2', name: '30天云存储', storageDays: 30, recordingMode: 'fullDay', status: 'expired', activatedAt: '2025-05-01', expiredAt: '2026-05-01', price: 699 }, aiAlgorithm: { id: 'aip2', name: '高级AI巡检包', algorithmIds: ['alg1','alg2','alg3','alg4','alg5','alg6'], algorithmNames: ['地面整洁度识别','物品摆放规范检测','安全通道占用检测','灭火器在位检测','灯光设备状态检测','卫生死角识别'], status: 'expired', activatedAt: '2025-05-01', expiredAt: '2026-05-01', price: 1299 } },
+  d8: { deviceId: 'd8', cloudStorage: { id: 'cs1', name: '7天云存储', storageDays: 7, recordingMode: 'event', status: 'active', activatedAt: '2026-02-10', expiredAt: '2027-02-10', price: 299 }, aiAlgorithm: null },
+  d9: { deviceId: 'd9', cloudStorage: null, aiAlgorithm: { id: 'aip1', name: '基础AI巡检包', algorithmIds: ['alg1','alg6'], algorithmNames: ['地面整洁度识别','卫生死角识别'], status: 'expired', activatedAt: '2025-10-01', expiredAt: '2026-10-01', price: 599 } },
+  d10: { deviceId: 'd10', cloudStorage: { id: 'cs2', name: '30天云存储', storageDays: 30, recordingMode: 'fullDay', status: 'active', activatedAt: '2026-04-15', expiredAt: '2027-04-15', price: 699 }, aiAlgorithm: { id: 'aip2', name: '高级AI巡检包', algorithmIds: ['alg1','alg2','alg3','alg4','alg5','alg6'], algorithmNames: ['地面整洁度识别','物品摆放规范检测','安全通道占用检测','灭火器在位检测','灯光设备状态检测','卫生死角识别'], status: 'active', activatedAt: '2026-04-15', expiredAt: '2027-04-15', price: 1299 } },
+  d11: { deviceId: 'd11', cloudStorage: { id: 'cs1', name: '7天云存储', storageDays: 7, recordingMode: 'event', status: 'pending', activatedAt: '2026-07-22', expiredAt: '2027-07-22', price: 299 }, aiAlgorithm: { id: 'aip1', name: '基础AI巡检包', algorithmIds: ['alg1','alg2'], algorithmNames: ['地面整洁度识别','物品摆放规范检测'], status: 'active', activatedAt: '2026-05-01', expiredAt: '2027-05-01', price: 599 } },
+  d12: { deviceId: 'd12', cloudStorage: null, aiAlgorithm: null },
+  d13: { deviceId: 'd13', cloudStorage: { id: 'cs2', name: '30天云存储', storageDays: 30, recordingMode: 'fullDay', status: 'active', activatedAt: '2026-06-01', expiredAt: '2027-06-01', price: 699 }, aiAlgorithm: { id: 'aip2', name: '高级AI巡检包', algorithmIds: ['alg3','alg4','alg5'], algorithmNames: ['安全通道占用检测','灭火器在位检测','灯光设备状态检测'], status: 'active', activatedAt: '2026-06-01', expiredAt: '2027-06-01', price: 1299 } },
+}
+
+const pkgStatusMap: Record<string, { label: string; color: string }> = {
+  active: { label: '生效中', color: 'green' },
+  expired: { label: '已过期', color: 'red' },
+  pending: { label: '待生效', color: 'orange' },
+}
+
+const recordingModeLabel: Record<string, string> = { event: '事件', fullDay: '全天' }
 
 // ==========================================
 // 计算每个树节点的设备总数
@@ -364,9 +392,12 @@ const handleDeleteConfirm = () => {
 // ==========================================
 const viewVisible = ref(false)
 const viewDevice = ref<DeviceItem | null>(null)
+const viewPackageInfo = ref<DevicePackageInfo | null>(null)
 
 const showView = (device: DeviceItem) => {
-  viewDevice.value = device; viewVisible.value = true
+  viewDevice.value = device
+  viewPackageInfo.value = mockDevicePackages[device.id] || { deviceId: device.id, cloudStorage: null, aiAlgorithm: null }
+  viewVisible.value = true
 }
 
 // ==========================================
@@ -769,8 +800,8 @@ const flipModeOptions = [
       </div>
     </a-modal>
 
-    <!-- ==================== 查看设备信息弹窗 ==================== -->
-    <a-modal v-model:open="viewVisible" title="查看设备信息" width="640px" :footer="null" @cancel="viewVisible = false">
+    <!-- ==================== 查看设备信息弹窗（含套餐详情） ==================== -->
+    <a-modal v-model:open="viewVisible" title="查看设备信息" width="720px" :footer="null" @cancel="viewVisible = false">
       <template v-if="viewDevice">
         <a-descriptions :column="2" bordered size="middle">
           <a-descriptions-item label="设备名称">{{ viewDevice.name }}</a-descriptions-item>
@@ -778,11 +809,54 @@ const flipModeOptions = [
           <a-descriptions-item label="所属组织架构" :span="2">{{ viewDevice.orgPathLabel }}</a-descriptions-item>
           <a-descriptions-item label="详细位置">{{ viewDevice.location || '—' }}</a-descriptions-item>
           <a-descriptions-item label="设备类型">{{ viewDevice.deviceType }}</a-descriptions-item>
-          <a-descriptions-item label="生态平台">{{ viewDevice.platform }}</a-descriptions-item>
           <a-descriptions-item label="设备型号">{{ viewDevice.deviceModel }}</a-descriptions-item>
           <a-descriptions-item label="固件版本">{{ viewDevice.firmwareVersion }}</a-descriptions-item>
           <a-descriptions-item label="SDK版本">{{ viewDevice.sdkVersion }}</a-descriptions-item>
         </a-descriptions>
+
+        <!-- 套餐信息：仅展示生效中或待生效的套餐 -->
+        <template v-if="(viewPackageInfo?.cloudStorage && (viewPackageInfo.cloudStorage.status === 'active' || viewPackageInfo.cloudStorage.status === 'pending')) || (viewPackageInfo?.aiAlgorithm && (viewPackageInfo.aiAlgorithm.status === 'active' || viewPackageInfo.aiAlgorithm.status === 'pending'))">
+        <a-divider orientation="center" style="font-size:13px;font-weight:600;color:#1677ff;margin:16px 0 12px">套餐信息</a-divider>
+
+        <!-- 云存储套餐 -->
+        <a-card v-if="viewPackageInfo?.cloudStorage && (viewPackageInfo.cloudStorage.status === 'active' || viewPackageInfo.cloudStorage.status === 'pending')" title="云存储套餐" size="small" class="dm-view-package-card" variant="outlined">
+          <a-descriptions :column="2" bordered size="small">
+            <a-descriptions-item label="套餐名称">
+              <span class="dm-package-name">{{ viewPackageInfo.cloudStorage.name }}</span>
+            </a-descriptions-item>
+            <a-descriptions-item label="套餐状态">
+              <a-tag :color="pkgStatusMap[viewPackageInfo.cloudStorage.status]?.color">
+                {{ pkgStatusMap[viewPackageInfo.cloudStorage.status]?.label }}
+              </a-tag>
+            </a-descriptions-item>
+            <a-descriptions-item label="存储天数">{{ viewPackageInfo.cloudStorage.storageDays }} 天</a-descriptions-item>
+            <a-descriptions-item label="录制模式">{{ recordingModeLabel[viewPackageInfo.cloudStorage.recordingMode] || viewPackageInfo.cloudStorage.recordingMode }}</a-descriptions-item>
+            <a-descriptions-item label="开通时间">{{ viewPackageInfo.cloudStorage.activatedAt }}</a-descriptions-item>
+            <a-descriptions-item label="到期时间">{{ viewPackageInfo.cloudStorage.expiredAt }}</a-descriptions-item>
+          </a-descriptions>
+        </a-card>
+
+        <!-- AI算法套餐 -->
+        <a-card v-if="viewPackageInfo?.aiAlgorithm && (viewPackageInfo.aiAlgorithm.status === 'active' || viewPackageInfo.aiAlgorithm.status === 'pending')" title="AI算法套餐" size="small" class="dm-view-package-card" variant="outlined">
+          <a-descriptions :column="2" bordered size="small">
+            <a-descriptions-item label="套餐名称">
+              <span class="dm-package-name">{{ viewPackageInfo.aiAlgorithm.name }}</span>
+            </a-descriptions-item>
+            <a-descriptions-item label="套餐状态">
+              <a-tag :color="pkgStatusMap[viewPackageInfo.aiAlgorithm.status]?.color">
+                {{ pkgStatusMap[viewPackageInfo.aiAlgorithm.status]?.label }}
+              </a-tag>
+            </a-descriptions-item>
+            <a-descriptions-item label="包含算法" :span="2">
+              <a-space wrap :size="4">
+                <a-tag v-for="(name, i) in viewPackageInfo.aiAlgorithm.algorithmNames" :key="i" color="blue">{{ name }}</a-tag>
+              </a-space>
+            </a-descriptions-item>
+            <a-descriptions-item label="开通时间">{{ viewPackageInfo.aiAlgorithm.activatedAt }}</a-descriptions-item>
+            <a-descriptions-item label="到期时间">{{ viewPackageInfo.aiAlgorithm.expiredAt }}</a-descriptions-item>
+          </a-descriptions>
+        </a-card>
+        </template>
       </template>
     </a-modal>
 
@@ -964,6 +1038,7 @@ const flipModeOptions = [
         </a-space>
       </template>
     </a-drawer>
+
   </div>
 </template>
 
@@ -1010,4 +1085,12 @@ const flipModeOptions = [
 .dm-settings-row-title { font-size:13px; font-weight:500; color:#333; }
 .dm-settings-row-hint { font-size:12px; color:#bbb; }
 .dm-settings-row-ctrl { flex-shrink:0; }
+
+/* ==================== 查看弹窗内套餐卡片 ==================== */
+.dm-view-package-card { margin-bottom:12px; border-radius:8px; box-shadow:0 1px 4px rgba(0,0,0,0.04); }
+.dm-view-package-card :deep(.ant-card-head) { background:#fafbfc; border-bottom:1px solid #f0f0f0; min-height:36px; }
+.dm-view-package-card :deep(.ant-card-head-title) { font-size:13px; font-weight:600; padding:8px 0; }
+.dm-view-package-card :deep(.ant-card-body) { padding:8px 12px; }
+.dm-package-name { font-size:13px; font-weight:600; color:#1677ff; }
+.dm-package-empty { display:flex; align-items:center; gap:6px; padding:8px 0; color:#999; font-size:13px; }
 </style>

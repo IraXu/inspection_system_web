@@ -461,3 +461,45 @@ export interface RecordingSegment {
   label: string
 }
 
+// ========== 设备套餐 ==========
+
+/** 云存储套餐 */
+export interface CloudStoragePackage {
+  id: string
+  name: string                 // 套餐名称，如"7天云存储"、"30天云存储"
+  storageDays: number          // 存储天数
+  recordingMode: 'event' | 'fullDay'  // 录制模式：event=事件，fullDay=全天
+  status: 'active' | 'expired' | 'pending'
+  activatedAt: string          // 开通时间
+  expiredAt: string            // 到期时间
+  price: number                // 价格（元/年）
+}
+
+/** AI算法套餐 */
+export interface AIAlgorithmPackage {
+  id: string
+  name: string                 // 套餐名称，如"基础AI巡检包"、"高级AI巡检包"
+  algorithmIds: string[]       // 包含的算法ID列表
+  algorithmNames: string[]     // 包含的算法名称列表
+  status: 'active' | 'expired' | 'pending'
+  activatedAt: string
+  expiredAt: string
+  price: number
+}
+
+/** 设备套餐绑定信息 */
+export interface DevicePackageInfo {
+  deviceId: string
+  cloudStorage: CloudStoragePackage | null   // 云存储套餐（可能未开通）
+  aiAlgorithm: AIAlgorithmPackage | null     // AI算法套餐（可能未开通）
+}
+
+/** 设备套餐校验结果 */
+export interface DevicePackageValidation {
+  deviceId: string
+  deviceName: string
+  hasCloudStorage: boolean
+  hasAIAlgorithm: boolean
+  missingPackages: string[]    // 缺失的套餐名称列表
+}
+
