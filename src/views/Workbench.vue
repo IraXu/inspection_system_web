@@ -78,13 +78,13 @@ onUnmounted(()=>{clearInterval(t1);clearInterval(t2)})
   <div class="wb">
     <a-row :gutter="12" class="r">
       <a-col :xs="24" :lg="12">
-        <a-card :bordered="false" class="c">
+        <a-card variant="borderless" class="c">
           <template #title><div class="hd"><span>账号信息</span><span class="hd-tm">{{ ts }}</span></div></template>
           <div class="acct"><div class="acct-hi">您好，{{ u.name }}</div><div class="acct-row">账号：{{ u.account }}</div><div class="acct-row">{{ org.name }}<span class="d">·</span><a-tag color="blue" size="small">{{ org.role }}</a-tag></div></div>
         </a-card>
       </a-col>
       <a-col :xs="24" :lg="12">
-        <a-card title="企业信息" :bordered="false" class="c">
+        <a-card title="企业信息" variant="borderless" class="c">
           <div class="ent"><img class="ent-badge" :src="logoPlaceholder" alt="企业logo" /><div class="ent-body"><div class="ent-name">{{ ent.name }}</div><div class="ent-line"><PhoneOutlined />{{ ent.phone }}</div><div class="ent-line"><EnvironmentOutlined />{{ ent.address }}</div></div></div>
         </a-card>
       </a-col>
@@ -92,7 +92,7 @@ onUnmounted(()=>{clearInterval(t1);clearInterval(t2)})
 
     <a-row v-if="sg" :gutter="12" class="r">
       <a-col :span="24">
-        <a-card :bordered="false" class="c guide">
+        <a-card variant="borderless" class="c guide">
           <template #title>👋 欢迎使用智慧巡检平台，完成以下基础设置后即可正常使用</template>
           <template #extra><div class="ge"><span class="gn" @click="nr=!nr"><CheckCircleFilled v-if="nr" style="color:#1677ff"/><span v-else class="gnb"></span>不再提示</span><a-button size="small" type="text" @click="gv=false"><CloseCircleFilled/></a-button></div></template>
           <div class="gt"><template v-for="(s,i) in steps" :key="s.t"><div class="gnode" :class="{ok:done[i]}" @click="go(s.to)"><CheckCircleFilled v-if="done[i]" class="gok"/><span v-else class="gnum">{{ i+1 }}</span><div class="gtxt"><span class="gtt">{{ s.t }}</span><span class="gd">{{ s.d }}</span></div></div><RightOutlined v-if="i<3" class="ga" :class="{ok:done[i]}"/></template></div>
@@ -103,7 +103,7 @@ onUnmounted(()=>{clearInterval(t1);clearInterval(t2)})
 
     <a-row :gutter="12" class="r r3">
       <a-col :xs="24" :md="8">
-        <a-card title="待我处理" :bordered="false" class="c">
+        <a-card title="待我处理" variant="borderless" class="c">
           <template #extra><a-button size="small" type="text" :loading="tL" @click="lt"><ReloadOutlined/></a-button></template>
           <a-skeleton v-if="tL" active :paragraph="{rows:3}"/>
           <div v-else class="tw">
@@ -115,7 +115,7 @@ onUnmounted(()=>{clearInterval(t1);clearInterval(t2)})
         </a-card>
       </a-col>
       <a-col :xs="24" :md="8">
-        <a-card title="今日设备概览" :bordered="false" class="c">
+        <a-card title="今日设备概览" variant="borderless" class="c">
           <template #extra><a-button size="small" type="text" :loading="dL" @click="ld"><ReloadOutlined/></a-button></template>
           <a-skeleton v-if="dL" active :paragraph="{rows:2}"/>
           <a-empty v-else-if="dv.total===0" description="暂无设备"/>
@@ -127,7 +127,7 @@ onUnmounted(()=>{clearInterval(t1);clearInterval(t2)})
         </a-card>
       </a-col>
       <a-col :xs="24" :md="8">
-        <a-card :bordered="false" class="c">
+        <a-card variant="borderless" class="c">
           <template #title><div class="ih"><span>巡检总览</span><div class="it"><span :class="{on:pd==='thisWeek'}" @click="pd='thisWeek';li()">本周</span><span :class="{on:pd==='lastWeek'}" @click="pd='lastWeek';li()">上周</span><span :class="{on:pd==='thisMonth'}" @click="pd='thisMonth';li()">本月</span></div></div></template>
           <template #extra><a-button size="small" type="text" :loading="iL" @click="li"><ReloadOutlined/></a-button></template>
           <a-skeleton v-if="iL" active :paragraph="{rows:2}"/>
@@ -142,7 +142,7 @@ onUnmounted(()=>{clearInterval(t1);clearInterval(t2)})
 
     <a-row :gutter="12" class="r">
       <a-col :span="24">
-        <a-card :bordered="false" class="c">
+        <a-card variant="borderless" class="c">
           <template #title><span><BellFilled style="color:#fa8c16;margin-right:4px"/>告警推送</span><a-tag color="success" size="small" class="live-tag"><span class="live" :class="{on:liveRef}">实时</span></a-tag></template>
           <template #extra><a-button size="small" type="text" :loading="aL" @click="la"><ReloadOutlined/></a-button><a-button size="small" type="link" @click="router.push('/alert-center')">查看全部 <ArrowRightOutlined/></a-button></template>
           <a-skeleton v-if="aL" active :paragraph="{rows:3}"/>

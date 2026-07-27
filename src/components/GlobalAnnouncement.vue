@@ -62,7 +62,7 @@ const beamTheme = {
               { color: '#67e8f9', percent: 100 },
             ]"
           >
-          <a-card class="announce-card" :bordered="false" size="small">
+          <a-card class="announce-card" variant="borderless" size="small">
             <template #title>
               <span class="announce-title">
                 <SoundOutlined class="announce-title-icon" />
