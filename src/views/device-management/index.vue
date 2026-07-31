@@ -11,6 +11,15 @@ import type { DevicePackageInfo, CloudStoragePackage, AIAlgorithmPackage } from 
 // ==========================================
 // 类型定义
 // ==========================================
+
+/** 设备能力模型（云端下发配置） */
+interface DeviceCapabilities {
+  screen: boolean       // 是否支持画面设置（屏幕模式、画面翻转、宽动态）
+  alarm: boolean        // 是否支持事件侦测报警
+  light: boolean        // 是否支持灯光设置（状态指示灯、灯光模式）
+  eventTypes: string[]  // 支持的事件侦测类型，如 motion/move/human/pet/child
+}
+
 interface DeviceItem {
   id: string
   name: string
@@ -24,12 +33,31 @@ interface DeviceItem {
   status: 'online' | 'offline' | 'sleep'
   location: string
   platform: string
+  capabilities: DeviceCapabilities
 }
 
 interface OrgTreeNode {
   key: string
   title: string
   children?: OrgTreeNode[]
+}
+
+/** 支持的事件侦测类型名称映射 */
+const eventTypeLabels: Record<string, string> = {
+  motion: '运动侦测',
+  move: '移动侦测',
+  human: '人形侦测',
+  pet: '宠物侦测',
+  child: '孩童侦测',
+}
+
+/** 事件类型对应的提示语 */
+const eventTypeHints: Record<string, string> = {
+  motion: '检测画面中有物体运动时触发报警',
+  move: '检测画面中有物体移动时触发报警',
+  human: '检测画面中有人形出现时触发报警',
+  pet: '检测画面中有宠物出现时触发报警',
+  child: '检测画面中有孩童出现时触发报警',
 }
 
 // ==========================================
@@ -143,19 +171,19 @@ const rawOrgTree: OrgTreeNode[] = [
 // Mock 设备数据
 // ==========================================
 const mockDevices: DeviceItem[] = [
-  { id: 'd1', name: 'xx相机-南门入口', license: 'LIC-2024-A001', deviceType: 'WIFI摄像机', deviceModel: 'DS-2CD2T47G2-L', firmwareVersion: 'v5.7.11', sdkVersion: 'v2.3.1', orgPath: ['root','huadong','js','nj','xb','xb-wanda'], orgPathLabel: '华东/江苏/南京/新街口商圈/万达苏宁旗舰店', status: 'online', location: '118.7842, 32.0493', platform: '海康威视' },
-  { id: 'd2', name: 'xx相机-北门入口', license: 'LIC-2024-A002', deviceType: 'AI摄像机', deviceModel: 'DS-2CD7A46G0/P-IZHS', firmwareVersion: 'v5.7.11', sdkVersion: 'v2.3.1', orgPath: ['root','huadong','js','nj','xb','xb-wanda'], orgPathLabel: '华东/江苏/南京/新街口商圈/万达苏宁旗舰店', status: 'online', location: '118.7842, 32.0498', platform: '海康威视' },
-  { id: 'd3', name: 'xx相机-收银台', license: 'LIC-2024-A003', deviceType: 'WIFI摄像机', deviceModel: 'DS-2CD2T47G2-L', firmwareVersion: 'v5.6.3', sdkVersion: 'v2.2.8', orgPath: ['root','huadong','js','nj','qb','qb-wanda'], orgPathLabel: '华东/江苏/南京/桥北商圈/桥北万象城', status: 'offline', location: '118.7453, 32.1021', platform: '海康威视' },
-  { id: 'd4', name: 'xx相机-仓库后门', license: 'LIC-2024-A004', deviceType: '低功耗摄像机', deviceModel: 'CS-C1HC-1D1WFR', firmwareVersion: 'v3.2.0', sdkVersion: 'v1.8.5', orgPath: ['root','huadong','js','nj','qb','qb-wanda'], orgPathLabel: '华东/江苏/南京/桥北商圈/桥北万象城', status: 'sleep', location: '118.7456, 32.1025', platform: '萤石' },
-  { id: 'd5', name: 'xx相机-大厅全景', license: 'LIC-2024-A005', deviceType: 'AI摄像机', deviceModel: 'DS-2CD7A46G0/P-IZHS', firmwareVersion: 'v5.7.11', sdkVersion: 'v2.3.1', orgPath: ['root','huadong','js','nj','xb','xb-taiyang'], orgPathLabel: '华东/江苏/南京/新街口商圈/21世纪太阳城', status: 'online', location: '118.7831, 32.0487', platform: '海康威视' },
-  { id: 'd6', name: 'xx相机-停车场入口', license: 'LIC-2024-A006', deviceType: 'WIFI摄像机', deviceModel: 'DS-2CD2T47G2-L', firmwareVersion: 'v5.7.11', sdkVersion: 'v2.3.1', orgPath: ['root','huadong','js','sz','sz-gusu','sz-gusu-meiluo'], orgPathLabel: '华东/江苏/苏州/姑苏区/美罗商城', status: 'online', location: '120.6154, 31.2989', platform: '海康威视' },
-  { id: 'd7', name: 'xx相机-东门监控', license: 'LIC-2024-A007', deviceType: 'WIFI摄像机', deviceModel: 'DS-2CD2T47G2-L', firmwareVersion: 'v5.6.3', sdkVersion: 'v2.2.8', orgPath: ['root','huadong','sh','sh-pudong','sh-lujiazui','sh-guoji'], orgPathLabel: '华东/上海/浦东新区/陆家嘴商圈/上海国际中心', status: 'offline', location: '121.5023, 31.2361', platform: '海康威视' },
-  { id: 'd8', name: 'xx相机-正门大厅', license: 'LIC-2024-A008', deviceType: 'AI摄像机', deviceModel: 'DS-2CD7A46G0/P-IZHS', firmwareVersion: 'v5.7.11', sdkVersion: 'v2.3.1', orgPath: ['root','huabei','bj','bj-chaoyang','bj-guomao','bj-guomao-yintai'], orgPathLabel: '华北/北京/朝阳区/国贸商圈/银泰中心', status: 'online', location: '116.4605, 39.9092', platform: '海康威视' },
-  { id: 'd9', name: 'xx相机-侧门通道', license: 'LIC-2024-A009', deviceType: '低功耗摄像机', deviceModel: 'CS-C1HC-1D1WFR', firmwareVersion: 'v3.2.0', sdkVersion: 'v1.8.5', orgPath: ['root','huabei','bj','bj-chaoyang','bj-guomao','bj-guomao-yintai'], orgPathLabel: '华北/北京/朝阳区/国贸商圈/银泰中心', status: 'sleep', location: '116.4608, 39.9095', platform: '萤石' },
-  { id: 'd10', name: 'xx相机-1楼中庭', license: 'LIC-2024-A010', deviceType: 'WIFI摄像机', deviceModel: 'DS-2CD2T47G2-L', firmwareVersion: 'v5.7.11', sdkVersion: 'v2.3.1', orgPath: ['root','huanan','gd','gz','gz-tianhe','gz-taiKoo'], orgPathLabel: '华南/广东/广州/天河商圈/太古汇', status: 'online', location: '113.3233, 23.1291', platform: '海康威视' },
-  { id: 'd11', name: 'xx相机-B1车库', license: 'LIC-2024-A011', deviceType: 'WIFI摄像机', deviceModel: 'DS-2CD2T47G2-L', firmwareVersion: 'v5.6.3', sdkVersion: 'v2.2.8', orgPath: ['root','huanan','gd','sz_city','sz-nanshan','sz-wanxiang'], orgPathLabel: '华南/广东/深圳/南山区/万象天地', status: 'offline', location: '113.9526, 22.5176', platform: '海康威视' },
-  { id: 'd12', name: 'xx相机-二楼走廊', license: 'LIC-2024-A012', deviceType: 'AI摄像机', deviceModel: 'DS-2CD7A46G0/P-IZHS', firmwareVersion: 'v5.7.11', sdkVersion: 'v2.3.1', orgPath: ['root','huanan','gd','sz_city','sz-nanshan','sz-wanxiang'], orgPathLabel: '华南/广东/深圳/南山区/万象天地', status: 'online', location: '113.9528, 22.5180', platform: '海康威视' },
-  { id: 'd13', name: 'xx相机-消防通道A', license: 'LIC-2024-A013', deviceType: 'WIFI摄像机', deviceModel: 'DS-2CD2T47G2-L', firmwareVersion: 'v5.7.11', sdkVersion: 'v2.3.1', orgPath: ['root','huadong','js','nj','qb','qb-hongyang'], orgPathLabel: '华东/江苏/南京/桥北商圈/弘扬广场', status: 'online', location: '118.7421, 32.0987', platform: '海康威视' },
+  { id: 'd1', name: 'xx相机-南门入口', license: 'LIC-2024-A001', deviceType: 'WIFI摄像机', deviceModel: 'DS-2CD2T47G2-L', firmwareVersion: 'v5.7.11', sdkVersion: 'v2.3.1', orgPath: ['root','huadong','js','nj','xb','xb-wanda'], orgPathLabel: '华东/江苏/南京/新街口商圈/万达苏宁旗舰店', status: 'online', location: '118.7842, 32.0493', platform: '海康威视', capabilities: { screen: true, alarm: true, light: false, eventTypes: ['motion'] } },
+  { id: 'd2', name: 'xx相机-北门入口', license: 'LIC-2024-A002', deviceType: 'AI摄像机', deviceModel: 'DS-2CD7A46G0/P-IZHS', firmwareVersion: 'v5.7.11', sdkVersion: 'v2.3.1', orgPath: ['root','huadong','js','nj','xb','xb-wanda'], orgPathLabel: '华东/江苏/南京/新街口商圈/万达苏宁旗舰店', status: 'online', location: '118.7842, 32.0498', platform: '海康威视', capabilities: { screen: true, alarm: true, light: true, eventTypes: ['motion', 'human', 'pet'] } },
+  { id: 'd3', name: 'xx相机-收银台', license: 'LIC-2024-A003', deviceType: 'WIFI摄像机', deviceModel: 'DS-2CD2T47G2-L', firmwareVersion: 'v5.6.3', sdkVersion: 'v2.2.8', orgPath: ['root','huadong','js','nj','qb','qb-wanda'], orgPathLabel: '华东/江苏/南京/桥北商圈/桥北万象城', status: 'offline', location: '118.7453, 32.1021', platform: '海康威视', capabilities: { screen: true, alarm: false, light: false, eventTypes: [] } },
+  { id: 'd4', name: 'xx相机-仓库后门', license: 'LIC-2024-A004', deviceType: '低功耗摄像机', deviceModel: 'CS-C1HC-1D1WFR', firmwareVersion: 'v3.2.0', sdkVersion: 'v1.8.5', orgPath: ['root','huadong','js','nj','qb','qb-wanda'], orgPathLabel: '华东/江苏/南京/桥北商圈/桥北万象城', status: 'sleep', location: '118.7456, 32.1025', platform: '萤石', capabilities: { screen: false, alarm: true, light: false, eventTypes: ['move'] } },
+  { id: 'd5', name: 'xx相机-大厅全景', license: 'LIC-2024-A005', deviceType: 'AI摄像机', deviceModel: 'DS-2CD7A46G0/P-IZHS', firmwareVersion: 'v5.7.11', sdkVersion: 'v2.3.1', orgPath: ['root','huadong','js','nj','xb','xb-taiyang'], orgPathLabel: '华东/江苏/南京/新街口商圈/21世纪太阳城', status: 'online', location: '118.7831, 32.0487', platform: '海康威视', capabilities: { screen: true, alarm: true, light: true, eventTypes: ['motion', 'move', 'human', 'pet', 'child'] } },
+  { id: 'd6', name: 'xx相机-停车场入口', license: 'LIC-2024-A006', deviceType: 'WIFI摄像机', deviceModel: 'DS-2CD2T47G2-L', firmwareVersion: 'v5.7.11', sdkVersion: 'v2.3.1', orgPath: ['root','huadong','js','sz','sz-gusu','sz-gusu-meiluo'], orgPathLabel: '华东/江苏/苏州/姑苏区/美罗商城', status: 'online', location: '120.6154, 31.2989', platform: '海康威视', capabilities: { screen: false, alarm: true, light: false, eventTypes: ['motion', 'move'] } },
+  { id: 'd7', name: 'xx相机-东门监控', license: 'LIC-2024-A007', deviceType: 'WIFI摄像机', deviceModel: 'DS-2CD2T47G2-L', firmwareVersion: 'v5.6.3', sdkVersion: 'v2.2.8', orgPath: ['root','huadong','sh','sh-pudong','sh-lujiazui','sh-guoji'], orgPathLabel: '华东/上海/浦东新区/陆家嘴商圈/上海国际中心', status: 'offline', location: '121.5023, 31.2361', platform: '海康威视', capabilities: { screen: true, alarm: true, light: true, eventTypes: ['motion'] } },
+  { id: 'd8', name: 'xx相机-正门大厅', license: 'LIC-2024-A008', deviceType: 'AI摄像机', deviceModel: 'DS-2CD7A46G0/P-IZHS', firmwareVersion: 'v5.7.11', sdkVersion: 'v2.3.1', orgPath: ['root','huabei','bj','bj-chaoyang','bj-guomao','bj-guomao-yintai'], orgPathLabel: '华北/北京/朝阳区/国贸商圈/银泰中心', status: 'online', location: '116.4605, 39.9092', platform: '海康威视', capabilities: { screen: true, alarm: true, light: true, eventTypes: ['motion', 'human', 'pet', 'child'] } },
+  { id: 'd9', name: 'xx相机-侧门通道', license: 'LIC-2024-A009', deviceType: '低功耗摄像机', deviceModel: 'CS-C1HC-1D1WFR', firmwareVersion: 'v3.2.0', sdkVersion: 'v1.8.5', orgPath: ['root','huabei','bj','bj-chaoyang','bj-guomao','bj-guomao-yintai'], orgPathLabel: '华北/北京/朝阳区/国贸商圈/银泰中心', status: 'sleep', location: '116.4608, 39.9095', platform: '萤石', capabilities: { screen: false, alarm: true, light: false, eventTypes: ['move', 'human'] } },
+  { id: 'd10', name: 'xx相机-1楼中庭', license: 'LIC-2024-A010', deviceType: 'WIFI摄像机', deviceModel: 'DS-2CD2T47G2-L', firmwareVersion: 'v5.7.11', sdkVersion: 'v2.3.1', orgPath: ['root','huanan','gd','gz','gz-tianhe','gz-taiKoo'], orgPathLabel: '华南/广东/广州/天河商圈/太古汇', status: 'online', location: '113.3233, 23.1291', platform: '海康威视', capabilities: { screen: true, alarm: false, light: false, eventTypes: [] } },
+  { id: 'd11', name: 'xx相机-B1车库', license: 'LIC-2024-A011', deviceType: 'WIFI摄像机', deviceModel: 'DS-2CD2T47G2-L', firmwareVersion: 'v5.6.3', sdkVersion: 'v2.2.8', orgPath: ['root','huanan','gd','sz_city','sz-nanshan','sz-wanxiang'], orgPathLabel: '华南/广东/深圳/南山区/万象天地', status: 'offline', location: '113.9526, 22.5176', platform: '海康威视', capabilities: { screen: true, alarm: true, light: false, eventTypes: ['motion', 'move'] } },
+  { id: 'd12', name: 'xx相机-二楼走廊', license: 'LIC-2024-A012', deviceType: 'AI摄像机', deviceModel: 'DS-2CD7A46G0/P-IZHS', firmwareVersion: 'v5.7.11', sdkVersion: 'v2.3.1', orgPath: ['root','huanan','gd','sz_city','sz-nanshan','sz-wanxiang'], orgPathLabel: '华南/广东/深圳/南山区/万象天地', status: 'online', location: '113.9528, 22.5180', platform: '海康威视', capabilities: { screen: true, alarm: true, light: true, eventTypes: ['motion', 'move', 'human', 'pet', 'child'] } },
+  { id: 'd13', name: 'xx相机-消防通道A', license: 'LIC-2024-A013', deviceType: 'WIFI摄像机', deviceModel: 'DS-2CD2T47G2-L', firmwareVersion: 'v5.7.11', sdkVersion: 'v2.3.1', orgPath: ['root','huadong','js','nj','qb','qb-hongyang'], orgPathLabel: '华东/江苏/南京/桥北商圈/弘扬广场', status: 'online', location: '118.7421, 32.0987', platform: '海康威视', capabilities: { screen: false, alarm: false, light: true, eventTypes: [] } },
 ]
 
 // ==========================================
@@ -446,6 +474,7 @@ const handleFormSubmit = () => {
       deviceType: 'WIFI摄像机', deviceModel: 'DS-2CD2T47G2-L', firmwareVersion: 'v5.7.11',
       sdkVersion: 'v2.3.1', orgPath: [deviceForm.orgKey], orgPathLabel: orgLabel,
       status: 'offline', location: deviceForm.location || '', platform: '海康威视',
+      capabilities: { screen: true, alarm: false, light: false, eventTypes: [] },
     })
     message.success('添加成功')
   } else if (formMode.value === 'edit' && editingDevice.value) {
@@ -540,36 +569,59 @@ const downloadTemplate = () => { message.success('模板下载中...') }
 const settingsVisible = ref(false)
 const settingsDevice = ref<DeviceItem | null>(null)
 
-// 每台设备的设置缓存
-const deviceSettingsMap = reactive<Record<string, {
+/** 设备设置数据模型 */
+interface DeviceSettings {
+  // 画面设置
   screenMode: 'single' | 'multi'
   flipMode: 'normal' | 'invert'
   wideDynamic: boolean
-  alarmEnabled: boolean
+  // 报警通知 - 事件侦测类型开关（key为事件类型，value为是否开启）
+  alarmNotify: boolean
+  eventAlarm: Record<string, boolean>
+  // 灯光设置
   lightMode: 'smart' | 'bw'
   statusLed: boolean
-}>>({})
+}
 
-const getDefaultSettings = () => ({
-  screenMode: 'single' as const,
-  flipMode: 'normal' as const,
-  wideDynamic: false,
-  alarmEnabled: true,
-  lightMode: 'smart' as const,
-  statusLed: true,
-})
+// 每台设备的设置缓存
+const deviceSettingsMap = reactive<Record<string, DeviceSettings>>({})
+
+const getDefaultSettings = (device: DeviceItem): DeviceSettings => {
+  const eventAlarm: Record<string, boolean> = {}
+  for (const et of device.capabilities.eventTypes) {
+    eventAlarm[et] = false
+  }
+  return {
+    screenMode: 'single',
+    flipMode: 'normal',
+    wideDynamic: false,
+    alarmNotify: false,
+    eventAlarm,
+    lightMode: 'smart',
+    statusLed: true,
+  }
+}
 
 const showSettings = (device: DeviceItem) => {
   settingsDevice.value = device
   if (!deviceSettingsMap[device.id]) {
-    deviceSettingsMap[device.id] = getDefaultSettings()
+    deviceSettingsMap[device.id] = getDefaultSettings(device)
   }
   settingsVisible.value = true
 }
 
 const currentSettings = computed(() => {
-  if (!settingsDevice.value) return getDefaultSettings()
+  if (!settingsDevice.value) return getDefaultSettings({ capabilities: { screen: false, alarm: false, light: false, eventTypes: [] } } as unknown as DeviceItem)
   return deviceSettingsMap[settingsDevice.value.id]
+})
+
+/** 当前设备支持的能力（便捷计算属性） */
+const currentCapabilities = computed(() => settingsDevice.value?.capabilities ?? { screen: false, alarm: false, light: false, eventTypes: [] })
+
+/** 当前设备是否有任何设置项（如果三个能力都为false则无设置项） */
+const hasAnySettings = computed(() => {
+  const cap = currentCapabilities.value
+  return cap.screen || cap.alarm || cap.light
 })
 
 const handleSettingsSave = () => {
@@ -888,8 +940,12 @@ const flipModeOptions = [
           </a-tag>
         </div>
 
+        <!-- 无设置项提示 -->
+        <a-empty v-if="!hasAnySettings" description="该设备暂无可配置项" />
+
+        <template v-else>
         <!-- 画面设置 -->
-        <a-card title="画面设置" size="small" class="dm-settings-card" variant="outlined">
+        <a-card v-if="currentCapabilities.screen" title="画面设置" size="small" class="dm-settings-card" variant="outlined">
           <template #extra>
             <span class="dm-settings-card-desc">配置设备画面的显示方式</span>
           </template>
@@ -962,27 +1018,55 @@ const flipModeOptions = [
         </a-card>
 
         <!-- 报警管理 -->
-        <a-card title="报警管理" size="small" class="dm-settings-card" variant="outlined">
+        <a-card v-if="currentCapabilities.alarm" title="报警管理" size="small" class="dm-settings-card" variant="outlined">
           <template #extra>
             <span class="dm-settings-card-desc">配置设备报警相关功能</span>
           </template>
+          <!-- 报警通知总开关 -->
           <div class="dm-settings-row">
             <div class="dm-settings-row-label">
-              <span class="dm-settings-row-title">报警设置</span>
-              <span class="dm-settings-row-hint">开启后设备检测到异常将触发报警</span>
+              <span class="dm-settings-row-title">报警通知</span>
+              <span class="dm-settings-row-hint">开启后设备产生事件报警将推送系统通知</span>
             </div>
             <div class="dm-settings-row-ctrl">
               <a-switch
-                v-model:checked="currentSettings.alarmEnabled"
-                checked-children="已开启"
-                un-checked-children="已关闭"
+                v-model:checked="currentSettings.alarmNotify"
+                checked-children="开启"
+                un-checked-children="关闭"
               />
             </div>
           </div>
+          <!-- 事件侦测类型开关（动态渲染） -->
+          <template v-if="currentCapabilities.eventTypes.length > 0">
+            <a-divider style="margin:12px 0" />
+            <div
+              v-for="et in currentCapabilities.eventTypes"
+              :key="et"
+              class="dm-settings-row"
+            >
+              <div class="dm-settings-row-label">
+                <span class="dm-settings-row-title">{{ eventTypeLabels[et] || et }}</span>
+                <span class="dm-settings-row-hint">{{ eventTypeHints[et] || '开启后检测到事件将触发报警' }}</span>
+              </div>
+              <div class="dm-settings-row-ctrl">
+                <a-switch
+                  :checked="currentSettings.eventAlarm[et]"
+                  checked-children="开启"
+                  un-checked-children="关闭"
+                  @update:checked="(val: boolean) => currentSettings.eventAlarm[et] = val"
+                />
+              </div>
+            </div>
+          </template>
+          <a-empty
+            v-else
+            description="该设备不支持事件侦测类型"
+            :image-style="{ height: '40px' }"
+          />
         </a-card>
 
         <!-- 灯光设置 -->
-        <a-card title="灯光设置" size="small" class="dm-settings-card" variant="outlined">
+        <a-card v-if="currentCapabilities.light" title="灯光设置" size="small" class="dm-settings-card" variant="outlined">
           <template #extra>
             <span class="dm-settings-card-desc">配置设备补光灯工作模式</span>
           </template>
@@ -1028,6 +1112,7 @@ const flipModeOptions = [
             </div>
           </div>
         </a-card>
+        </template>
       </template>
 
       <!-- 底部操作 -->
