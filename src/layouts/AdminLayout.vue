@@ -2,7 +2,7 @@
 import { ref, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import type { MenuProps } from 'antdv-next'
-import { DownOutlined, BankOutlined, LogoutOutlined, CheckOutlined, SlackOutlined, XFilled, FundFilled, VideoCameraFilled, CloudServerOutlined, DeploymentUnitOutlined, AlertFilled, NotificationOutlined } from '@antdv-next/icons'
+import { DownOutlined, BankOutlined, LogoutOutlined, CheckOutlined, SlackOutlined, XFilled, FundFilled, VideoCameraFilled, CloudServerOutlined, DeploymentUnitOutlined, AlertFilled, NotificationOutlined, GlobalOutlined, RightOutlined, CheckCircleFilled } from '@antdv-next/icons'
 import touxiangImg from '@/assets/touxiang.jpg'
 
 const router = useRouter()
@@ -41,10 +41,22 @@ const currentUser: CurrentUser = {
 
 const userMenuClick: MenuProps['onClick'] = ({ key }) => {
   if (key === 'logout') {
-    // 退出登录逻辑
     console.log('退出登录')
   }
 }
+
+// 语言切换（原型展示）
+type Lang = 'auto' | 'zh' | 'en'
+const currentLang = ref<Lang>('auto')
+const langOptions: { key: Lang; label: string }[] = [
+  { key: 'auto', label: '跟随系统' },
+  { key: 'zh', label: '中文' },
+  { key: 'en', label: 'English' },
+]
+const switchLang = (lang: Lang) => {
+  currentLang.value = lang
+}
+const currentLabel = computed(() => langOptions.find(o => o.key === currentLang.value)?.label ?? '')
 
 // 只保留有子菜单的模块
 interface SubMenuItem { key: string; label: string }
@@ -228,6 +240,34 @@ const handlePrimaryClick = (item: PrimaryItem) => {
             <div class="user-dropdown">
               <span class="user-dd-name">{{ currentUser.name }}</span>
               <a-tag color="blue" class="user-dd-tag">{{ currentEnterprise.role }}</a-tag>
+              <div class="user-dd-divider"></div>
+              <!-- 语言切换 -->
+              <a-popover
+                trigger="click"
+                placement="leftTop"
+                overlay-class-name="lang-popover-overlay"
+              >
+                <div class="user-dd-lang">
+                  <GlobalOutlined class="lang-nav-icon" />
+                  <span class="lang-nav-text">{{ currentLang === 'auto' ? '自动' : currentLabel }}</span>
+                  <RightOutlined class="lang-nav-arrow" />
+                </div>
+                <template #content>
+                  <div class="lang-menu">
+                    <div class="lang-menu-title">语言</div>
+                    <div
+                      v-for="opt in langOptions"
+                      :key="opt.key"
+                      class="lang-menu-item"
+                      :class="{ active: currentLang === opt.key }"
+                      @click.stop="switchLang(opt.key)"
+                    >
+                      <span class="lang-menu-label">{{ opt.key === 'auto' ? '跟随系统' : opt.label }}</span>
+                      <CheckCircleFilled v-if="currentLang === opt.key" class="lang-menu-check" />
+                    </div>
+                  </div>
+                </template>
+              </a-popover>
               <div class="user-dd-divider"></div>
               <div class="user-dd-logout" @click="userMenuClick({ key: 'logout' } as any)">
                 <LogoutOutlined />
@@ -473,5 +513,90 @@ const handlePrimaryClick = (item: PrimaryItem) => {
 }
 .user-dd-logout:active {
   background:#ffd8d2;
+}
+
+/* 语言切换 */
+.user-dd-lang {
+  width:100%;
+  display:flex;
+  align-items:center;
+  gap:6px;
+  padding:7px 6px;
+  border-radius:6px;
+  cursor:pointer;
+  transition:background .2s;
+  user-select:none;
+}
+.user-dd-lang:hover {
+  background:#f5f7fa;
+}
+.lang-nav-icon {
+  font-size:14px;
+  color:#999;
+  flex-shrink:0;
+}
+.lang-nav-text {
+  flex:1;
+  font-size:13px;
+  color:#333;
+}
+.lang-nav-arrow {
+  font-size:11px;
+  color:#bbb;
+  flex-shrink:0;
+}
+</style>
+
+<!-- 语言菜单 Popover（非 scoped） -->
+<style>
+.lang-popover-overlay .ant-popover-inner {
+  padding: 0 !important;
+  border-radius: 10px !important;
+  box-shadow: 0 8px 28px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06) !important;
+}
+.lang-popover-overlay .ant-popover-arrow {
+  display: none;
+}
+.lang-menu {
+  min-width: 180px;
+  padding: 6px 0;
+}
+.lang-menu-title {
+  padding: 8px 16px 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #8c8c8c;
+}
+.lang-menu-item {
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:8px 16px;
+  font-size:13px;
+  color:#333;
+  cursor:pointer;
+  transition:all .15s;
+}
+.lang-menu-item:hover {
+  background:#f5f7fa;
+}
+.lang-menu-item.active {
+  background:#e6f4ff;
+}
+.lang-menu-label {
+  flex:1;
+  font-weight:500;
+}
+.lang-menu-tag {
+  font-size:11px;
+  color:#999;
+}
+.lang-menu-item.active .lang-menu-label {
+  color:#1677ff;
+}
+.lang-menu-check {
+  font-size:13px;
+  color:#1677ff;
+  flex-shrink:0;
 }
 </style>
