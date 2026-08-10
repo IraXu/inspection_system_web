@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, reactive, computed, watch, onMounted, onUnmounted, nextTick, h } from 'vue'
+import { useRouter } from 'vue-router'
 import { message } from 'antdv-next'
 import {
   VideoCameraOutlined, AudioOutlined, AudioMutedOutlined,
@@ -15,11 +16,14 @@ import {
   LeftOutlined, RightOutlined, StarOutlined, EditOutlined,
   GlobalOutlined, SyncOutlined, UnorderedListOutlined,
   BankOutlined, ApartmentOutlined, ShopOutlined,
+  CloudServerOutlined, CreditCardOutlined,
 } from '@antdv-next/icons'
 
 // ========== Tab 状态 ==========
 type TabKey = 'live' | 'playback' | 'map'
 const activeTab = ref<TabKey>('live')
+
+const router = useRouter()
 
 // ========== 区域树（含设备叶子节点） ==========
 interface TreeNode {
@@ -768,7 +772,51 @@ const playbackStrategyVisible = ref(false)
 const playbackSkipNormal = ref(false)
 const playbackNormalSpeed = ref(8)
 const playbackEventSpeed = ref(8)
-const selectPlaybackDevice = (device:Device) => { playbackDevice.value=device; playbackPlaying.value=false; playbackRangeStartHour.value=0 }
+
+// ========== 回放类型（云录像 / 卡录像） ==========
+type PlaybackType = 'cloud' | 'card'
+const playbackType = ref<PlaybackType>('cloud')
+// 模拟云存服务开通状态：key 为设备 deviceId
+const cloudServiceEnabledMap: Record<string, boolean> = {
+  'd-bj-1': false, 'd-bj-2': true, 'd-bj-3': true,
+  'd-tj-1': false, 'd-tj-2': false, 'd-tj-3': true,
+  'd-nj-1': true, 'd-nj-2': false, 'd-nj-4': true, 'd-nj-16': true, 'd-nj-22': true,
+  'd-gz-1': false,
+}
+const getCloudServiceStatus = (deviceId: string) => {
+  // 实际开发时替换为接口：校验当前绑定设备是否开通云存服务
+  return !!cloudServiceEnabledMap[deviceId]
+}
+const openServiceMall = () => {
+  router.push({ name: 'ServiceMall' })
+}
+// 未开通云存服务的设备：在录像播放框内展示购买引导（屏蔽列表查询与播放）
+const cloudGuideDevice = ref<Device | null>(null)
+// 切换回放类型：默认选中「云录像」，未开通云存服务时在播放框内引导购买并屏蔽列表查询/播放
+const switchPlaybackType = (type: PlaybackType) => {
+  if (type === playbackType.value) return
+  const current = playbackDevice.value
+  if (type === 'cloud' && current && !getCloudServiceStatus(current.id)) {
+    playbackType.value = type
+    playbackDevice.value = null
+    cloudGuideDevice.value = current
+    return
+  }
+  playbackType.value = type
+  // 切换类型后重置回放设备，避免复用另一类型的回放画面
+  playbackDevice.value = null
+  cloudGuideDevice.value = null
+}
+const selectPlaybackDevice = (device:Device) => {
+  // 云录像模式下校验云存服务开通状态，未开通则播放框内引导购买并屏蔽播放
+  if (playbackType.value === 'cloud' && !getCloudServiceStatus(device.id)) {
+    cloudGuideDevice.value = device
+    playbackDevice.value = null
+    return
+  }
+  cloudGuideDevice.value = null
+  playbackDevice.value=device; playbackPlaying.value=false; playbackRangeStartHour.value=0
+}
 const togglePlayback = () => { playbackPlaying.value=!playbackPlaying.value }
 const setPlaybackSpeed = (s:number) => { playbackSpeed.value=s; message.info(`播放倍速：${s}x`) }
 const skipBackward30s = () => { message.info('快退 30 秒') }
@@ -1296,7 +1344,31 @@ watch(selectedCellIdx, (val) => {
         <template v-if="activeTab==='playback'">
           <div class="vs-playback-area">
             <!-- 视频画面区（单画面） -->
-            <div v-if="!playbackDevice" class="vs-playback-empty">
+            <div v-if="cloudGuideDevice" class="vs-playback-video-wrap">
+              <div class="vs-playback-video">
+                <div class="vs-mock-video vs-mock-video-dim">
+                  <div class="vs-mock-video-bg">
+                    <span class="vs-mock-icon">📼</span>
+                    <div class="vs-mock-scanline"></div>
+                  </div>
+                  <div class="vs-cell-osd">
+                    <span class="vs-cell-osd-name">{{ cloudGuideDevice.name }}</span>
+                    <span class="vs-cell-osd-time">{{ playbackCurrentTime }}</span>
+                    <span class="vs-cell-osd-stream">云录像</span>
+                  </div>
+                </div>
+                <!-- 沉浸式提示：直接写在画面上，无卡片/弹窗感 -->
+                <div class="vs-playback-guide">
+                  <div class="vs-pg-icon"><CloudServerOutlined /></div>
+                  <div class="vs-pg-title">云存服务未开通</div>
+                  <div class="vs-pg-desc">「{{ cloudGuideDevice.name }}」暂不支持云录像的查询与播放<br />开通云存服务后即可正常回放</div>
+                  <div class="vs-pg-btns">
+                    <span class="vs-pg-link" @click="openServiceMall">前往智能服务商城开通 ›</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div v-else-if="!playbackDevice" class="vs-playback-empty">
               <div class="vs-playback-empty-placeholder"><span>请添加设备</span></div>
             </div>
             <div v-else class="vs-playback-video-wrap">
@@ -1309,7 +1381,7 @@ watch(selectedCellIdx, (val) => {
                   <div class="vs-cell-osd">
                     <span class="vs-cell-osd-name">{{ playbackDevice.name }}</span>
                     <span class="vs-cell-osd-time">{{ playbackCurrentTime }}</span>
-                    <span class="vs-cell-osd-stream">回放</span>
+                    <span class="vs-cell-osd-stream">{{ playbackType==='cloud'?'云录像':'卡录像' }}</span>
                   </div>
                   <div v-if="!playbackPlaying" class="vs-cell-pause-overlay"><PauseCircleOutlined /><span>已暂停</span></div>
                   <div v-if="playbackMuted" class="vs-cell-mute-indicator"><AudioMutedOutlined /></div>
@@ -1341,11 +1413,20 @@ watch(selectedCellIdx, (val) => {
 
             <!-- 底部控制栏-下层：功能按钮区域（始终显示） -->
             <div class="vs-playback-bar-bottom">
-              <!-- 左侧：图例与筛选 -->
+              <!-- 左侧：图例与筛选 + 回放类型切换 -->
               <div class="vs-pbb-left">
                 <span class="vs-pbb-legend"><span class="vs-pbb-legend-dot normal"></span>常规录像</span>
                 <span class="vs-pbb-legend"><span class="vs-pbb-legend-dot event"></span>事件录像</span>
                 <span class="vs-pbb-filter">全部事件 <CaretUpOutlined /></span>
+                <!-- 回放类型切换：云录像 / 卡录像 -->
+                <div class="vs-pb-type-tabs">
+                  <div class="vs-pb-type-tab" :class="{active:playbackType==='cloud'}" @click="switchPlaybackType('cloud')">
+                    <CloudServerOutlined class="vs-pb-type-icon" /><span>云录像</span>
+                  </div>
+                  <div class="vs-pb-type-tab" :class="{active:playbackType==='card'}" @click="switchPlaybackType('card')">
+                    <CreditCardOutlined class="vs-pb-type-icon" /><span>卡录像</span>
+                  </div>
+                </div>
               </div>
               <!-- 中间：播放控制组 -->
               <div class="vs-pbb-center">
@@ -1363,7 +1444,8 @@ watch(selectedCellIdx, (val) => {
                     <div class="vs-split-menu"><div v-for="s in [0.5,1,2,4,8]" :key="s" class="vs-split-item" :class="{active:playbackSpeed===s}" @click="setPlaybackSpeed(s)">{{ s }}x</div></div>
                   </template>
                 </a-dropdown>
-                <div class="vs-pbb-download-wrap">
+                <!-- 下载入口：仅云录像提供（卡录像全程隐藏下载功能） -->
+                <div v-if="playbackType==='cloud'" class="vs-pbb-download-wrap">
                   <a-badge :count="downloadTaskCount" color="#ff4d4f" :offset="[-2,2]" :overflow-count="99">
                     <div class="vs-pbb-btn" @click="downloadMenuOpen=!downloadMenuOpen"><DownloadOutlined /></div>
                   </a-badge>
@@ -1999,9 +2081,19 @@ watch(selectedCellIdx, (val) => {
 .vs-split-btn-pv.pv-7 .vs-split-btn-pv-cell:nth-child(3) { grid-area:c; }
 
 /* ========== 视频回放 ========== */
-.vs-playback-area { display:flex; flex-direction:column; height:100%; background:#404040; }
+.vs-playback-area { display:flex; flex-direction:column; height:100%; background:#404040; position:relative; }
 .vs-playback-empty { display:flex; align-items:center; justify-content:center; height:100%; }
 .vs-playback-empty-placeholder { color:rgba(255,255,255,0.5); font-size:14px; user-select:none; }
+
+/* 未开通云存服务引导（沉浸式提示，直接写在录像画面上） */
+.vs-playback-guide { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; z-index:8; color:#fff; pointer-events:none; }
+.vs-pg-icon { font-size:46px; color:rgba(255,255,255,0.85); opacity:0.9; text-shadow:0 2px 8px rgba(0,0,0,0.4); }
+.vs-pg-title { font-size:17px; font-weight:600; color:#fff; text-shadow:0 1px 6px rgba(0,0,0,0.5); }
+.vs-pg-desc { font-size:13px; color:rgba(255,255,255,0.75); text-align:center; line-height:1.8; text-shadow:0 1px 4px rgba(0,0,0,0.5); }
+.vs-pg-btns { display:flex; gap:20px; margin-top:6px; }
+.vs-pg-link { font-size:13px; color:#91caff; cursor:pointer; pointer-events:auto; border-bottom:1px solid rgba(145,202,255,0.5); padding-bottom:1px; transition:color .15s; }
+.vs-pg-link:hover { color:#fff; border-bottom-color:#fff; }
+.vs-mock-video-dim { filter:brightness(0.5); }
 .vs-playback-video-wrap { flex:1; display:flex; align-items:center; justify-content:center; padding:8px; }
 .vs-playback-video { width:100%; height:100%; display:flex; align-items:center; justify-content:center; }
 .vs-playback-video .vs-mock-video { width:100%; height:100%; max-width:100%; position:relative; overflow:hidden; }
@@ -2039,6 +2131,12 @@ watch(selectedCellIdx, (val) => {
 .vs-pbb-legend-dot.event { background:#fa8c16; }
 .vs-pbb-filter { font-size:11px; color:#888; cursor:pointer; display:flex; align-items:center; gap:2px; }
 .vs-pbb-filter:hover { color:#333; }
+/* 回放类型切换：置于左侧事件控件右侧 */
+.vs-pb-type-tabs { display:flex; align-items:center; gap:2px; padding:2px; margin-left:10px; padding-left:12px; border-left:1px solid #eee; background:transparent; border-radius:999px; }
+.vs-pb-type-tab { display:flex; align-items:center; gap:5px; padding:5px 12px; font-size:12px; color:#666; cursor:pointer; user-select:none; border-radius:999px; transition:all .2s; white-space:nowrap; }
+.vs-pb-type-tab:hover { color:#1677ff; background:#f0f5ff; }
+.vs-pb-type-tab.active { color:#1677ff; background:#e6f4ff; font-weight:600; }
+.vs-pb-type-icon { font-size:12px; }
 
 .vs-pbb-btn { width:36px; height:36px; display:flex; align-items:center; justify-content:center; border-radius:50%; border:1px solid #d9d9d9; color:#666; font-size:14px; cursor:pointer; transition:all .15s; background:#fff; }
 .vs-pbb-btn:hover { color:#1677ff; border-color:#1677ff; background:#f0f5ff; }
