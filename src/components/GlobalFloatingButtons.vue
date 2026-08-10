@@ -1,6 +1,11 @@
 <script setup lang="ts">
 import { ref, computed, reactive, onMounted, onUnmounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { QrcodeOutlined, ReadOutlined, CustomerServiceOutlined, AndroidOutlined, AppleOutlined, WindowsOutlined, WechatOutlined } from '@ant-design/icons-vue'
+
+const route = useRoute()
+// 首页（工作台）常驻显示，其他页面向右隐藏仅漏出一半
+const isHome = computed(() => route.path === '/' || route.path === '/workbench')
 
 const MANUAL_URL = ''
 const openManual = () => {
@@ -70,6 +75,7 @@ onUnmounted(() => {
   <a-float-button-group
     trigger="click"
     shape="square"
+    :class="{ 'float-btn-hidden': !isHome }"
     :style="{ insetInlineEnd: '24px', bottom: '120px' }"
   >
     <template #icon>
@@ -144,6 +150,19 @@ onUnmounted(() => {
 </template>
 
 <style>
+/* ====== 非首页：向右隐藏，仅漏出一半 ====== */
+.float-btn-hidden {
+  transition: transform 0.3s ease;
+}
+.float-btn-hidden:not(:hover) {
+  transform: translateX(calc(100% - 12px));
+  opacity: 0.65;
+}
+.float-btn-hidden:hover {
+  transform: translateX(0);
+  opacity: 1;
+}
+
 /* ====== 二维码卡片 ====== */
 .qr-card-wrapper {
   position: fixed;
