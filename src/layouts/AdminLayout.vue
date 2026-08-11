@@ -4,9 +4,15 @@ import { useRouter, useRoute } from 'vue-router'
 import type { MenuProps } from 'antdv-next'
 import { DownOutlined, BankOutlined, LogoutOutlined, CheckOutlined, SlackOutlined, XFilled, FundFilled, VideoCameraFilled, CloudServerOutlined, DeploymentUnitOutlined, AlertFilled, NotificationOutlined, GlobalOutlined, RightOutlined, CheckCircleFilled } from '@antdv-next/icons'
 import touxiangImg from '@/assets/touxiang.jpg'
+import { useBrandStore } from '@/stores/brand'
 
 const router = useRouter()
 const route = useRoute()
+
+// ========== 品牌配置（当前企业品牌元素） ==========
+const brandStore = useBrandStore()
+const headerLogo = computed(() => brandStore.settings.headerLogo)
+const headerTitle = computed(() => brandStore.settings.headerTitle)
 
 // 企业列表
 interface Enterprise {
@@ -22,9 +28,14 @@ const enterprises: Enterprise[] = [
 const currentEnterprise = ref(enterprises[0])
 const enterpriseVisible = ref(false)
 
+// 进入系统时应用当前登录企业（原型默认企业）的品牌配置
+brandStore.loadForEnterprise(currentEnterprise.value.id)
+
 const switchEnterprise = (ent: Enterprise) => {
   currentEnterprise.value = ent
   enterpriseVisible.value = false
+  // 切换企业：动态读取新企业的品牌配置并全局应用（浏览器标题/图标、主界面 Header）
+  brandStore.loadForEnterprise(ent.id)
 }
 
 // 当前用户信息
@@ -145,6 +156,7 @@ const primaryItems: PrimaryItem[] = [
       { key: '/system/roles', label: '角色管理', icon: XFilled },
       { key: '/system/logs', label: '系统日志', icon: XFilled },
       { key: '/system/enterprise-center', label: '企业中心', icon: XFilled },
+      { key: '/system/brand-settings', label: '品牌设置', icon: XFilled },
     ],
   },
   /*
@@ -201,8 +213,8 @@ const handlePrimaryClick = (item: PrimaryItem) => {
     <!-- 顶部导航栏：横跨全宽 -->
     <a-layout-header class="top-header">
       <div class="header-left">
-        <img src="/logo.png" class="header-logo" />
-        <span class="system-name">智慧巡检管理系统</span>
+        <img :src="headerLogo" class="header-logo" />
+        <span class="system-name">{{ headerTitle }}</span>
       </div>
       <div class="header-right">
         <!-- 企业切换下拉：Popover（自定义内容无需 menu） -->

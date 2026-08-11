@@ -47,6 +47,7 @@ const router = createRouter({
         { path: 'system/roles', name: 'RoleManagement', component: () => import('@/views/system-management/UnderConstruction.vue'), meta: { title: '角色管理' } },
         { path: 'system/logs', name: 'SystemLogs', component: () => import('@/views/system-management/UnderConstruction.vue'), meta: { title: '系统日志' } },
         { path: 'system/enterprise-center', name: 'EnterpriseCenter', component: () => import('@/views/system-management/EnterpriseCenter.vue'), meta: { title: '企业中心' } },
+        { path: 'system/brand-settings', name: 'BrandSettings', component: () => import('@/views/system-management/BrandSettings.vue'), meta: { title: '品牌设置' } },
         { path: 'system/nav-management', name: 'NavManagement', component: () => import('@/views/nav-management/index.vue'), meta: { title: '导航管理' } },
       ],
     },

@@ -6,8 +6,6 @@
     "paths": {
       "@/*": ["./src/*"]
     },
-    "ignoreDeprecations": "6.0",
-    "baseUrl": ".",
 
     /* Linting */
     "noUnusedLocals": false,

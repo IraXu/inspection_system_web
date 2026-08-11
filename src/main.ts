@@ -15,3 +15,5 @@ app.use(createPinia())
 app.use(router)
 app.use(Antd, { locale: zhCN })
 app.mount('#app')
+
+// 品牌配置在进入系统时由 AdminLayout 按当前登录企业加载并应用
