@@ -2,7 +2,7 @@
 import { ref, h, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { message, Modal } from 'antdv-next'
-import { PlusOutlined, SearchOutlined, ExclamationCircleOutlined, DeleteOutlined, ClockCircleOutlined, CalendarOutlined, ThunderboltOutlined, RightOutlined } from '@antdv-next/icons'
+import { PlusOutlined, SearchOutlined, ExclamationCircleOutlined, DeleteOutlined, ClockCircleOutlined, CalendarOutlined, ThunderboltOutlined, RightOutlined, GlobalOutlined } from '@antdv-next/icons'
 import dayjs from 'dayjs'
 import type { AIInspectionTask, DevicePackageInfo } from '@/types'
 
@@ -128,6 +128,48 @@ const syncDeviceSelection = () => { formDeviceIds.value = [...deviceSelectedRowK
 
 const router = useRouter()
 
+// ========== AI生成内容语言设置（企业级，全局生效） ==========
+const isAdmin = ref(true) // 原型中当前用户为企业管理员
+const aiMsgLang = ref('zh-CN') // 默认中文
+const langSaving = ref(false)
+const langOptions = [
+  { label: '中文', value: 'zh-CN' },
+  { label: 'English', value: 'en-US' },
+  { label: '日本語', value: 'ja-JP' },
+  { label: '한국어', value: 'ko-KR' },
+  { label: 'Tiếng Việt', value: 'vi-VN' },
+  { label: 'ไทย', value: 'th-TH' },
+  { label: 'Español', value: 'es-ES' },
+  { label: 'Русский', value: 'ru-RU' },
+]
+const langLabel = (v: string) => langOptions.find(o => o.value === v)?.label || v
+
+// 切换语言：全局性变更，二次确认后保存
+const handleLangChange = (value: string) => {
+  const prevLang = aiMsgLang.value
+  const target = langLabel(value)
+  Modal.confirm({
+    title: '切换AI生成内容语言',
+    icon: () => h(ExclamationCircleOutlined),
+    content: `切换后该企业所有 AI 生成内容（AI告警描述、AI分析结果等）将使用「${target}」生成，仅对后续新生成的 AI 消息生效，是否继续？`,
+    okText: '确定',
+    cancelText: '取消',
+    onOk: () => new Promise<void>((resolve) => {
+      langSaving.value = true
+      setTimeout(() => {
+        langSaving.value = false
+        aiMsgLang.value = value
+        message.success('已切换AI生成内容语言，仅对后续新生成的AI消息生效')
+        resolve()
+      }, 500)
+    }),
+    onCancel: () => {
+      // 取消则回滚为原语言
+      aiMsgLang.value = prevLang
+    },
+  })
+}
+
 const deviceStatusMap: Record<string, { label: string; color: string }> = { online: { label: '在线', color: '#67C23A' }, offline: { label: '离线', color: '#F56C6C' }, sleep: { label: '休眠中', color: '#E6A23C' } }
 const deviceTableColumns = [{ title: '设备名称', dataIndex: 'name', key: 'name', align: 'center' as const }, { title: '设备状态', key: 'status', width: 90, align: 'center' as const }]
 const paginatedDevices = computed(() => { const s = (devicePage.value - 1) * devicePageSize.value; return deviceTableData.value.slice(s, s + devicePageSize.value) })
@@ -235,12 +277,25 @@ const rowSelection = computed(() => ({ selectedRowKeys: selectedRowKeys.value, o
           <a-button @click="doReset">重置</a-button>
         </a-space>
       </div>
-      <div class="toolbar-row">
+      <div class="toolbar-row toolbar-row-between">
         <a-space>
           <a-button type="primary" @click="openAdd"><PlusOutlined /> 新建AI巡检任务</a-button>
           <a-button danger @click="batchDelete" :disabled="!selectedRowKeys.length"><DeleteOutlined /> 批量删除</a-button>
           <span v-if="selectedRowKeys.length" class="selected-count">已选 {{ selectedRowKeys.length }} 项</span>
         </a-space>
+        <!-- AI生成内容语言设置（企业级，全局生效，仅管理员可见） -->
+        <div v-if="isAdmin" class="lang-setting">
+          <a-tooltip title="设置该企业所有 AI 生成内容（AI告警描述、AI分析结果等）的语言，全局生效，仅对后续新生成的 AI 消息生效">
+            <span class="lang-setting-label"><GlobalOutlined class="lang-icon" /> AI生成内容语言</span>
+          </a-tooltip>
+          <a-select
+            :value="aiMsgLang"
+            class="lang-select"
+            :options="langOptions"
+            :loading="langSaving"
+            @change="handleLangChange"
+          />
+        </div>
       </div>
     </div>
 
@@ -369,7 +424,36 @@ const rowSelection = computed(() => ({ selectedRowKeys: selectedRowKeys.value, o
 .page-toolbar { margin-bottom: 16px; }
 .toolbar-row { margin-bottom: 12px; }
 .toolbar-row:last-child { margin-bottom: 0; }
+.toolbar-row-between { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
 .selected-count { color: #1677ff; font-size: 13px; margin-left: 8px; }
+/* AI生成内容语言设置 */
+.lang-setting {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 6px 4px 14px;
+  background: #f5f7fa;
+  border: 1px solid #e8eef5;
+  border-radius: 8px;
+}
+.lang-setting-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #555;
+  font-weight: 500;
+  cursor: help;
+  white-space: nowrap;
+}
+.lang-icon {
+  color: #1677ff;
+  font-size: 14px;
+}
+.lang-setting :deep(.ant-select .ant-select-selector) {
+  border-radius: 6px;
+  background: #fff;
+}
 .col-center { display: flex; justify-content: center; }
 .task-name-cell { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
 .task-name-text { font-size: 13px; color: #333; line-height: 1.4; }
