@@ -11,6 +11,8 @@ const formState = reactive({ ...brandStore.settings })
 const saving = ref(false)
 
 // ========== 通用图片上传 ==========
+const MAX_IMG_SIZE = 2 * 1024 * 1024 // 2MB
+
 function getBase64(file: File) {
   return new Promise<string>((resolve, reject) => {
     const reader = new FileReader()
@@ -31,7 +33,15 @@ function makeUploadProps(target: keyof typeof formState): UploadProps {
         message.error('仅支持图片格式文件')
         return false
       }
-      formState[target] = await getBase64(file)
+      if (file.size > MAX_IMG_SIZE) {
+        message.error('图片大小不能超过 2MB')
+        return false
+      }
+      try {
+        formState[target] = await getBase64(file)
+      } catch {
+        message.error('图片读取失败，请重新上传')
+      }
       return false
     },
   }
