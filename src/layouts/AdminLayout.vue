@@ -5,6 +5,7 @@ import type { MenuProps } from 'antdv-next'
 import { DownOutlined, BankOutlined, LogoutOutlined, CheckOutlined, SlackOutlined, XFilled, FundFilled, VideoCameraFilled, CloudServerOutlined, DeploymentUnitOutlined, AlertFilled, NotificationOutlined, GlobalOutlined, RightOutlined, CheckCircleFilled } from '@antdv-next/icons'
 import touxiangImg from '@/assets/touxiang.jpg'
 import { useBrandStore } from '@/stores/brand'
+import { useEnterpriseStore } from '@/stores/enterprise'
 
 const router = useRouter()
 const route = useRoute()
@@ -13,6 +14,10 @@ const route = useRoute()
 const brandStore = useBrandStore()
 const headerLogo = computed(() => brandStore.settings.headerLogo)
 const headerTitle = computed(() => brandStore.settings.headerTitle)
+
+// ========== 企业行业配置（数据大屏据此匹配场景） ==========
+const enterpriseStore = useEnterpriseStore()
+enterpriseStore.loadForEnterprise('ent-default')
 
 // 企业列表
 interface Enterprise {
@@ -36,6 +41,8 @@ const switchEnterprise = (ent: Enterprise) => {
   enterpriseVisible.value = false
   // 切换企业：动态读取新企业的品牌配置并全局应用（浏览器标题/图标、主界面 Header）
   brandStore.loadForEnterprise(ent.id)
+  // 同步加载该企业的行业配置（数据大屏自动匹配展示场景）
+  enterpriseStore.loadForEnterprise(ent.id)
 }
 
 // 当前用户信息
