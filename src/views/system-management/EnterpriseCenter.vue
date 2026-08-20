@@ -5,8 +5,11 @@ import {
   CameraOutlined, EnvironmentOutlined, InboxOutlined, CopyOutlined,
   ShopOutlined, BuildOutlined, ApartmentOutlined,
   ToolOutlined, BookOutlined, ProjectOutlined, PlusOutlined,
+  CheckCircleFilled, ReloadOutlined, SaveOutlined,
+  FileTextOutlined, ContactsOutlined, AppstoreOutlined, BankOutlined,
 } from '@antdv-next/icons'
 import type { UploadProps } from 'antdv-next'
+import { useEnterpriseStore } from '@/stores/enterprise'
 
 // ========== 企业码 ==========
 const enterpriseCode = ref('xxxx12345xxx')
@@ -33,6 +36,14 @@ const formState = reactive({
   contactTitle: '行政总监',
   contactPhone: '13951888888',
 })
+
+// 初始值快照，用于「重置」
+const initialFormState = { ...formState }
+
+// 名片副标题（行业 · 规模）
+const heroSubtitle = computed(() =>
+  [formState.industryL1, formState.industryL2, formState.scale].filter(Boolean).join(' · ')
+)
 
 // ========== 公司规模选项 ==========
 const scaleOptions = [
@@ -126,6 +137,9 @@ const licenseFileList = ref<any[]>([
   { uid: '-2', name: 'business-license.jpg', status: 'done', url: 'https://picsum.photos/400/300?random=2' },
 ])
 
+// 名片实时展示当前 Logo
+const logoPreview = computed(() => logoFileList.value[0]?.url || '')
+
 const logoUploadProps: UploadProps = {
   action: '#',
   listType: 'picture-card',
@@ -161,325 +175,466 @@ const licenseUploadProps: UploadProps = {
   },
 }
 
-// ========== 保存 ==========
+// ========== 保存 / 重置 ==========
+const enterpriseStore = useEnterpriseStore()
+
 const saving = ref(false)
 const handleSave = () => {
   saving.value = true
   setTimeout(() => {
     saving.value = false
+    // 保存当前企业的应用场景配置，数据大屏据此自动匹配展示场景
+    enterpriseStore.save('ent-default', {
+      scenarioKey: (selectedScenario.value || 'store') as any,
+    })
     message.success('企业信息保存成功')
   }, 800)
 }
+
+const handleReset = () => {
+  Object.assign(formState, initialFormState)
+  selectedScenario.value = 'store'
+  message.info('已重置为初始内容')
+}
 </script>
 <template>
-  <div class="enterprise-center">
+  <div class="ec-page">
     <div class="ec-container">
-    <!-- ========== Header ========== -->
-    <div class="ec-header">
-      <h2 class="ec-title">基础信息</h2>
-      <div class="ec-code-area">
-        <span class="ec-code-bar"></span>
-        <span class="ec-code-label">企业码：</span>
-        <span class="ec-code-value">{{ enterpriseCode }}</span>
-        <a-button type="link" size="small" class="ec-copy-btn" @click="copyCode">
-          <template #icon><CopyOutlined /></template>
-        </a-button>
-      </div>
-    </div>
-
-    <!-- ========== Card 1: 基础信息 ========== -->
-    <div class="ec-card">
-      <a-form :model="formState" layout="vertical" class="ec-form">
-
-        <!-- Logo区域 -->
-        <a-form-item label="企业Logo">
-          <div class="logo-area">
-            <a-upload
-              v-model:file-list="logoFileList"
-              v-bind="logoUploadProps"
-            >
-              <div v-if="logoFileList.length === 0" class="logo-upload-dashed">
-                <CameraOutlined class="logo-camera-icon" />
-              </div>
-            </a-upload>
-            <div class="logo-hints">
-              <p class="logo-hint-title">支持 JPG, PNG 格式</p>
-              <p class="logo-hint-sub">建议尺寸 512x512px，文件大小不超过 2MB</p>
-            </div>
+      <!-- ========== 企业名片横幅 ========== -->
+      <div class="ec-card ec-banner">
+        <div class="ec-banner-main">
+          <div class="ec-banner-logo">
+            <img v-if="logoPreview" :src="logoPreview" alt="企业Logo" />
+            <ShopOutlined v-else class="ec-banner-logo-fallback" />
           </div>
-        </a-form-item>
+          <div class="ec-banner-info">
+            <div class="ec-banner-name">{{ formState.name }}</div>
+            <div class="ec-banner-desc">{{ heroSubtitle }}</div>
+          </div>
+        </div>
+        <div class="ec-banner-code">
+          <span class="ec-code-key">企业码</span>
+          <span class="ec-code-val">{{ enterpriseCode }}</span>
+          <a-button type="text" size="small" class="ec-copy-btn" @click="copyCode">
+            <template #icon><CopyOutlined /></template>
+          </a-button>
+        </div>
+      </div>
 
-        <!-- Row 1: 企业名称 + 公司规模 -->
-        <a-row :gutter="24">
-          <a-col :span="12">
-            <a-form-item label="企业名称">
-              <a-input v-model:value="formState.name" disabled />
-            </a-form-item>
-          </a-col>
-          <a-col :span="12">
-            <a-form-item label="公司规模">
-              <a-select
-                v-model:value="formState.scale"
-                :options="scaleOptions"
-                placeholder="请选择公司规模"
-              />
-            </a-form-item>
-          </a-col>
-        </a-row>
+      <!-- ========== 基本信息 ========== -->
+      <section class="ec-card ec-section">
+        <div class="section-head">
+          <span class="section-icon"><FileTextOutlined /></span>
+          <div class="section-head-text">
+            <h3 class="section-title">基本信息</h3>
+            <p class="section-subtitle">企业名称、规模与所属行业</p>
+          </div>
+        </div>
 
-        <!-- Row 2: 所属行业（一级/二级联动） -->
-        <a-row :gutter="24">
-          <a-col :span="24">
-            <a-form-item label="所属行业">
-              <a-space style="width:100%">
+        <a-form :model="formState" layout="vertical" class="ec-form">
+          <!-- Logo区域 -->
+          <a-form-item label="企业Logo">
+            <div class="logo-area">
+              <a-upload v-model:file-list="logoFileList" v-bind="logoUploadProps">
+                <div v-if="logoFileList.length === 0" class="logo-upload-dashed">
+                  <CameraOutlined class="logo-camera-icon" />
+                </div>
+              </a-upload>
+              <div class="logo-hints">
+                <p class="logo-hint-title">支持 JPG, PNG 格式</p>
+                <p class="logo-hint-sub">建议尺寸 512x512px，文件大小不超过 2MB</p>
+              </div>
+            </div>
+          </a-form-item>
+
+          <a-row :gutter="24">
+            <a-col :xs="24" :sm="12">
+              <a-form-item label="企业名称">
+                <a-input v-model:value="formState.name" disabled />
+              </a-form-item>
+            </a-col>
+            <a-col :xs="24" :sm="12">
+              <a-form-item label="公司规模">
+                <a-select v-model:value="formState.scale" :options="scaleOptions" placeholder="请选择公司规模" />
+              </a-form-item>
+            </a-col>
+          </a-row>
+
+          <a-row :gutter="24">
+            <a-col :xs="24" :sm="12">
+              <a-form-item label="一级行业">
                 <a-select
                   v-model:value="formState.industryL1"
                   :options="industryL1Options"
                   placeholder="请选择一级行业"
                   :filter-option="industryFilter"
                   show-search
-                  style="flex:1"
                   @change="onIndustryL1Change"
                 />
+              </a-form-item>
+            </a-col>
+            <a-col :xs="24" :sm="12">
+              <a-form-item label="二级行业">
                 <a-select
                   v-model:value="formState.industryL2"
                   :options="industryL2Options"
                   placeholder="请选择二级行业"
                   :filter-option="industryFilter"
                   show-search
-                  style="flex:1"
                 />
-              </a-space>
-            </a-form-item>
-          </a-col>
-        </a-row>
+              </a-form-item>
+            </a-col>
+          </a-row>
 
-        <!-- Row 3: 公司简介 -->
-        <a-row :gutter="24">
-          <a-col :span="24">
-            <a-form-item label="公司简介">
-              <a-textarea
-                v-model:value="formState.description"
-                placeholder="请输入公司简介"
-                :rows="3"
-                :maxlength="500"
-                show-count
-              />
-            </a-form-item>
-          </a-col>
-        </a-row>
+          <a-row :gutter="24">
+            <a-col :span="24">
+              <a-form-item label="公司简介">
+                <a-textarea
+                  v-model:value="formState.description"
+                  placeholder="请输入公司简介"
+                  :rows="3"
+                  :maxlength="500"
+                  show-count
+                />
+              </a-form-item>
+            </a-col>
+          </a-row>
+        </a-form>
+      </section>
 
-        <!-- Row 4: 统一社会信用代码 + 法定代表人 -->
-        <a-row :gutter="24">
-          <a-col :span="12">
-            <a-form-item label="统一社会信用代码">
-              <a-input v-model:value="formState.creditCode" disabled placeholder="—" />
-            </a-form-item>
-          </a-col>
-          <a-col :span="12">
-            <a-form-item label="法定代表人">
-              <a-input v-model:value="formState.legalPerson" disabled placeholder="—" />
-            </a-form-item>
-          </a-col>
-        </a-row>
-
-        <!-- Row 5: 注册地址 -->
-        <a-row :gutter="24">
-          <a-col :span="24">
-            <a-form-item label="注册地址">
-              <a-input v-model:value="formState.registeredAddress" disabled placeholder="—">
-                <template #prefix>
-                  <EnvironmentOutlined style="color:#bfbfbf" />
-                </template>
-              </a-input>
-            </a-form-item>
-          </a-col>
-        </a-row>
-
-        <!-- Row 6: 企业营业执照 -->
-        <a-row :gutter="24">
-          <a-col :span="24">
-            <a-form-item label="企业营业执照">
-              <a-upload
-                v-model:file-list="licenseFileList"
-                v-bind="licenseUploadProps"
-              >
-                <div v-if="licenseFileList.length < 1" class="license-upload-btn">
-                  <PlusOutlined />
-                  <div class="license-upload-text">上传营业执照</div>
-                </div>
-              </a-upload>
-              <div class="field-hint">支持 JPG、PNG 格式，仅限上传一张</div>
-            </a-form-item>
-          </a-col>
-        </a-row>
-
-      </a-form>
-    </div>
-
-    <!-- ========== Card 2: 联系人信息 ========== -->
-    <div class="ec-card">
-      <div class="card-title">联系人信息</div>
-      <a-form :model="formState" layout="vertical" class="ec-form">
-
-        <!-- Row 1: 联系人 + 联系人职务 -->
-        <a-row :gutter="24">
-          <a-col :span="12">
-            <a-form-item label="联系人">
-              <a-input v-model:value="formState.contactPerson" placeholder="请输入姓名" />
-            </a-form-item>
-          </a-col>
-          <a-col :span="12">
-            <a-form-item label="联系人职务">
-              <a-input v-model:value="formState.contactTitle" placeholder="如：行政总监" />
-            </a-form-item>
-          </a-col>
-        </a-row>
-
-        <!-- Row 2: 联系人电话 -->
-        <a-row :gutter="24">
-          <a-col :span="24">
-            <a-form-item label="联系人电话">
-              <a-input v-model:value="formState.contactPhone" placeholder="11位手机号码" :maxlength="11" />
-            </a-form-item>
-          </a-col>
-        </a-row>
-
-      </a-form>
-    </div>
-
-    <!-- ========== Card 3: 应用场景 ========== -->
-    <div class="ec-card">
-      <div class="card-title">应用场景</div>
-      <p class="card-subtitle">请选择贵公司主要部署或涉及的场景类型</p>
-      <div class="scenario-grid">
-        <div
-          v-for="item in scenarios"
-          :key="item.key"
-          class="scenario-card"
-          :class="{ selected: selectedScenario === item.key }"
-          @click="selectScenario(item.key)"
-        >
-          <component :is="item.icon" class="scenario-icon" />
-          <span class="scenario-label">{{ item.label }}</span>
+      <!-- ========== 工商信息 ========== -->
+      <section class="ec-card ec-section">
+        <div class="section-head">
+          <span class="section-icon"><BankOutlined /></span>
+          <div class="section-head-text">
+            <h3 class="section-title">工商信息</h3>
+            <p class="section-subtitle">证照与工商注册信息</p>
+          </div>
         </div>
-      </div>
-    </div>
 
-    <!-- ========== Footer ========== -->
-    <div class="ec-footer">
-      <a-button type="primary" size="large" :loading="saving" @click="handleSave">
-        保存
-      </a-button>
-    </div>
+        <a-form :model="formState" layout="vertical" class="ec-form">
+          <a-row :gutter="24">
+            <a-col :xs="24" :sm="12">
+              <a-form-item label="统一社会信用代码">
+                <a-input v-model:value="formState.creditCode" disabled placeholder="—" />
+              </a-form-item>
+            </a-col>
+            <a-col :xs="24" :sm="12">
+              <a-form-item label="法定代表人">
+                <a-input v-model:value="formState.legalPerson" disabled placeholder="—" />
+              </a-form-item>
+            </a-col>
+          </a-row>
+
+          <a-row :gutter="24">
+            <a-col :span="24">
+              <a-form-item label="注册地址">
+                <a-input v-model:value="formState.registeredAddress" disabled placeholder="—">
+                  <template #prefix>
+                    <EnvironmentOutlined style="color:#bfbfbf" />
+                  </template>
+                </a-input>
+              </a-form-item>
+            </a-col>
+          </a-row>
+
+          <a-row :gutter="24">
+            <a-col :span="24">
+              <a-form-item label="企业营业执照">
+                <a-upload v-model:file-list="licenseFileList" v-bind="licenseUploadProps">
+                  <div v-if="licenseFileList.length < 1" class="license-upload-btn">
+                    <PlusOutlined />
+                    <div class="license-upload-text">上传营业执照</div>
+                  </div>
+                </a-upload>
+                <div class="field-hint">支持 JPG、PNG 格式，仅限上传一张</div>
+              </a-form-item>
+            </a-col>
+          </a-row>
+        </a-form>
+      </section>
+
+      <!-- ========== 联系人信息 ========== -->
+      <section class="ec-card ec-section">
+        <div class="section-head">
+          <span class="section-icon"><ContactsOutlined /></span>
+          <div class="section-head-text">
+            <h3 class="section-title">联系人信息</h3>
+            <p class="section-subtitle">企业主要对接人</p>
+          </div>
+        </div>
+
+        <a-form :model="formState" layout="vertical" class="ec-form">
+          <a-row :gutter="24">
+            <a-col :xs="24" :sm="12">
+              <a-form-item label="联系人">
+                <a-input v-model:value="formState.contactPerson" placeholder="请输入姓名" />
+              </a-form-item>
+            </a-col>
+            <a-col :xs="24" :sm="12">
+              <a-form-item label="联系人职务">
+                <a-input v-model:value="formState.contactTitle" placeholder="如：行政总监" />
+              </a-form-item>
+            </a-col>
+          </a-row>
+
+          <a-row :gutter="24">
+            <a-col :span="24">
+              <a-form-item label="联系人电话">
+                <a-input v-model:value="formState.contactPhone" placeholder="11位手机号码" :maxlength="11" />
+              </a-form-item>
+            </a-col>
+          </a-row>
+        </a-form>
+      </section>
+
+      <!-- ========== 应用场景 ========== -->
+      <section class="ec-card ec-section">
+        <div class="section-head">
+          <span class="section-icon"><AppstoreOutlined /></span>
+          <div class="section-head-text">
+            <h3 class="section-title">应用场景</h3>
+            <p class="section-subtitle">请选择贵公司主要部署或涉及的场景类型</p>
+          </div>
+        </div>
+
+        <div class="scenario-grid">
+          <div
+            v-for="item in scenarios"
+            :key="item.key"
+            class="scenario-card"
+            :class="{ selected: selectedScenario === item.key }"
+            @click="selectScenario(item.key)"
+          >
+            <span v-if="selectedScenario === item.key" class="scenario-check">
+              <CheckCircleFilled />
+            </span>
+            <component :is="item.icon" class="scenario-icon" />
+            <span class="scenario-label">{{ item.label }}</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========== 底部操作栏 ========== -->
+      <div class="ec-footer">
+        <a-button size="large" @click="handleReset">
+          <template #icon><ReloadOutlined /></template>
+          重置
+        </a-button>
+        <a-button type="primary" size="large" :loading="saving" @click="handleSave">
+          <template #icon><SaveOutlined /></template>
+          保存
+        </a-button>
+      </div>
     </div>
   </div>
 </template>
 
 <style scoped>
-/* ========== 全局背景 ========== */
-.enterprise-center {
+/* ========== 主题变量 ========== */
+.ec-page {
+  --ec-primary: #1677ff;
+  --ec-primary-hover: #4096ff;
+  --ec-primary-soft: #e6f4ff;
+  --ec-primary-softer: #f0f5ff;
+  --ec-border: #e8e8e8;
+  --ec-border-hover: #91caff;
+  --ec-text: #1a1a1a;
+  --ec-text-2: #555;
+  --ec-text-3: #999;
+  --ec-text-4: #bbb;
+  --ec-radius: 10px;
+  --ec-radius-sm: 8px;
+  --ec-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+.ec-page {
   min-height: 100%;
-  background: #f5f7fa;
-  padding: 20px 24px 32px;
+  padding: 12px 20px 24px;
 }
 
 .ec-container {
-  max-width: 800px;
+  max-width: 1000px;
   margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
-/* ========== Header ========== */
-.ec-header {
+/* ========== 通用卡片 ========== */
+.ec-card {
+  background: #fff;
+  border-radius: var(--ec-radius);
+  box-shadow: var(--ec-shadow);
+}
+
+/* ========== 企业名片横幅 ========== */
+.ec-banner {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 20px;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 14px 20px;
 }
 
-.ec-title {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 600;
-  color: #1a1a1a;
-}
-
-.ec-code-area {
+.ec-banner-main {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 14px;
+  min-width: 0;
 }
 
-.ec-code-bar {
-  display: inline-block;
-  width: 3px;
-  height: 16px;
-  background: #1677ff;
-  border-radius: 2px;
-  margin-right: 4px;
+.ec-banner-logo {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--ec-radius-sm);
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid var(--ec-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
-.ec-code-label {
+.ec-banner-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.ec-banner-logo-fallback {
+  font-size: 22px;
+  color: var(--ec-primary);
+}
+
+.ec-banner-info {
+  min-width: 0;
+}
+
+.ec-banner-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ec-text);
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ec-banner-desc {
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--ec-text-3);
+}
+
+.ec-banner-code {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: #fafafa;
+  border: 1px solid var(--ec-border);
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.ec-code-key {
+  font-size: 12px;
+  color: var(--ec-text-3);
+}
+
+.ec-code-val {
   font-size: 13px;
-  color: #888;
-}
-
-.ec-code-value {
-  font-size: 14px;
-  color: #555;
-  font-family: 'SF Mono', 'Menlo', monospace;
+  color: var(--ec-text-2);
+  font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
 }
 
 .ec-copy-btn {
-  padding: 0 4px;
+  padding: 0 2px;
+  color: var(--ec-primary);
 }
 
-/* ========== 卡片 ========== */
-.ec-card {
-  background: #fff;
-  border-radius: 8px;
-  padding: 20px 24px;
-  margin-bottom: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+/* ========== 分区标题 ========== */
+.section-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px 12px;
+  border-bottom: 1px solid #f0f0f0;
 }
 
-.card-title {
+.section-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--ec-radius-sm);
+  background: var(--ec-primary-soft);
+  color: var(--ec-primary);
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.section-head-text {
+  min-width: 0;
+}
+
+.section-title {
+  margin: 0;
   font-size: 15px;
   font-weight: 600;
-  color: #1a1a1a;
-  margin-bottom: 4px;
+  color: var(--ec-text);
+  line-height: 1.4;
 }
 
-.card-subtitle {
-  font-size: 13px;
-  color: #999;
-  margin: 0 0 20px 0;
+.section-subtitle {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--ec-text-3);
 }
 
 /* ========== 表单 ========== */
+.ec-form {
+  padding: 14px 20px 16px;
+}
+
 .ec-form :deep(.ant-form-item) {
   margin-bottom: 16px;
 }
 
 .ec-form :deep(.ant-form-item-label > label) {
   font-size: 13px;
-  color: #555;
+  color: var(--ec-text-2);
   font-weight: 500;
 }
 
 .ec-form :deep(.ant-input),
-.ec-form :deep(.ant-input-affix-wrapper) {
-  border-color: #e8e8e8;
+.ec-form :deep(.ant-input-affix-wrapper),
+.ec-form :deep(.ant-select .ant-select-selector) {
+  border-color: var(--ec-border);
+  border-radius: var(--ec-radius-sm);
 }
 
 .ec-form :deep(.ant-input:hover),
-.ec-form :deep(.ant-input-affix-wrapper:hover) {
-  border-color: #91caff;
+.ec-form :deep(.ant-input-affix-wrapper:hover),
+.ec-form :deep(.ant-select:hover .ant-select-selector) {
+  border-color: var(--ec-border-hover);
+}
+
+.ec-form :deep(.ant-input:focus),
+.ec-form :deep(.ant-input-affix-wrapper-focused),
+.ec-form :deep(.ant-select-focused .ant-select-selector) {
+  border-color: var(--ec-primary);
+  box-shadow: 0 0 0 2px rgba(22, 119, 255, 0.12);
 }
 
 .ec-form :deep(.ant-input-disabled),
 .ec-form :deep(.ant-select-disabled .ant-select-selector) {
-  color: #999;
+  color: var(--ec-text-3);
   background: #fafafa;
   cursor: not-allowed;
 }
@@ -492,10 +647,10 @@ const handleSave = () => {
 }
 
 .logo-upload-dashed {
-  width: 96px;
-  height: 96px;
+  width: 88px;
+  height: 88px;
   border: 1px dashed #d9d9d9;
-  border-radius: 6px;
+  border-radius: var(--ec-radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -504,12 +659,12 @@ const handleSave = () => {
 }
 
 .logo-upload-dashed:hover {
-  border-color: #1677ff;
+  border-color: var(--ec-primary);
 }
 
 .logo-camera-icon {
   font-size: 24px;
-  color: #bbb;
+  color: var(--ec-text-4);
 }
 
 .logo-hints {
@@ -521,13 +676,13 @@ const handleSave = () => {
 .logo-hint-title {
   margin: 0;
   font-size: 13px;
-  color: #555;
+  color: var(--ec-text-2);
 }
 
 .logo-hint-sub {
   margin: 0;
   font-size: 12px;
-  color: #bbb;
+  color: var(--ec-text-4);
 }
 
 /* ========== 营业执照上传区域 ========== */
@@ -536,88 +691,142 @@ const handleSave = () => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  width: 96px;
-  height: 96px;
+  width: 88px;
+  height: 88px;
 }
 
 .license-upload-text {
   margin-top: 6px;
   font-size: 12px;
-  color: #999;
+  color: var(--ec-text-3);
 }
 
 .field-hint {
   margin-top: 4px;
   font-size: 12px;
-  color: #bbb;
+  color: var(--ec-text-4);
 }
 
 /* ========== 应用场景 ========== */
 .scenario-grid {
+  padding: 14px 20px 18px;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
 }
 
 .scenario-card {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  height: 96px;
-  border: 1px solid #e8e8e8;
-  border-radius: 8px;
+  gap: 8px;
+  height: 88px;
+  border: 1px solid var(--ec-border);
+  border-radius: var(--ec-radius-sm);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
   background: #fff;
   user-select: none;
+  overflow: hidden;
 }
 
 .scenario-card:hover {
-  border-color: #91caff;
-  background: #f0f5ff;
+  border-color: var(--ec-border-hover);
+  background: var(--ec-primary-softer);
 }
 
 .scenario-card.selected {
-  border-color: #1677ff;
-  background: #e6f4ff;
-  box-shadow: 0 0 0 2px rgba(22, 119, 255, 0.12);
+  border-color: var(--ec-primary);
+  background: var(--ec-primary-soft);
+}
+
+.scenario-check {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  font-size: 18px;
+  line-height: 1;
+  color: var(--ec-primary);
+  background: #fff;
+  border-radius: 50%;
 }
 
 .scenario-icon {
-  font-size: 26px;
-  color: #999;
+  font-size: 24px;
+  color: var(--ec-text-3);
   transition: color 0.2s;
 }
 
 .scenario-card:hover .scenario-icon {
-  color: #1677ff;
+  color: var(--ec-primary);
 }
 
 .scenario-card.selected .scenario-icon {
-  color: #1677ff;
+  color: var(--ec-primary);
 }
 
 .scenario-label {
   font-size: 13px;
-  color: #555;
+  color: var(--ec-text-2);
   font-weight: 500;
 }
 
 .scenario-card.selected .scenario-label {
-  color: #1677ff;
+  color: var(--ec-primary);
 }
 
-/* ========== Footer ========== */
+/* ========== 底部操作栏 ========== */
 .ec-footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
   display: flex;
   justify-content: flex-end;
-  padding-top: 8px;
+  gap: 12px;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--ec-border);
+  border-radius: var(--ec-radius);
+  box-shadow: 0 -4px 16px rgba(16, 24, 40, 0.06);
 }
 
 .ec-footer .ant-btn {
-  min-width: 120px;
-  border-radius: 6px;
+  min-width: 112px;
+  border-radius: var(--ec-radius-sm);
+}
+
+.ec-footer :deep(.ant-btn-primary) {
+  background: var(--ec-primary);
+  border: none;
+}
+
+.ec-footer :deep(.ant-btn-primary:hover) {
+  background: var(--ec-primary-hover);
+}
+
+/* ========== 响应式 ========== */
+@media (max-width: 576px) {
+  .ec-page {
+    padding: 8px 8px 16px;
+  }
+
+  .ec-banner {
+    padding: 12px 16px;
+  }
+
+  .section-head {
+    padding: 12px 16px 10px;
+  }
+
+  .ec-form {
+    padding: 12px 16px 14px;
+  }
+
+  .scenario-grid {
+    padding: 12px 16px 14px;
+  }
 }
 </style>

@@ -5,6 +5,7 @@ import {
   ReloadOutlined, RightOutlined, ArrowRightOutlined,
   CheckCircleFilled, CloseCircleFilled, CheckOutlined,
   BellFilled, PhoneOutlined, EnvironmentOutlined, VideoCameraOutlined,
+  FundProjectionScreenOutlined,
 } from '@antdv-next/icons'
 const router = useRouter()
 
@@ -76,6 +77,21 @@ onUnmounted(()=>{clearInterval(t1);clearInterval(t2)})
 
 <template>
   <div class="wb">
+    <!-- 数据大屏入口 -->
+    <div class="screen-entry" @click="router.push('/screen')">
+      <div class="se-left">
+        <span class="se-icon"><FundProjectionScreenOutlined /></span>
+        <div class="se-info">
+          <span class="se-title">智能数据大屏</span>
+          <span class="se-desc">多维度经营数据 · 实时视频墙 · 告警与巡检任务，进入即浏览器全屏，适配企业指挥中心大屏</span>
+        </div>
+      </div>
+      <div class="se-right">
+        <span class="se-live"><i></i>实时更新</span>
+        <span class="se-btn">进入大屏 <ArrowRightOutlined /></span>
+      </div>
+    </div>
+
     <a-row :gutter="12" class="r">
       <a-col :xs="24" :lg="12">
         <a-card variant="borderless" class="c">
@@ -203,6 +219,59 @@ onUnmounted(()=>{clearInterval(t1);clearInterval(t2)})
 .gb { display:flex; align-items:center; gap:12px; margin-top:12px; padding-top:10px; border-top:1px solid #f0f0f0; }
 .gb :deep(.ant-progress) { flex:1; }
 .gb span { font-size:12px; color:#999; }
+
+/* ===== 数据大屏入口 ===== */
+.screen-entry {
+  margin-bottom: 12px;
+  padding: 14px 20px;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background:
+    radial-gradient(ellipse at 12% 50%, rgba(56, 189, 248, 0.16) 0%, transparent 55%),
+    radial-gradient(ellipse at 88% 50%, rgba(56, 189, 248, 0.1) 0%, transparent 55%),
+    linear-gradient(120deg, #0b1e42 0%, #0f2f6e 45%, #0b1e42 100%);
+  border: 1px solid rgba(96, 165, 250, 0.35);
+  box-shadow: 0 4px 16px rgba(15, 47, 110, 0.25);
+  overflow: hidden;
+  position: relative;
+  transition: all .25s;
+}
+.screen-entry::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; top: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(125, 211, 252, 0.8), transparent);
+}
+.screen-entry:hover { border-color: #38bdf8; box-shadow: 0 6px 24px rgba(56, 189, 248, 0.3); transform: translateY(-1px); }
+.se-left { display: flex; align-items: center; gap: 16px; min-width: 0; }
+.se-icon {
+  width: 48px; height: 48px; border-radius: 12px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px; color: #7dd3fc;
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  box-shadow: 0 0 18px rgba(56, 189, 248, 0.25) inset;
+}
+.se-info { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.se-title { font-size: 16px; font-weight: 600; color: #e8f1ff; letter-spacing: 1px; }
+.se-desc { font-size: 12px; color: #8fb4e8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.se-right { display: flex; align-items: center; gap: 16px; flex-shrink: 0; }
+.se-live { font-size: 12px; color: #4ade80; display: inline-flex; align-items: center; gap: 6px; }
+.se-live i { width: 7px; height: 7px; border-radius: 50%; background: #4ade80; animation: seBlink 1.2s infinite; }
+@keyframes seBlink { 0%,100% { opacity: 1; } 50% { opacity: .2; } }
+.se-btn {
+  font-size: 13px; color: #0b1e42; font-weight: 600;
+  padding: 6px 16px; border-radius: 6px;
+  background: linear-gradient(90deg, #7dd3fc, #38bdf8);
+  display: inline-flex; align-items: center; gap: 6px;
+  transition: all .2s;
+}
+.se-btn:hover { background: linear-gradient(90deg, #a5e3fd, #7dd3fc); }
+
 
 .tw { display:flex; flex-direction:column; gap:2px; }
 .tr { display:flex; align-items:center; gap:10px; padding:12px; cursor:pointer; border-radius:6px; transition:background .15s; }

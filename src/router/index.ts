@@ -3,6 +3,8 @@ import { createRouter, createWebHashHistory } from 'vue-router'
 const router = createRouter({
   history: createWebHashHistory(import.meta.env.BASE_URL),
   routes: [
+    // 数据大屏：独立全屏页面（不套用后台布局）
+    { path: '/screen', name: 'ScreenDashboard', component: () => import('@/views/screen/ScreenDashboard.vue'), meta: { title: '智能数据大屏' } },
     {
       path: '/',
       component: () => import('@/layouts/AdminLayout.vue'),
