@@ -285,7 +285,7 @@ const rowSelection = computed(() => ({ selectedRowKeys: selectedRowKeys.value, o
         </a-space>
         <!-- AI生成内容语言设置（企业级，全局生效，仅管理员可见） -->
         <div v-if="isAdmin" class="lang-setting">
-          <a-tooltip title="设置该企业所有 AI 生成内容（AI告警描述、AI分析结果等）的语言，全局生效，仅对后续新生成的 AI 消息生效">
+          <a-tooltip title="设置该企业所有 AI 生成内容（AI告警描述、AI分析结果等）的语言，全局生效，仅对后续新生成的 AI 消息生效" placement="bottom" color="#fff" overlay-inner-style="color:#333;box-shadow:0 6px 16px rgba(0,0,0,.12);font-size:13px;line-height:1.6;max-width:320px">
             <span class="lang-setting-label"><GlobalOutlined class="lang-icon" /> AI生成内容语言</span>
           </a-tooltip>
           <a-select

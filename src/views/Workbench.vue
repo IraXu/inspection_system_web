@@ -83,7 +83,7 @@ onUnmounted(()=>{clearInterval(t1);clearInterval(t2)})
         <span class="se-icon"><FundProjectionScreenOutlined /></span>
         <div class="se-info">
           <span class="se-title">智能数据大屏</span>
-          <span class="se-desc">多维度经营数据 · 实时视频墙 · 告警与巡检任务，进入即浏览器全屏，适配企业指挥中心大屏</span>
+          <span class="se-desc">多维数据看板 · 实时视频墙 · 进入即全屏</span>
         </div>
       </div>
       <div class="se-right">
