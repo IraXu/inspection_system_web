@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 import {
   ArrowLeftOutlined, WarningFilled, RightOutlined, VideoCameraOutlined,
   CheckCircleFilled, ExclamationCircleFilled, SoundOutlined, BellFilled,
-  PlusOutlined, CloseOutlined,
+  PlusOutlined, CloseOutlined, SearchOutlined,
 } from '@antdv-next/icons'
 import { useEnterpriseStore } from '@/stores/enterprise'
 
@@ -28,7 +28,7 @@ interface ScreenScenario {
 }
 
 const scenarios: ScreenScenario[] = [
-  { key: 'store', name: '门店', subName: '连锁门店运营', first: { label: '门店总数', value: 128, unit: '家', extra: '覆盖 12 个区域' }, overview: '门店运营概览', category: '问题类型分布', region: '区域门店排行' },
+  { key: 'store', name: '门店', subName: '连锁门店运营', first: { label: '门店总数', value: 128, unit: '家', extra: '覆盖 12 个区域' }, overview: '门店运营概览', category: '问题类型分布', region: '区域巡检排行' },
   { key: 'factory', name: '厂区', subName: '厂区生产安全', first: { label: '产线数量', value: 46, unit: '条', extra: '覆盖 8 个车间' }, overview: '厂区安全概览', category: '隐患类型分布', region: '车间巡检排行' },
   { key: 'district', name: '园区', subName: '园区综合管理', first: { label: '园区数量', value: 32, unit: '个', extra: '覆盖 6 个城市' }, overview: '园区运营概览', category: '问题类型分布', region: '园区巡检排行' },
   { key: 'site', name: '站点', subName: '站点运营管理', first: { label: '站点数量', value: 96, unit: '个', extra: '覆盖 9 个区域' }, overview: '站点运营概览', category: '问题类型分布', region: '站点巡检排行' },
@@ -96,7 +96,7 @@ const timeStr = computed(() => now.value.toLocaleTimeString('zh-CN', { hour: '2-
 const overview = reactive({
   devices: 140, deviceOnline: 128, deviceSleep: 5, deviceOff: 7, onlineRate: 91.4,
   planTotal: 86, planDone: 62, planRate: 72.1,
-  alertToday: 23, alertPending: 7,
+  alertToday: 23,
   aiImages: 1612, aiProblems: 13, aiPassRate: 99.2,
   spotTotal: 33, spotPass: 29, spotRate: 87.9,
 })
@@ -109,7 +109,7 @@ const metricCards = computed<MetricCard[]>(() => {
     { key: 'first', label: f.label, value: f.value, unit: f.unit, extra: f.extra, color: '#3b82f6', target: '/inspection/online' },
     { key: 'devices', label: '设备在线率', value: overview.onlineRate, unit: '%', extra: `在线 ${overview.deviceOnline}/${overview.devices} 台`, color: '#22c55e', target: '/device/management' },
     { key: 'inspection', label: '巡检完成率', value: overview.planRate, unit: '%', extra: `${overview.planDone}/${overview.planTotal} 项任务`, color: '#f59e0b', target: '/inspection/task-list' },
-    { key: 'alert', label: '今日告警', value: overview.alertToday, unit: '条', extra: `${overview.alertPending} 条待处理`, color: '#ef4444', target: '/alert-center' },
+    { key: 'alert', label: '今日告警', value: overview.alertToday, unit: '条', extra: '实时告警', color: '#ef4444', target: '/alert-center' },
     { key: 'ai', label: 'AI 分析合格率', value: overview.aiPassRate, unit: '%', extra: `图片 ${overview.aiImages} · 问题 ${overview.aiProblems}`, color: '#8b5cf6', target: '/inspection/ai/results' },
     { key: 'spot', label: '视频点检合格率', value: overview.spotRate, unit: '%', extra: `${overview.spotPass}/${overview.spotTotal} 项检查`, color: '#06b6d4', target: '/inspection/spot-check-records' },
   ]
@@ -251,6 +251,14 @@ const clickCell = (idx: number) => {
 
 const removeCell = (idx: number) => {
   cells.value[idx].deviceId = null
+  // 若该格为轮巡位置，取消其轮巡资格
+  if (patrolPositions.value[idx]) {
+    patrolPositions.value[idx] = false
+  }
+  // 轮巡运行中且已无有效轮巡位置时，自动停止轮巡
+  if (patrolRunning.value && activePatrolPositions.value.length === 0) {
+    stopPatrol()
+  }
   if (selectedCellIdx.value === idx) selectedCellIdx.value = null
 }
 
@@ -274,11 +282,92 @@ const togglePatrolPosition = (idx: number) => {
   patrolPositions.value = v
 }
 
-const togglePatrolDevice = (id: string) => {
-  const set = new Set(patrolCheckedDeviceIds.value)
-  if (set.has(id)) set.delete(id); else set.add(id)
-  patrolCheckedDeviceIds.value = Array.from(set)
+// 轮巡设备选择树（复用视频广场组织树勾选交互）
+interface PatrolTreeNode {
+  key: string
+  title: string
+  children?: PatrolTreeNode[]
+  isDevice?: boolean
+  deviceId?: string
 }
+
+const patrolTreeSearch = ref('')
+
+const patrolDeviceTree = computed<PatrolTreeNode[]>(() => {
+  const map = new Map<string, PatrolTreeNode>()
+  onlineCams.value.forEach((cam) => {
+    const region = cam.store.split('·')[0] || '其他'
+    if (!map.has(region)) {
+      map.set(region, { key: 'region-' + region, title: region, children: [] })
+    }
+    map.get(region)!.children!.push({
+      key: cam.id,
+      title: cam.name,
+      isDevice: true,
+      deviceId: cam.id,
+    })
+  })
+  return Array.from(map.values())
+})
+
+const filteredPatrolTree = computed<PatrolTreeNode[]>(() => {
+  const kw = patrolTreeSearch.value.trim()
+  if (!kw) return patrolDeviceTree.value
+  const filter = (nodes: PatrolTreeNode[]): PatrolTreeNode[] => {
+    const result: PatrolTreeNode[] = []
+    for (const n of nodes) {
+      if (n.isDevice) {
+        if (n.title.includes(kw)) result.push(n)
+      } else if (n.children) {
+        const filtered = filter(n.children)
+        if (n.title.includes(kw) || filtered.length > 0) {
+          result.push({ ...n, children: n.title.includes(kw) ? n.children : filtered })
+        }
+      }
+    }
+    return result
+  }
+  return filter(patrolDeviceTree.value)
+})
+
+const collectDeviceIds = (node: PatrolTreeNode): string[] => {
+  if (node.isDevice && node.deviceId) return [node.deviceId]
+  if (node.children) return node.children.flatMap(collectDeviceIds)
+  return []
+}
+const getNodeDeviceIds = (key: string): string[] => {
+  const find = (nodes: PatrolTreeNode[]): PatrolTreeNode | null => {
+    for (const n of nodes) {
+      if (n.key === key) return n
+      if (n.children) { const r = find(n.children); if (r) return r }
+    }
+    return null
+  }
+  const node = find(patrolDeviceTree.value)
+  return node ? collectDeviceIds(node) : []
+}
+
+const onPatrolTreeCheck = (checkedKeys: any) => {
+  const keys = Array.isArray(checkedKeys) ? checkedKeys : (checkedKeys?.checked || [])
+  const allChecked = new Set<string>()
+  for (const key of keys) {
+    getNodeDeviceIds(key).forEach(id => allChecked.add(id))
+  }
+  patrolCheckedDeviceIds.value = Array.from(allChecked)
+}
+
+const patrolTreeCheckedKeys = computed(() => {
+  const deviceKeys = new Set(patrolCheckedDeviceIds.value)
+  const result: string[] = []
+  const walk = (nodes: PatrolTreeNode[]) => {
+    for (const n of nodes) {
+      if (n.isDevice && n.deviceId && deviceKeys.has(n.deviceId)) result.push(n.key)
+      if (n.children) walk(n.children)
+    }
+  }
+  walk(patrolDeviceTree.value)
+  return result
+})
 
 const confirmPatrol = () => {
   if (!patrolEnabled.value) { stopPatrol(); patrolModalOpen.value = false; return }
@@ -733,12 +822,20 @@ const exitScreen = () => {
           </div>
           <div class="ds-patrol-row ds-patrol-row-device">
             <span class="ds-patrol-label">轮巡设备</span>
-            <div class="ds-patrol-device-list">
-              <div v-for="cam in onlineCams" :key="cam.id" class="ds-patrol-device" :class="{ on: patrolCheckedDeviceIds.includes(cam.id) }" @click="togglePatrolDevice(cam.id)">
-                <span class="ds-patrol-check"><CheckCircleFilled v-if="patrolCheckedDeviceIds.includes(cam.id)" /></span>
-                <span class="ds-patrol-device-name">{{ cam.name }}</span>
-                <span class="ds-patrol-device-store">{{ cam.store }}</span>
-              </div>
+            <div class="ds-patrol-tree-wrap">
+              <a-input v-model:value="patrolTreeSearch" placeholder="搜索区域/设备..." size="small" allow-clear class="ds-patrol-tree-search">
+                <template #prefix><SearchOutlined /></template>
+              </a-input>
+              <a-tree
+                v-if="filteredPatrolTree.length > 0"
+                :tree-data="filteredPatrolTree"
+                checkable
+                :checked-keys="patrolTreeCheckedKeys"
+                default-expand-all
+                @check="onPatrolTreeCheck"
+                class="ds-patrol-tree"
+              />
+              <a-empty v-else description="未找到匹配的设备" :image-style="{ height: '30px' }" />
             </div>
           </div>
         </div>
@@ -1142,17 +1239,15 @@ const exitScreen = () => {
 .ds-patrol-cell:hover { border-color: #3b82f6; }
 .ds-patrol-cell.on { background: rgba(37, 99, 235, 0.35); border-color: #3b82f6; color: #7ab2ff; }
 .ds-patrol-row-device { align-items: flex-start; }
-.ds-patrol-device-list { flex: 1; max-height: 220px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
-.ds-patrol-device {
-  display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 6px;
-  background: rgba(23, 42, 90, 0.35); border: 1px solid transparent; cursor: pointer; transition: all .15s;
-}
-.ds-patrol-device:hover { border-color: #3b82f6; }
-.ds-patrol-device.on { border-color: rgba(34, 211, 238, 0.5); background: rgba(34, 211, 238, 0.1); }
-.ds-patrol-check { flex: none; width: 16px; height: 16px; border-radius: 3px; border: 1px solid rgba(96, 165, 250, 0.4); display: flex; align-items: center; justify-content: center; font-size: 12px; color: #22d3ee; }
-.ds-patrol-device.on .ds-patrol-check { border-color: #22d3ee; }
-.ds-patrol-device-name { font-size: 13px; font-weight: 600; color: #dbe7ff; flex: none; }
-.ds-patrol-device-store { font-size: 12px; color: #7aa2f7; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ds-patrol-tree-wrap { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.ds-patrol-tree-search { margin-bottom: 6px; }
+.ds-patrol-tree { max-height: 220px; overflow-y: auto; background: transparent; }
+.ds-patrol-tree :deep(.ant-tree-node-content-wrapper) { color: #dbe7ff; }
+.ds-patrol-tree :deep(.ant-tree-node-content-wrapper:hover) { background: rgba(37, 99, 235, 0.15); }
+.ds-patrol-tree :deep(.ant-tree-title) { color: #dbe7ff; }
+.ds-patrol-tree :deep(.ant-tree-checkbox-inner) { background: rgba(23, 42, 90, 0.5); border-color: rgba(96, 165, 250, 0.4); }
+.ds-patrol-tree :deep(.ant-tree-checkbox-checked .ant-tree-checkbox-inner) { background: #2563eb; border-color: #2563eb; }
+.ds-patrol-tree :deep(.ant-tree-switcher) { color: #7aa2f7; }
 .ds-patrol-footer {
   display: flex; align-items: center; justify-content: flex-end; gap: 8px;
   padding: 12px 16px; border-top: 1px solid rgba(64, 128, 255, 0.2);
