@@ -173,21 +173,28 @@ interface WallCam {
   store: string
   status: 'online' | 'offline'
   thumb: string
+  nvrName?: string   // 属于某个 NVR 的通道时，标记所属 NVR 名称
 }
 
 const camThumbs = ['#0d1f3d', '#14263d', '#0a1f33', '#102b45', '#0d2540', '#12304a', '#0b2138', '#142a44']
 const camNames = ['大门出入口', '收银台全景', '仓库入口', '货架巡查', '后门通道', '停车场出入口', '大堂全景', '机房监控', '电梯口']
 const camStores = ['华东一区·南京新街口店', '华东二区·上海徐汇店', '华南大区·深圳福田店', '华北大区·北京朝阳店', '西南大区·成都春熙店', '华中大区·武汉光谷店']
 
-const wallCams = ref<WallCam[]>(
-  camNames.map((n, i) => ({
+const wallCams = ref<WallCam[]>([
+  ...camNames.map((n, i) => ({
     id: 'cam-' + String(i + 1).padStart(3, '0'),
     name: n,
     store: camStores[i % camStores.length],
     status: (i === 5 ? 'offline' : 'online') as WallCam['status'],
     thumb: camThumbs[i % camThumbs.length],
-  }))
-)
+  })),
+  // NVR 通道：NVR 本身作为树中的容器节点，通道才是可播放的最小单元
+  { id: 'cam-nvr-001', name: '通道1-大门', store: '华东一区·南京新街口店', nvrName: 'NVR-南京新街口机房', status: 'online', thumb: camThumbs[2] },
+  { id: 'cam-nvr-002', name: '通道2-收银台', store: '华东一区·南京新街口店', nvrName: 'NVR-南京新街口机房', status: 'online', thumb: camThumbs[3] },
+  { id: 'cam-nvr-003', name: '通道3-库房', store: '华东一区·南京新街口店', nvrName: 'NVR-南京新街口机房', status: 'offline', thumb: camThumbs[4] },
+  { id: 'cam-nvr-004', name: '通道1-东门', store: '华南大区·深圳福田店', nvrName: 'NVR-深圳福田机房', status: 'online', thumb: camThumbs[5] },
+  { id: 'cam-nvr-005', name: '通道2-停车场', store: '华南大区·深圳福田店', nvrName: 'NVR-深圳福田机房', status: 'online', thumb: camThumbs[6] },
+])
 const onlineCams = computed(() => wallCams.value.filter(c => c.status === 'online'))
 const getCamById = (id: string | null) => wallCams.value.find(c => c.id === id) ?? null
 
@@ -289,25 +296,48 @@ interface PatrolTreeNode {
   children?: PatrolTreeNode[]
   isDevice?: boolean
   deviceId?: string
+  isNvr?: boolean
 }
 
 const patrolTreeSearch = ref('')
 
 const patrolDeviceTree = computed<PatrolTreeNode[]>(() => {
-  const map = new Map<string, PatrolTreeNode>()
+  const regions = new Map<string, PatrolTreeNode>()
+  const getRegion = (region: string): PatrolTreeNode => {
+    if (!regions.has(region)) {
+      regions.set(region, { key: 'region-' + region, title: region, children: [] })
+    }
+    return regions.get(region)!
+  }
+  // NVR 节点缓存：region::nvrName -> 节点
+  const nvrMap = new Map<string, PatrolTreeNode>()
+
   onlineCams.value.forEach((cam) => {
     const region = cam.store.split('·')[0] || '其他'
-    if (!map.has(region)) {
-      map.set(region, { key: 'region-' + region, title: region, children: [] })
+    const regionNode = getRegion(region)
+    if (cam.nvrName) {
+      const nvrKey = region + '::' + cam.nvrName
+      if (!nvrMap.has(nvrKey)) {
+        const node: PatrolTreeNode = { key: 'nvr-' + nvrKey, title: cam.nvrName, isNvr: true, children: [] }
+        nvrMap.set(nvrKey, node)
+        regionNode.children!.push(node)
+      }
+      nvrMap.get(nvrKey)!.children!.push({
+        key: cam.id,
+        title: cam.name,
+        isDevice: true,
+        deviceId: cam.id,
+      })
+    } else {
+      regionNode.children!.push({
+        key: cam.id,
+        title: cam.name,
+        isDevice: true,
+        deviceId: cam.id,
+      })
     }
-    map.get(region)!.children!.push({
-      key: cam.id,
-      title: cam.name,
-      isDevice: true,
-      deviceId: cam.id,
-    })
   })
-  return Array.from(map.values())
+  return Array.from(regions.values())
 })
 
 const filteredPatrolTree = computed<PatrolTreeNode[]>(() => {

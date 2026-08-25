@@ -29,7 +29,8 @@ const router = useRouter()
 interface TreeNode {
   key: string; title: string; count?: number; children?: TreeNode[]
   isDevice?: boolean; online?: boolean; deviceId?: string
-  nodeType?: 'enterprise' | 'organization' | 'store'
+  isNvr?: boolean
+  nodeType?: 'enterprise' | 'organization' | 'store' | 'nvr'
 }
 
 const rawRegionTree: TreeNode[] = [
@@ -180,12 +181,20 @@ const rawRegionTree: TreeNode[] = [
                       { key: 'd-nj-21', title: '设备名称F', isDevice:true, online:true, deviceId:'d-nj-21' },
                     ]
                   },
-                  { key: 'nj-jn-s3', title: 'xxx店铺f', count: 4,
+                  { key: 'nj-jn-s3', title: 'xxx店铺f', count: 8,
                     children: [
                       { key: 'd-nj-22', title: '设备名称A', isDevice:true, online:true, deviceId:'d-nj-22' },
                       { key: 'd-nj-23', title: '设备名称B', isDevice:true, online:true, deviceId:'d-nj-23' },
                       { key: 'd-nj-24', title: '设备名称C', isDevice:true, online:false, deviceId:'d-nj-24' },
                       { key: 'd-nj-25', title: '设备名称D', isDevice:true, online:true, deviceId:'d-nj-25' },
+                      { key: 'nvr-nj-1', title: 'NVR-1F机房', count: 4, isNvr:true, online:true,
+                        children: [
+                          { key: 'd-nvr-nj-1-1', title: '通道1-大门', isDevice:true, online:true, deviceId:'d-nvr-nj-1-1' },
+                          { key: 'd-nvr-nj-1-2', title: '通道2-收银台', isDevice:true, online:true, deviceId:'d-nvr-nj-1-2' },
+                          { key: 'd-nvr-nj-1-3', title: '通道3-库房', isDevice:true, online:false, deviceId:'d-nvr-nj-1-3' },
+                          { key: 'd-nvr-nj-1-4', title: '通道4-后门', isDevice:true, online:true, deviceId:'d-nvr-nj-1-4' },
+                        ]
+                      },
                     ]
                   },
                 ]
@@ -202,7 +211,8 @@ const rawRegionTree: TreeNode[] = [
 const annotateNodeTypes = (nodes: TreeNode[], isRoot = true): TreeNode[] => nodes.map(n => {
   if (n.isDevice) return n
   if (!n.children || n.children.length === 0) return n
-  const hasDeviceChildren = n.children.some(c => c.isDevice)
+  if (n.isNvr) return { ...n, nodeType: 'nvr', children: annotateNodeTypes(n.children, false) }
+  const hasDeviceChildren = n.children.some(c => c.isDevice || c.isNvr)
   const nodeType: TreeNode['nodeType'] = isRoot
     ? 'enterprise'
     : hasDeviceChildren
@@ -225,6 +235,7 @@ const nodeTypeIconMap: Record<string, any> = {
   enterprise: BankOutlined,
   organization: ApartmentOutlined,
   store: ShopOutlined,
+  nvr: CloudServerOutlined,
 }
 
 // 自定义树节点渲染：设备节点前加状态圆点，后加播放/轮巡状态图标；组织层级前加对应图标
@@ -247,6 +258,14 @@ const titleRender = (nodeData: any) => {
       isPlaying ? h('span', { class: 'vs-tree-status vs-tree-playing', title: '播放中' }, [
         h(CaretRight, { class: 'vs-tree-play-icon' }),
       ]) : null,
+    ])
+  }
+  // NVR 节点：带在线状态圆点 + 图标
+  if (nodeData.isNvr) {
+    return h('span', { class: 'vs-tree-node' }, [
+      h('span', { class: ['vs-tree-dot', nodeData.online ? 'online' : ''] }),
+      h(nodeTypeIconMap.nvr, { class: 'vs-tree-node-icon vs-tree-icon-nvr' }),
+      h('span', { class: 'vs-tree-node-title' }, nodeData.title),
     ])
   }
   // 非设备节点：根据 nodeType 添加层级图标
@@ -781,6 +800,7 @@ const cloudServiceEnabledMap: Record<string, boolean> = {
   'd-bj-1': false, 'd-bj-2': true, 'd-bj-3': true,
   'd-tj-1': false, 'd-tj-2': false, 'd-tj-3': true,
   'd-nj-1': true, 'd-nj-2': false, 'd-nj-4': true, 'd-nj-16': true, 'd-nj-22': true,
+  'd-nvr-nj-1-1': true, 'd-nvr-nj-1-2': true, 'd-nvr-nj-1-3': false, 'd-nvr-nj-1-4': true,
   'd-gz-1': false,
 }
 const getCloudServiceStatus = (deviceId: string) => {
@@ -903,6 +923,8 @@ const deviceRecordingMap: Record<string, Record<string, 'regular'|'event'|'both'
   'd-nj-4': { '2026-05-30': 'both', '2026-06-03': 'regular' },
   'd-nj-16': { '2026-06-01': 'event', '2026-06-02': 'regular', '2026-06-04': 'event' },
   'd-nj-22': { '2026-05-29': 'regular', '2026-06-01': 'both', '2026-06-03': 'regular' },
+  'd-nvr-nj-1-1': { '2026-06-02': 'regular', '2026-06-03': 'event', '2026-06-04': 'both' },
+  'd-nvr-nj-1-2': { '2026-06-01': 'regular', '2026-06-04': 'regular' },
 }
 
 const selectedDateKey = computed(() => {

@@ -1,10 +1,3 @@
-<!--
- * @Author: AloofXu
- * @Date: 2026-06-09 18:42:24
- * @LastEditors: AloofXu
- * @LastEditTime: 2026-06-26 15:00:00
- * @FilePath: /web-prototype/src/views/alert-center/index.vue
--->
 <script setup lang="ts">
 import { ref, reactive, computed, watch, onMounted, h } from 'vue'
 import { message } from 'antdv-next'
@@ -12,7 +5,7 @@ import {
   SearchOutlined, DeleteOutlined, ReloadOutlined,
   ExclamationCircleOutlined,
   BankOutlined, ApartmentOutlined, ShopOutlined,
-  EnvironmentOutlined, VideoCameraOutlined,
+  EnvironmentOutlined, VideoCameraOutlined, CloudServerOutlined,
 } from '@antdv-next/icons'
 import dayjs, { type Dayjs } from 'dayjs'
 
@@ -20,7 +13,7 @@ import dayjs, { type Dayjs } from 'dayjs'
 interface TreeNode {
   key: string; title: string; count?: number
   children?: TreeNode[]; isDevice?: boolean
-  nodeLevel?: 'root' | 'region' | 'city' | 'district' | 'store' | 'device'
+  nodeLevel?: 'root' | 'region' | 'city' | 'district' | 'store' | 'nvr' | 'device'
 }
 
 const rawOrgTree: TreeNode[] = [
@@ -33,10 +26,14 @@ const rawOrgTree: TreeNode[] = [
             children: [
               { key: 'jiangning-wanda', title: '江宁万达', count: 10, nodeLevel: 'district',
                 children: [
-                  { key: 'jn-store-a', title: 'xxx店铺a', count: 3, nodeLevel: 'store', children: [
+                  { key: 'jn-store-a', title: 'xxx店铺a', count: 5, nodeLevel: 'store', children: [
                     { key: 'dev-jn-a1', title: '设备名称A', isDevice: true, nodeLevel: 'device' },
                     { key: 'dev-jn-a2', title: '设备名称A', isDevice: true, nodeLevel: 'device' },
                     { key: 'dev-jn-a3', title: '设备名称A', isDevice: true, nodeLevel: 'device' },
+                    { key: 'nvr-jn-a', title: 'NVR-1F机房', count: 2, nodeLevel: 'nvr', children: [
+                      { key: 'dev-jn-a-n1', title: '通道1-大门', isDevice: true, nodeLevel: 'device' },
+                      { key: 'dev-jn-a-n2', title: '通道2-收银台', isDevice: true, nodeLevel: 'device' },
+                    ]},
                   ]},
                   { key: 'jn-store-b', title: 'xxx店铺b', count: 3, nodeLevel: 'store', children: [
                     { key: 'dev-jn-b1', title: '设备名称A', isDevice: true, nodeLevel: 'device' },
@@ -155,7 +152,7 @@ const rawOrgTree: TreeNode[] = [
   },
 ]
 
-const nodeIconMap: Record<string, any> = { root: BankOutlined, region: ApartmentOutlined, city: EnvironmentOutlined, district: ShopOutlined, store: ShopOutlined, device: VideoCameraOutlined }
+const nodeIconMap: Record<string, any> = { root: BankOutlined, region: ApartmentOutlined, city: EnvironmentOutlined, district: ShopOutlined, store: ShopOutlined, nvr: CloudServerOutlined, device: VideoCameraOutlined }
 
 // 为树节点附加图标和计数徽章
 const attachMeta = (nodes: TreeNode[]): any[] => nodes.map(n => {

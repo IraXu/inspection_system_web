@@ -20,6 +20,18 @@ interface DeviceCapabilities {
   eventTypes: string[]  // 支持的事件侦测类型，如 motion/move/human/pet/child
 }
 
+/** NVR 通道（下挂 IPC，作为可播放的最小单元） */
+interface NvrChannel {
+  id: string
+  channelNo: number
+  name: string
+  deviceModel: string
+  serialNo?: string
+  ip?: string
+  protocol?: string
+  status: 'online' | 'offline'
+}
+
 interface DeviceItem {
   id: string
   name: string
@@ -34,6 +46,7 @@ interface DeviceItem {
   location: string
   platform: string
   capabilities: DeviceCapabilities
+  channels?: NvrChannel[]   // NVR 设备的通道列表
 }
 
 interface OrgTreeNode {
@@ -171,19 +184,32 @@ const rawOrgTree: OrgTreeNode[] = [
 // Mock 设备数据
 // ==========================================
 const mockDevices: DeviceItem[] = [
-  { id: 'd1', name: 'xx相机-南门入口', license: 'LIC-2024-A001', deviceType: 'WIFI摄像机', deviceModel: 'DS-2CD2T47G2-L', firmwareVersion: 'v5.7.11', sdkVersion: 'v2.3.1', orgPath: ['root','huadong','js','nj','xb','xb-wanda'], orgPathLabel: '华东/江苏/南京/新街口商圈/万达苏宁旗舰店', status: 'online', location: '118.7842, 32.0493', platform: '海康威视', capabilities: { screen: true, alarm: true, light: false, eventTypes: ['motion'] } },
-  { id: 'd2', name: 'xx相机-北门入口', license: 'LIC-2024-A002', deviceType: 'AI摄像机', deviceModel: 'DS-2CD7A46G0/P-IZHS', firmwareVersion: 'v5.7.11', sdkVersion: 'v2.3.1', orgPath: ['root','huadong','js','nj','xb','xb-wanda'], orgPathLabel: '华东/江苏/南京/新街口商圈/万达苏宁旗舰店', status: 'online', location: '118.7842, 32.0498', platform: '海康威视', capabilities: { screen: true, alarm: true, light: true, eventTypes: ['motion', 'human', 'pet'] } },
-  { id: 'd3', name: 'xx相机-收银台', license: 'LIC-2024-A003', deviceType: 'WIFI摄像机', deviceModel: 'DS-2CD2T47G2-L', firmwareVersion: 'v5.6.3', sdkVersion: 'v2.2.8', orgPath: ['root','huadong','js','nj','qb','qb-wanda'], orgPathLabel: '华东/江苏/南京/桥北商圈/桥北万象城', status: 'offline', location: '118.7453, 32.1021', platform: '海康威视', capabilities: { screen: true, alarm: false, light: false, eventTypes: [] } },
-  { id: 'd4', name: 'xx相机-仓库后门', license: 'LIC-2024-A004', deviceType: '低功耗摄像机', deviceModel: 'CS-C1HC-1D1WFR', firmwareVersion: 'v3.2.0', sdkVersion: 'v1.8.5', orgPath: ['root','huadong','js','nj','qb','qb-wanda'], orgPathLabel: '华东/江苏/南京/桥北商圈/桥北万象城', status: 'sleep', location: '118.7456, 32.1025', platform: '萤石', capabilities: { screen: false, alarm: true, light: false, eventTypes: ['move'] } },
-  { id: 'd5', name: 'xx相机-大厅全景', license: 'LIC-2024-A005', deviceType: 'AI摄像机', deviceModel: 'DS-2CD7A46G0/P-IZHS', firmwareVersion: 'v5.7.11', sdkVersion: 'v2.3.1', orgPath: ['root','huadong','js','nj','xb','xb-taiyang'], orgPathLabel: '华东/江苏/南京/新街口商圈/21世纪太阳城', status: 'online', location: '118.7831, 32.0487', platform: '海康威视', capabilities: { screen: true, alarm: true, light: true, eventTypes: ['motion', 'move', 'human', 'pet', 'child'] } },
-  { id: 'd6', name: 'xx相机-停车场入口', license: 'LIC-2024-A006', deviceType: 'WIFI摄像机', deviceModel: 'DS-2CD2T47G2-L', firmwareVersion: 'v5.7.11', sdkVersion: 'v2.3.1', orgPath: ['root','huadong','js','sz','sz-gusu','sz-gusu-meiluo'], orgPathLabel: '华东/江苏/苏州/姑苏区/美罗商城', status: 'online', location: '120.6154, 31.2989', platform: '海康威视', capabilities: { screen: false, alarm: true, light: false, eventTypes: ['motion', 'move'] } },
-  { id: 'd7', name: 'xx相机-东门监控', license: 'LIC-2024-A007', deviceType: 'WIFI摄像机', deviceModel: 'DS-2CD2T47G2-L', firmwareVersion: 'v5.6.3', sdkVersion: 'v2.2.8', orgPath: ['root','huadong','sh','sh-pudong','sh-lujiazui','sh-guoji'], orgPathLabel: '华东/上海/浦东新区/陆家嘴商圈/上海国际中心', status: 'offline', location: '121.5023, 31.2361', platform: '海康威视', capabilities: { screen: true, alarm: true, light: true, eventTypes: ['motion'] } },
-  { id: 'd8', name: 'xx相机-正门大厅', license: 'LIC-2024-A008', deviceType: 'AI摄像机', deviceModel: 'DS-2CD7A46G0/P-IZHS', firmwareVersion: 'v5.7.11', sdkVersion: 'v2.3.1', orgPath: ['root','huabei','bj','bj-chaoyang','bj-guomao','bj-guomao-yintai'], orgPathLabel: '华北/北京/朝阳区/国贸商圈/银泰中心', status: 'online', location: '116.4605, 39.9092', platform: '海康威视', capabilities: { screen: true, alarm: true, light: true, eventTypes: ['motion', 'human', 'pet', 'child'] } },
-  { id: 'd9', name: 'xx相机-侧门通道', license: 'LIC-2024-A009', deviceType: '低功耗摄像机', deviceModel: 'CS-C1HC-1D1WFR', firmwareVersion: 'v3.2.0', sdkVersion: 'v1.8.5', orgPath: ['root','huabei','bj','bj-chaoyang','bj-guomao','bj-guomao-yintai'], orgPathLabel: '华北/北京/朝阳区/国贸商圈/银泰中心', status: 'sleep', location: '116.4608, 39.9095', platform: '萤石', capabilities: { screen: false, alarm: true, light: false, eventTypes: ['move', 'human'] } },
-  { id: 'd10', name: 'xx相机-1楼中庭', license: 'LIC-2024-A010', deviceType: 'WIFI摄像机', deviceModel: 'DS-2CD2T47G2-L', firmwareVersion: 'v5.7.11', sdkVersion: 'v2.3.1', orgPath: ['root','huanan','gd','gz','gz-tianhe','gz-taiKoo'], orgPathLabel: '华南/广东/广州/天河商圈/太古汇', status: 'online', location: '113.3233, 23.1291', platform: '海康威视', capabilities: { screen: true, alarm: false, light: false, eventTypes: [] } },
-  { id: 'd11', name: 'xx相机-B1车库', license: 'LIC-2024-A011', deviceType: 'WIFI摄像机', deviceModel: 'DS-2CD2T47G2-L', firmwareVersion: 'v5.6.3', sdkVersion: 'v2.2.8', orgPath: ['root','huanan','gd','sz_city','sz-nanshan','sz-wanxiang'], orgPathLabel: '华南/广东/深圳/南山区/万象天地', status: 'offline', location: '113.9526, 22.5176', platform: '海康威视', capabilities: { screen: true, alarm: true, light: false, eventTypes: ['motion', 'move'] } },
-  { id: 'd12', name: 'xx相机-二楼走廊', license: 'LIC-2024-A012', deviceType: 'AI摄像机', deviceModel: 'DS-2CD7A46G0/P-IZHS', firmwareVersion: 'v5.7.11', sdkVersion: 'v2.3.1', orgPath: ['root','huanan','gd','sz_city','sz-nanshan','sz-wanxiang'], orgPathLabel: '华南/广东/深圳/南山区/万象天地', status: 'online', location: '113.9528, 22.5180', platform: '海康威视', capabilities: { screen: true, alarm: true, light: true, eventTypes: ['motion', 'move', 'human', 'pet', 'child'] } },
-  { id: 'd13', name: 'xx相机-消防通道A', license: 'LIC-2024-A013', deviceType: 'WIFI摄像机', deviceModel: 'DS-2CD2T47G2-L', firmwareVersion: 'v5.7.11', sdkVersion: 'v2.3.1', orgPath: ['root','huadong','js','nj','qb','qb-hongyang'], orgPathLabel: '华东/江苏/南京/桥北商圈/弘扬广场', status: 'online', location: '118.7421, 32.0987', platform: '海康威视', capabilities: { screen: false, alarm: false, light: true, eventTypes: [] } },
+  { id: 'd1', name: 'xx相机-南门入口', license: 'LIC-2024-A001', deviceType: 'WIFI摄像机', deviceModel: '高清网络枪机', firmwareVersion: 'v5.7.11', sdkVersion: 'v2.3.1', orgPath: ['root','huadong','js','nj','xb','xb-wanda'], orgPathLabel: '华东/江苏/南京/新街口商圈/万达苏宁旗舰店', status: 'online', location: '118.7842, 32.0493', platform: '海康威视', capabilities: { screen: true, alarm: true, light: false, eventTypes: ['motion'] } },
+  { id: 'd2', name: 'xx相机-北门入口', license: 'LIC-2024-A002', deviceType: 'AI摄像机', deviceModel: 'AI智能摄像机', firmwareVersion: 'v5.7.11', sdkVersion: 'v2.3.1', orgPath: ['root','huadong','js','nj','xb','xb-wanda'], orgPathLabel: '华东/江苏/南京/新街口商圈/万达苏宁旗舰店', status: 'online', location: '118.7842, 32.0498', platform: '海康威视', capabilities: { screen: true, alarm: true, light: true, eventTypes: ['motion', 'human', 'pet'] } },
+  { id: 'd3', name: 'xx相机-收银台', license: 'LIC-2024-A003', deviceType: 'WIFI摄像机', deviceModel: '高清网络枪机', firmwareVersion: 'v5.6.3', sdkVersion: 'v2.2.8', orgPath: ['root','huadong','js','nj','qb','qb-wanda'], orgPathLabel: '华东/江苏/南京/桥北商圈/桥北万象城', status: 'offline', location: '118.7453, 32.1021', platform: '海康威视', capabilities: { screen: true, alarm: false, light: false, eventTypes: [] } },
+  { id: 'd4', name: 'xx相机-仓库后门', license: 'LIC-2024-A004', deviceType: '低功耗摄像机', deviceModel: '低功耗网络摄像机', firmwareVersion: 'v3.2.0', sdkVersion: 'v1.8.5', orgPath: ['root','huadong','js','nj','qb','qb-wanda'], orgPathLabel: '华东/江苏/南京/桥北商圈/桥北万象城', status: 'sleep', location: '118.7456, 32.1025', platform: '萤石', capabilities: { screen: false, alarm: true, light: false, eventTypes: ['move'] } },
+  { id: 'd5', name: 'xx相机-大厅全景', license: 'LIC-2024-A005', deviceType: 'AI摄像机', deviceModel: 'AI智能摄像机', firmwareVersion: 'v5.7.11', sdkVersion: 'v2.3.1', orgPath: ['root','huadong','js','nj','xb','xb-taiyang'], orgPathLabel: '华东/江苏/南京/新街口商圈/21世纪太阳城', status: 'online', location: '118.7831, 32.0487', platform: '海康威视', capabilities: { screen: true, alarm: true, light: true, eventTypes: ['motion', 'move', 'human', 'pet', 'child'] } },
+  { id: 'd6', name: 'xx相机-停车场入口', license: 'LIC-2024-A006', deviceType: 'WIFI摄像机', deviceModel: '高清网络枪机', firmwareVersion: 'v5.7.11', sdkVersion: 'v2.3.1', orgPath: ['root','huadong','js','sz','sz-gusu','sz-gusu-meiluo'], orgPathLabel: '华东/江苏/苏州/姑苏区/美罗商城', status: 'online', location: '120.6154, 31.2989', platform: '海康威视', capabilities: { screen: false, alarm: true, light: false, eventTypes: ['motion', 'move'] } },
+  { id: 'd7', name: 'xx相机-东门监控', license: 'LIC-2024-A007', deviceType: 'WIFI摄像机', deviceModel: '高清网络枪机', firmwareVersion: 'v5.6.3', sdkVersion: 'v2.2.8', orgPath: ['root','huadong','sh','sh-pudong','sh-lujiazui','sh-guoji'], orgPathLabel: '华东/上海/浦东新区/陆家嘴商圈/上海国际中心', status: 'offline', location: '121.5023, 31.2361', platform: '海康威视', capabilities: { screen: true, alarm: true, light: true, eventTypes: ['motion'] } },
+  { id: 'd8', name: 'xx相机-正门大厅', license: 'LIC-2024-A008', deviceType: 'AI摄像机', deviceModel: 'AI智能摄像机', firmwareVersion: 'v5.7.11', sdkVersion: 'v2.3.1', orgPath: ['root','huabei','bj','bj-chaoyang','bj-guomao','bj-guomao-yintai'], orgPathLabel: '华北/北京/朝阳区/国贸商圈/银泰中心', status: 'online', location: '116.4605, 39.9092', platform: '海康威视', capabilities: { screen: true, alarm: true, light: true, eventTypes: ['motion', 'human', 'pet', 'child'] } },
+  { id: 'd9', name: 'xx相机-侧门通道', license: 'LIC-2024-A009', deviceType: '低功耗摄像机', deviceModel: '低功耗网络摄像机', firmwareVersion: 'v3.2.0', sdkVersion: 'v1.8.5', orgPath: ['root','huabei','bj','bj-chaoyang','bj-guomao','bj-guomao-yintai'], orgPathLabel: '华北/北京/朝阳区/国贸商圈/银泰中心', status: 'sleep', location: '116.4608, 39.9095', platform: '萤石', capabilities: { screen: false, alarm: true, light: false, eventTypes: ['move', 'human'] } },
+  { id: 'd10', name: 'xx相机-1楼中庭', license: 'LIC-2024-A010', deviceType: 'WIFI摄像机', deviceModel: '高清网络枪机', firmwareVersion: 'v5.7.11', sdkVersion: 'v2.3.1', orgPath: ['root','huanan','gd','gz','gz-tianhe','gz-taiKoo'], orgPathLabel: '华南/广东/广州/天河商圈/太古汇', status: 'online', location: '113.3233, 23.1291', platform: '海康威视', capabilities: { screen: true, alarm: false, light: false, eventTypes: [] } },
+  { id: 'd11', name: 'xx相机-B1车库', license: 'LIC-2024-A011', deviceType: 'WIFI摄像机', deviceModel: '高清网络枪机', firmwareVersion: 'v5.6.3', sdkVersion: 'v2.2.8', orgPath: ['root','huanan','gd','sz_city','sz-nanshan','sz-wanxiang'], orgPathLabel: '华南/广东/深圳/南山区/万象天地', status: 'offline', location: '113.9526, 22.5176', platform: '海康威视', capabilities: { screen: true, alarm: true, light: false, eventTypes: ['motion', 'move'] } },
+  { id: 'd12', name: 'xx相机-二楼走廊', license: 'LIC-2024-A012', deviceType: 'AI摄像机', deviceModel: 'AI智能摄像机', firmwareVersion: 'v5.7.11', sdkVersion: 'v2.3.1', orgPath: ['root','huanan','gd','sz_city','sz-nanshan','sz-wanxiang'], orgPathLabel: '华南/广东/深圳/南山区/万象天地', status: 'online', location: '113.9528, 22.5180', platform: '海康威视', capabilities: { screen: true, alarm: true, light: true, eventTypes: ['motion', 'move', 'human', 'pet', 'child'] } },
+  { id: 'd13', name: 'xx相机-消防通道A', license: 'LIC-2024-A013', deviceType: 'WIFI摄像机', deviceModel: '高清网络枪机', firmwareVersion: 'v5.7.11', sdkVersion: 'v2.3.1', orgPath: ['root','huadong','js','nj','qb','qb-hongyang'], orgPathLabel: '华东/江苏/南京/桥北商圈/弘扬广场', status: 'online', location: '118.7421, 32.0987', platform: '海康威视', capabilities: { screen: false, alarm: false, light: true, eventTypes: [] } },
+  { id: 'd14', name: 'NVR-新街口机房', license: 'LIC-2024-N014', deviceType: 'NVR', deviceModel: '网络硬盘录像机', firmwareVersion: 'v4.60.10', sdkVersion: 'v2.3.1', orgPath: ['root','huadong','js','nj','xb','xb-wanda'], orgPathLabel: '华东/江苏/南京/新街口商圈/万达苏宁旗舰店', status: 'online', location: '118.7842, 32.0493', platform: '海康威视', capabilities: { screen: false, alarm: false, light: false, eventTypes: [] },
+    channels: [
+      { id: 'd14-c1', channelNo: 1, name: '通道1-大门', deviceModel: '高清网络枪机', serialNo: 'C20702456', ip: '192.168.1.64', protocol: 'private', status: 'online' },
+      { id: 'd14-c2', channelNo: 2, name: '通道2-收银台', deviceModel: 'AI智能摄像机', serialNo: 'C20702457', ip: '192.168.1.65', protocol: 'hik', status: 'online' },
+      { id: 'd14-c3', channelNo: 3, name: '通道3-库房', deviceModel: '高清网络枪机', serialNo: 'C20702458', ip: '192.168.1.66', protocol: 'onvif', status: 'offline' },
+      { id: 'd14-c4', channelNo: 4, name: '通道4-后门', deviceModel: '高清半球摄像机', serialNo: 'GB28181-2231', ip: '192.168.1.67', protocol: 'gb28181', status: 'online' },
+      { id: 'd14-c5', channelNo: 5, name: '通道5-机房', deviceModel: '—', serialNo: '', ip: '', protocol: 'unknown', status: 'online' },
+    ] },
+  { id: 'd15', name: 'NVR-万象天地机房', license: 'LIC-2024-N015', deviceType: 'NVR', deviceModel: '网络硬盘录像机', firmwareVersion: 'v4.60.10', sdkVersion: 'v2.3.1', orgPath: ['root','huanan','gd','sz_city','sz-nanshan','sz-wanxiang'], orgPathLabel: '华南/广东/深圳/南山区/万象天地', status: 'online', location: '113.9526, 22.5176', platform: '海康威视', capabilities: { screen: false, alarm: false, light: false, eventTypes: [] },
+    channels: [
+      { id: 'd15-c1', channelNo: 1, name: '通道1-东门', deviceModel: '高清网络枪机', serialNo: 'C20800112', ip: '192.168.1.64', protocol: 'hik', status: 'online' },
+      { id: 'd15-c2', channelNo: 2, name: '通道2-停车场', deviceModel: '4K云台球机', serialNo: 'RTSP-5567-9A12', ip: '192.168.1.65', protocol: 'rtsp', status: 'offline' },
+    ] },
 ]
 
 // ==========================================
@@ -203,6 +229,8 @@ const mockDevicePackages: Record<string, DevicePackageInfo> = {
   d11: { deviceId: 'd11', cloudStorage: { id: 'cs1', name: '7天云存储', storageDays: 7, recordingMode: 'event', status: 'pending', activatedAt: '2026-07-22', expiredAt: '2027-07-22', price: 299 }, aiAlgorithm: { id: 'aip1', name: '基础AI巡检包', algorithmIds: ['alg1','alg2'], algorithmNames: ['地面整洁度识别','物品摆放规范检测'], status: 'active', activatedAt: '2026-05-01', expiredAt: '2027-05-01', price: 599 } },
   d12: { deviceId: 'd12', cloudStorage: null, aiAlgorithm: null },
   d13: { deviceId: 'd13', cloudStorage: { id: 'cs2', name: '30天云存储', storageDays: 30, recordingMode: 'fullDay', status: 'active', activatedAt: '2026-06-01', expiredAt: '2027-06-01', price: 699 }, aiAlgorithm: { id: 'aip2', name: '高级AI巡检包', algorithmIds: ['alg3','alg4','alg5'], algorithmNames: ['安全通道占用检测','灭火器在位检测','灯光设备状态检测'], status: 'active', activatedAt: '2026-06-01', expiredAt: '2027-06-01', price: 1299 } },
+  d14: { deviceId: 'd14', cloudStorage: { id: 'cs2', name: '30天云存储', storageDays: 30, recordingMode: 'fullDay', status: 'active', activatedAt: '2026-05-01', expiredAt: '2027-05-01', price: 699 }, aiAlgorithm: null },
+  d15: { deviceId: 'd15', cloudStorage: null, aiAlgorithm: null },
 }
 
 const pkgStatusMap: Record<string, { label: string; color: string }> = {
@@ -344,7 +372,8 @@ watch(selectedOrgKey, (key) => {
 // ==========================================
 // 设备列表计算
 // ==========================================
-const allDevices = ref<DeviceItem[]>([...mockDevices])
+// NVR 设备排在最前，便于演示（第一页即可看到 NVR 及其通道）
+const allDevices = ref<DeviceItem[]>([...mockDevices].sort((a, b) => (a.deviceType === 'NVR' ? -1 : 1) - (b.deviceType === 'NVR' ? -1 : 1)))
 
 const filteredDevices = computed(() => {
   let list = allDevices.value
@@ -380,7 +409,7 @@ const statusLabel: Record<string, string> = { online: '在线', offline: '离线
 const columns: TableColumnsType = [
   { title: '设备名称', dataIndex: 'name', key: 'name', width: 180, ellipsis: true },
   { title: 'LICENSE', dataIndex: 'license', key: 'license', width: 160 },
-  { title: '设备类型', dataIndex: 'deviceType', key: 'deviceType', width: 130 },
+  { title: '设备类型', dataIndex: 'deviceType', key: 'deviceType', width: 150 },
   { title: '所属组织路径', dataIndex: 'orgPathLabel', key: 'orgPathLabel', width: 260, ellipsis: true },
   { title: '设备状态', key: 'status', width: 100 },
   { title: '操作', key: 'action', width: 240, fixed: 'right' },
@@ -443,6 +472,13 @@ const addMode = ref<'single' | 'batch'>('single')
 const formTitle = computed(() => formMode.value === 'add' ? '添加设备' : '编辑设备')
 const editingDevice = ref<DeviceItem | null>(null)
 
+// 模拟云端根据 License 自动识别设备类型（实际由后端识别并返回）
+const detectDeviceTypeByLicense = (license: string): 'NVR' | 'WIFI摄像机' => {
+  const upper = license.toUpperCase()
+  if (upper.includes('NVR') || /-N\d/.test(upper)) return 'NVR'
+  return 'WIFI摄像机'
+}
+
 const showAdd = () => {
   formMode.value = 'add'; addMode.value = 'single'
   deviceForm.name = ''; deviceForm.license = ''; deviceForm.orgKey = ''; deviceForm.location = ''
@@ -469,14 +505,18 @@ const handleFormSubmit = () => {
   const orgLabel = getOrgPathLabel(deviceForm.orgKey)
 
   if (formMode.value === 'add') {
+    const isNvr = detectDeviceTypeByLicense(deviceForm.license.trim()) === 'NVR'
     allDevices.value.push({
       id: `d${Date.now()}`, name: deviceForm.name.trim(), license: deviceForm.license.trim(),
-      deviceType: 'WIFI摄像机', deviceModel: 'DS-2CD2T47G2-L', firmwareVersion: 'v5.7.11',
+      deviceType: isNvr ? 'NVR' : 'WIFI摄像机',
+      deviceModel: isNvr ? '网络硬盘录像机' : '高清网络枪机',
+      firmwareVersion: isNvr ? 'v4.60.10' : 'v5.7.11',
       sdkVersion: 'v2.3.1', orgPath: [deviceForm.orgKey], orgPathLabel: orgLabel,
       status: 'offline', location: deviceForm.location || '', platform: '海康威视',
-      capabilities: { screen: true, alarm: false, light: false, eventTypes: [] },
+      capabilities: { screen: !isNvr, alarm: false, light: false, eventTypes: [] },
+      ...(isNvr ? { channels: [] } : {}),
     })
-    message.success('添加成功')
+    message.success(isNvr ? '添加成功，已自动识别为 NVR 设备' : '添加成功')
   } else if (formMode.value === 'edit' && editingDevice.value) {
     const dev = allDevices.value.find(d => d.id === editingDevice.value!.id)
     if (dev) {
@@ -487,6 +527,195 @@ const handleFormSubmit = () => {
     message.success('编辑成功')
   }
   formVisible.value = false
+}
+
+// ==========================================
+// NVR 添加子设备（自动搜索检测 → 勾选 → 通道分配/认证）
+// ==========================================
+interface DetectedCamera {
+  id: string
+  serialNo: string
+  ip: string
+  model: string
+  protocol: 'private' | 'hik' | 'onvif' | 'gb28181' | 'rtsp' | 'unknown'
+  needsAuth: boolean      // onvif / 其他协议需输入用户名密码
+  selected: boolean
+  channelNo: number
+  username: string
+  password: string
+}
+
+// 协议名称映射
+const protocolLabelMap: Record<string, string> = {
+  private: '鹤梦云协议',
+  hik: '海康协议',
+  onvif: 'ONVIF',
+  gb28181: 'GB28181',
+  rtsp: 'RTSP',
+  unknown: '其他协议',
+}
+
+/** 协议展示名：检测不到协议时兜底为「其他协议」 */
+const protocolLabel = (protocol?: string) => protocolLabelMap[protocol || 'unknown'] || '其他协议'
+
+const subDeviceModalVisible = ref(false)
+const subDeviceStep = ref<1 | 2>(1)
+const subDeviceTargetNvr = ref<DeviceItem | null>(null)
+const detecting = ref(false)
+const detectError = ref(false)
+const detectedCameras = ref<DetectedCamera[]>([])
+
+// 模拟 NVR 扫描到的、已通过网线连接的摄像头
+const mockDetectedCameras: DetectedCamera[] = [
+  { id: 'det-1', serialNo: 'C20702461', ip: '192.168.1.64', model: '高清网络枪机', protocol: 'private', needsAuth: false, selected: false, channelNo: 0, username: '', password: '' },
+  { id: 'det-2', serialNo: 'C20702462', ip: '192.168.1.65', model: 'AI智能摄像机', protocol: 'private', needsAuth: false, selected: false, channelNo: 0, username: '', password: '' },
+  { id: 'det-3', serialNo: 'C20702463', ip: '192.168.1.66', model: '高清网络枪机', protocol: 'hik', needsAuth: false, selected: false, channelNo: 0, username: '', password: '' },
+  { id: 'det-4', serialNo: 'ONVIF-8842-9F31', ip: '192.168.1.67', model: '4K云台球机', protocol: 'onvif', needsAuth: true, selected: false, channelNo: 0, username: '', password: '' },
+  { id: 'det-5', serialNo: 'GB28181-1023', ip: '192.168.1.68', model: '高清半球摄像机', protocol: 'gb28181', needsAuth: true, selected: false, channelNo: 0, username: '', password: '' },
+  { id: 'det-6', serialNo: 'RTSP-5567-9A12', ip: '192.168.1.69', model: '4K云台球机', protocol: 'rtsp', needsAuth: true, selected: false, channelNo: 0, username: '', password: '' },
+  { id: 'det-7', serialNo: '', ip: '192.168.1.70', model: '未知型号', protocol: 'unknown', needsAuth: false, selected: false, channelNo: 0, username: '', password: '' },
+]
+
+const selectedCameras = computed(() => detectedCameras.value.filter(c => c.selected))
+
+const runDetect = () => {
+  detecting.value = true
+  detectError.value = false
+  detectedCameras.value = []
+  setTimeout(() => {
+    // 模拟搜索：小概率失败，演示搜索异常兜底（实际由 NVR SDK 返回结果）
+    if (Math.random() < 0.15) {
+      detecting.value = false
+      detectError.value = true
+      return
+    }
+    detectedCameras.value = mockDetectedCameras.map(c => ({ ...c, selected: false, channelNo: 0, username: '', password: '' }))
+    detecting.value = false
+  }, 800)
+}
+
+const showAddSubDevice = (nvr: DeviceItem) => {
+  if (nvr.status === 'offline') {
+    message.warning('NVR 已离线，无法搜索子设备，请确认设备在线后再试')
+    return
+  }
+  subDeviceTargetNvr.value = nvr
+  subDeviceStep.value = 1
+  subDeviceModalVisible.value = true
+  runDetect()
+}
+
+const rescanSubDevices = () => { runDetect() }
+
+const goToChannelAssign = () => {
+  if (selectedCameras.value.length === 0) { message.warning('请至少勾选一台设备'); return }
+  const nvr = subDeviceTargetNvr.value
+  let nextNo = (nvr?.channels?.length ? Math.max(...nvr.channels.map(c => c.channelNo)) : 0) + 1
+  for (const cam of selectedCameras.value) {
+    cam.channelNo = nextNo++
+  }
+  subDeviceStep.value = 2
+}
+
+const confirmAddSubDevice = () => {
+  const nvr = subDeviceTargetNvr.value
+  if (!nvr) return
+  const existingNos = new Set((nvr.channels || []).map(c => c.channelNo))
+  const okList: DetectedCamera[] = []
+  const failList: string[] = []
+
+  for (const cam of selectedCameras.value) {
+    if (cam.needsAuth && (!cam.username.trim() || !cam.password.trim())) {
+      message.warning(`请为 ${cam.model} 填写用户名和密码`); return
+    }
+    if (existingNos.has(cam.channelNo)) {
+      message.warning(`通道号 CH${cam.channelNo} 已被占用，请调整`); return
+    }
+    existingNos.add(cam.channelNo)
+    // 模拟添加失败：序列号为空（无法建立有效连接）的设备添加失败
+    if (!cam.serialNo) {
+      failList.push(cam.model || '未知设备')
+      continue
+    }
+    okList.push(cam)
+  }
+
+  if (!nvr.channels) nvr.channels = []
+  for (const cam of okList) {
+    nvr.channels.push({
+      id: `ch-${Date.now()}-${cam.id}`,
+      channelNo: cam.channelNo,
+      name: `通道${cam.channelNo}-${cam.model}`,
+      deviceModel: cam.model,
+      serialNo: cam.serialNo,
+      ip: cam.ip,
+      protocol: cam.protocol,
+      status: 'online',
+    })
+  }
+
+  subDeviceModalVisible.value = false
+  if (failList.length === 0) {
+    message.success(`成功添加 ${okList.length} 路子设备`)
+  } else if (okList.length === 0) {
+    message.error(`添加失败：${failList.join('、')} 未能建立连接`)
+  } else {
+    message.warning(`成功添加 ${okList.length} 路，${failList.length} 路失败（${failList.join('、')}）`)
+  }
+}
+
+const showDeleteChannel = (nvr: DeviceItem, channel: NvrChannel) => {
+  if (nvr.channels) {
+    nvr.channels = nvr.channels.filter(c => c.id !== channel.id)
+  }
+  message.success('通道删除成功')
+}
+
+// ==========================================
+// 子设备更名
+// ==========================================
+const channelRenameVisible = ref(false)
+const channelRenameTarget = ref<NvrChannel | null>(null)
+const channelRenameName = ref('')
+
+const showRenameChannel = (channel: NvrChannel) => {
+  channelRenameTarget.value = channel
+  channelRenameName.value = channel.name
+  channelRenameVisible.value = true
+}
+
+const handleRenameChannel = () => {
+  const target = channelRenameTarget.value
+  if (!target) return
+  const name = channelRenameName.value.trim()
+  if (!name) { message.warning('请输入通道名称'); return }
+  if (name.length > 50) { message.warning('通道名称限制50个字符以内'); return }
+  target.name = name
+  message.success('更名成功')
+  channelRenameVisible.value = false
+}
+
+// ==========================================
+// 鹤梦云协议子设备功能设置（复用功能设置抽屉）
+// ==========================================
+const buildChannelSettingsDevice = (channel: NvrChannel): DeviceItem => ({
+  id: channel.id,
+  name: channel.name,
+  license: '',
+  deviceType: '鹤梦云协议摄像机',
+  deviceModel: channel.deviceModel,
+  firmwareVersion: '',
+  sdkVersion: '',
+  orgPath: [],
+  orgPathLabel: '',
+  status: channel.status === 'online' ? 'online' : 'offline',
+  location: '',
+  platform: '',
+  capabilities: { screen: true, alarm: true, light: true, eventTypes: ['motion', 'human'] },
+})
+
+const showChannelSettings = (channel: NvrChannel) => {
+  showSettings(buildChannelSettingsDevice(channel))
 }
 
 // 上传处理
@@ -702,17 +931,49 @@ const flipModeOptions = [
           :row-key="(r: DeviceItem) => r.id"
           :row-selection="rowSelection"
           :pagination="false"
-          :scroll="{ x: 1070 }"
+          :scroll="{ x: 1180 }"
+          :expandable="{ rowExpandable: (r: DeviceItem) => r.deviceType === 'NVR' }"
           size="middle"
         >
+          <template #expandedRowRender="{ record }">
+            <div class="dm-channel-panel">
+              <div class="dm-channel-header">
+                <span class="dm-channel-title">子设备列表（{{ record.channels?.length || 0 }} 路）</span>
+                <a-button size="small" type="primary" @click="showAddSubDevice(record)">
+                  <template #icon><PlusOutlined /></template>添加子设备
+                </a-button>
+              </div>
+              <div v-if="record.channels && record.channels.length" class="dm-channel-list">
+                <div v-for="ch in record.channels" :key="ch.id" class="dm-channel-item">
+                  <span class="dm-channel-no">CH{{ ch.channelNo }}</span>
+                  <span class="dm-channel-name">{{ ch.name }}</span>
+                  <a-tag color="blue" class="dm-channel-protocol">{{ protocolLabel(ch.protocol) }}</a-tag>
+                  <span class="dm-channel-meta">SN：{{ ch.serialNo || '—' }} · IP：{{ ch.ip || '—' }}</span>
+                  <a-tag :color="ch.status === 'online' ? 'green' : 'red'" class="dm-channel-status">{{ ch.status === 'online' ? '在线' : '离线' }}</a-tag>
+                  <div class="dm-channel-actions">
+                    <a @click="showRenameChannel(ch)">编辑</a>
+                    <a v-if="ch.protocol === 'private'" @click="showChannelSettings(ch)">功能设置</a>
+                    <a class="dm-link-danger" @click="showDeleteChannel(record, ch)">删除</a>
+                  </div>
+                </div>
+              </div>
+              <a-empty v-else description="暂无子设备，点击右上角添加" :image-style="{ height: '40px' }" />
+            </div>
+          </template>
           <template #bodyCell="{ column, record }">
+            <template v-if="column.key === 'deviceType'">
+              <a-space :size="6">
+                <span>{{ record.deviceType }}</span>
+                <a-tag v-if="record.deviceType === 'NVR'" color="blue">{{ record.channels?.length || 0 }} 路</a-tag>
+              </a-space>
+            </template>
             <template v-if="column.key === 'status'">
               <a-tag :color="statusColor[record.status]">{{ statusLabel[record.status] }}</a-tag>
             </template>
             <template v-if="column.key === 'action'">
               <a-space :size="8">
                 <a @click="showEdit(record)">编辑</a>
-                <a @click="showSettings(record)">功能设置</a>
+                <a v-if="record.deviceType !== 'NVR'" @click="showSettings(record)">功能设置</a>
                 <a @click="showView(record)">查看</a>
                 <a class="dm-link-danger" @click="showDeleteSingle(record)">删除</a>
               </a-space>
@@ -793,17 +1054,12 @@ const flipModeOptions = [
                 </a-form-item>
               </a-col>
               <a-col :span="12">
-                <a-form-item label="设备型号">
-                  <a-input :value="editingDevice.deviceModel" disabled style="background:#f5f5f5" />
-                </a-form-item>
-              </a-col>
-            </a-row>
-            <a-row :gutter="16">
-              <a-col :span="12">
                 <a-form-item label="固件版本">
                   <a-input :value="editingDevice.firmwareVersion" disabled style="background:#f5f5f5" />
                 </a-form-item>
               </a-col>
+            </a-row>
+            <a-row :gutter="16">
               <a-col :span="12">
                 <a-form-item label="SDK版本">
                   <a-input :value="editingDevice.sdkVersion" disabled style="background:#f5f5f5" />
@@ -842,6 +1098,105 @@ const flipModeOptions = [
       </a-form>
     </a-modal>
 
+    <!-- ==================== 添加子设备弹窗（NVR 自动搜索） ==================== -->
+    <a-modal v-model:open="subDeviceModalVisible" :title="subDeviceStep === 1 ? '添加子设备' : '通道分配'" width="720px"
+      :footer="null" :destroy-on-hidden="true">
+      <a-steps :current="subDeviceStep - 1" size="small" style="margin-bottom:20px">
+        <a-step title="搜索检测" />
+        <a-step title="通道分配" />
+      </a-steps>
+
+      <!-- 步骤 1：自动搜索检测 -->
+      <template v-if="subDeviceStep === 1">
+        <div class="dm-sub-tip">
+          <template v-if="detecting">
+            <a-spin size="small" /> 正在搜索已通过网线连接 NVR 的摄像头...
+          </template>
+          <template v-else-if="detectError">
+            <span class="dm-sub-error-text">搜索失败，请检查 NVR 网络连接后重试</span>
+            <a-button size="small" type="link" @click="rescanSubDevices"><template #icon><ReloadOutlined /></template>重试</a-button>
+          </template>
+          <template v-else>
+            共检测到 <b>{{ detectedCameras.length }}</b> 台设备，已选 <b>{{ selectedCameras.length }}</b> 台
+            <a-button size="small" type="link" @click="rescanSubDevices"><template #icon><ReloadOutlined /></template>重新搜索</a-button>
+          </template>
+        </div>
+
+        <div v-if="detecting" class="dm-sub-searching">
+          <a-spin />
+          <p>设备搜索中，请稍候...</p>
+        </div>
+
+        <div v-else-if="detectError" class="dm-sub-searching">
+          <a-result status="error" title="搜索失败" sub-title="未能搜索到子设备，请检查 NVR 连接后重试">
+            <template #extra>
+              <a-button type="primary" @click="rescanSubDevices"><template #icon><ReloadOutlined /></template>重新搜索</a-button>
+            </template>
+          </a-result>
+        </div>
+
+        <div v-else class="dm-sub-detect-list">
+          <div v-for="cam in detectedCameras" :key="cam.id" class="dm-sub-detect-item">
+            <a-checkbox v-model:checked="cam.selected">{{ cam.model }}</a-checkbox>
+            <span class="dm-sub-detect-sn">SN：{{ cam.serialNo }}</span>
+            <span class="dm-sub-detect-ip">IP：{{ cam.ip }}</span>
+            <a-tag v-if="cam.needsAuth" color="orange">需认证</a-tag>
+          </div>
+        </div>
+
+        <div class="dm-sub-footer">
+          <a-space>
+            <a-button @click="subDeviceModalVisible = false">取消</a-button>
+            <a-button type="primary" :disabled="selectedCameras.length === 0" @click="goToChannelAssign">下一步</a-button>
+          </a-space>
+        </div>
+      </template>
+
+      <!-- 步骤 2：通道分配 + 协议认证 -->
+      <template v-else>
+        <div class="dm-sub-assign-list">
+          <div v-for="cam in selectedCameras" :key="cam.id" class="dm-sub-assign-item">
+            <div class="dm-sub-assign-head">
+              <span class="dm-sub-assign-title">{{ cam.model }}</span>
+              <span class="dm-sub-assign-meta">SN：{{ cam.serialNo }} · IP：{{ cam.ip }}</span>
+            </div>
+            <div class="dm-sub-assign-row">
+              <div class="dm-sub-assign-field">
+                <span class="dm-sub-assign-label">通道号</span>
+                <a-input-number v-model:value="cam.channelNo" :min="1" :max="64" style="width:120px" />
+              </div>
+              <template v-if="cam.needsAuth">
+                <div class="dm-sub-assign-field">
+                  <span class="dm-sub-assign-label">用户名</span>
+                  <a-input v-model:value="cam.username" placeholder="请输入用户名" style="width:180px" />
+                </div>
+                <div class="dm-sub-assign-field">
+                  <span class="dm-sub-assign-label">密码</span>
+                  <a-input-password v-model:value="cam.password" placeholder="请输入密码" style="width:180px" />
+                </div>
+              </template>
+            </div>
+          </div>
+        </div>
+
+        <div class="dm-sub-footer">
+          <a-space>
+            <a-button @click="subDeviceStep = 1">上一步</a-button>
+            <a-button type="primary" @click="confirmAddSubDevice">确认添加</a-button>
+          </a-space>
+        </div>
+      </template>
+    </a-modal>
+
+    <!-- ==================== 子设备更名弹窗 ==================== -->
+    <a-modal v-model:open="channelRenameVisible" title="编辑子设备名称" width="440px" @ok="handleRenameChannel" @cancel="channelRenameVisible = false" :destroy-on-hidden="true">
+      <a-form :model="{ name: channelRenameName }" layout="vertical" class="dm-form">
+        <a-form-item label="通道名称" required>
+          <a-input v-model:value="channelRenameName" placeholder="请输入通道名称" :maxlength="50" />
+        </a-form-item>
+      </a-form>
+    </a-modal>
+
     <!-- ==================== 确认删除弹窗 ==================== -->
     <a-modal v-model:open="deleteVisible" title="确认删除所选设备？" width="440px" @ok="handleDeleteConfirm" @cancel="deleteVisible = false" :ok-button-props="{ danger: true }" ok-text="继续" cancel-text="取消">
       <div class="dm-delete-body">
@@ -861,10 +1216,24 @@ const flipModeOptions = [
           <a-descriptions-item label="所属组织架构" :span="2">{{ viewDevice.orgPathLabel }}</a-descriptions-item>
           <a-descriptions-item label="详细位置">{{ viewDevice.location || '—' }}</a-descriptions-item>
           <a-descriptions-item label="设备类型">{{ viewDevice.deviceType }}</a-descriptions-item>
-          <a-descriptions-item label="设备型号">{{ viewDevice.deviceModel }}</a-descriptions-item>
           <a-descriptions-item label="固件版本">{{ viewDevice.firmwareVersion }}</a-descriptions-item>
           <a-descriptions-item label="SDK版本">{{ viewDevice.sdkVersion }}</a-descriptions-item>
         </a-descriptions>
+
+        <!-- NVR 通道列表 -->
+        <template v-if="viewDevice.deviceType === 'NVR'">
+          <a-divider orientation="center" style="font-size:13px;font-weight:600;color:#1677ff;margin:16px 0 12px">通道列表</a-divider>
+          <div class="dm-view-channels">
+            <div v-for="ch in viewDevice.channels || []" :key="ch.id" class="dm-view-channel-item">
+              <span class="dm-view-channel-no">CH{{ ch.channelNo }}</span>
+              <span class="dm-view-channel-name">{{ ch.name }}</span>
+              <a-tag color="blue">{{ protocolLabel(ch.protocol) }}</a-tag>
+              <span class="dm-channel-meta">SN：{{ ch.serialNo || '—' }} · IP：{{ ch.ip || '—' }}</span>
+              <a-tag :color="ch.status === 'online' ? 'green' : 'red'">{{ ch.status === 'online' ? '在线' : '离线' }}</a-tag>
+            </div>
+            <a-empty v-if="!(viewDevice.channels && viewDevice.channels.length)" description="暂无通道" :image-style="{ height: '40px' }" />
+          </div>
+        </template>
 
         <!-- 套餐信息：仅展示生效中或待生效的套餐 -->
         <template v-if="(viewPackageInfo?.cloudStorage && (viewPackageInfo.cloudStorage.status === 'active' || viewPackageInfo.cloudStorage.status === 'pending')) || (viewPackageInfo?.aiAlgorithm && (viewPackageInfo.aiAlgorithm.status === 'active' || viewPackageInfo.aiAlgorithm.status === 'pending'))">
@@ -1178,4 +1547,41 @@ const flipModeOptions = [
 .dm-view-package-card :deep(.ant-card-body) { padding:8px 12px; }
 .dm-package-name { font-size:13px; font-weight:600; color:#1677ff; }
 .dm-package-empty { display:flex; align-items:center; gap:6px; padding:8px 0; color:#999; font-size:13px; }
+
+/* ==================== NVR 通道 ==================== */
+.dm-channel-panel { padding:4px 8px 8px; }
+.dm-channel-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+.dm-channel-title { font-size:13px; font-weight:600; color:#333; }
+.dm-channel-list { display:flex; flex-direction:column; gap:6px; }
+.dm-channel-item { display:grid; grid-template-columns:56px minmax(120px,1fr) 88px 220px 60px 132px; align-items:center; gap:12px; padding:8px 12px; background:#fafbfc; border:1px solid #f0f0f0; border-radius:6px; }
+.dm-channel-no { font-size:12px; font-weight:600; color:#1677ff; }
+.dm-channel-name { font-size:13px; color:#333; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.dm-channel-protocol, .dm-channel-status { justify-self:start; }
+.dm-channel-meta { font-size:12px; color:#999; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.dm-channel-actions { display:flex; justify-content:flex-end; gap:8px; white-space:nowrap; }
+
+.dm-view-channels { display:flex; flex-direction:column; gap:6px; }
+.dm-view-channel-item { display:flex; align-items:center; gap:12px; padding:8px 12px; background:#fafbfc; border:1px solid #f0f0f0; border-radius:6px; }
+.dm-view-channel-no { font-size:12px; font-weight:600; color:#1677ff; min-width:44px; }
+.dm-view-channel-name { font-size:13px; color:#333; flex:1; }
+
+/* ==================== 添加子设备向导 ==================== */
+.dm-sub-tip { display:flex; align-items:center; gap:8px; font-size:13px; color:#666; margin-bottom:12px; }
+.dm-sub-error-text { color:#ff4d4f; }
+.dm-sub-searching { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; padding:48px 0; color:#999; }
+.dm-sub-detect-list { display:flex; flex-direction:column; gap:8px; max-height:320px; overflow-y:auto; }
+.dm-sub-detect-item { display:flex; align-items:center; gap:12px; padding:10px 12px; background:#fafbfc; border:1px solid #f0f0f0; border-radius:6px; }
+.dm-sub-detect-item :deep(.ant-checkbox-wrapper) { min-width:200px; }
+.dm-sub-detect-sn { font-size:12px; color:#666; }
+.dm-sub-detect-ip { font-size:12px; color:#999; }
+.dm-sub-footer { display:flex; justify-content:flex-end; margin-top:16px; }
+
+.dm-sub-assign-list { display:flex; flex-direction:column; gap:10px; max-height:360px; overflow-y:auto; }
+.dm-sub-assign-item { padding:12px; background:#fafbfc; border:1px solid #f0f0f0; border-radius:6px; }
+.dm-sub-assign-head { display:flex; align-items:baseline; gap:8px; margin-bottom:8px; }
+.dm-sub-assign-title { font-size:13px; font-weight:600; color:#333; }
+.dm-sub-assign-meta { font-size:12px; color:#999; }
+.dm-sub-assign-row { display:flex; align-items:center; flex-wrap:wrap; gap:16px; }
+.dm-sub-assign-field { display:flex; align-items:center; gap:8px; }
+.dm-sub-assign-label { font-size:12px; color:#666; white-space:nowrap; }
 </style>
