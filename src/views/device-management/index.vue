@@ -29,6 +29,7 @@ interface NvrChannel {
   serialNo?: string
   ip?: string
   protocol?: string
+  location?: string
   status: 'online' | 'offline'
 }
 
@@ -199,8 +200,8 @@ const mockDevices: DeviceItem[] = [
   { id: 'd13', name: 'xx相机-消防通道A', license: 'LIC-2024-A013', deviceType: 'WIFI摄像机', deviceModel: '高清网络枪机', firmwareVersion: 'v5.7.11', sdkVersion: 'v2.3.1', orgPath: ['root','huadong','js','nj','qb','qb-hongyang'], orgPathLabel: '华东/江苏/南京/桥北商圈/弘扬广场', status: 'online', location: '118.7421, 32.0987', platform: '海康威视', capabilities: { screen: false, alarm: false, light: true, eventTypes: [] } },
   { id: 'd14', name: 'NVR-新街口机房', license: 'LIC-2024-N014', deviceType: 'NVR', deviceModel: '网络硬盘录像机', firmwareVersion: 'v4.60.10', sdkVersion: 'v2.3.1', orgPath: ['root','huadong','js','nj','xb','xb-wanda'], orgPathLabel: '华东/江苏/南京/新街口商圈/万达苏宁旗舰店', status: 'online', location: '118.7842, 32.0493', platform: '海康威视', capabilities: { screen: false, alarm: false, light: false, eventTypes: [] },
     channels: [
-      { id: 'd14-c1', channelNo: 1, name: '通道1-大门', deviceModel: '高清网络枪机', serialNo: 'C20702456', ip: '192.168.1.64', protocol: 'private', status: 'online' },
-      { id: 'd14-c2', channelNo: 2, name: '通道2-收银台', deviceModel: 'AI智能摄像机', serialNo: 'C20702457', ip: '192.168.1.65', protocol: 'hik', status: 'online' },
+      { id: 'd14-c1', channelNo: 1, name: '通道1-大门', deviceModel: '高清网络枪机', serialNo: 'C20702456', ip: '192.168.1.64', protocol: 'private', location: '118.7842, 32.0493', status: 'online' },
+      { id: 'd14-c2', channelNo: 2, name: '通道2-收银台', deviceModel: 'AI智能摄像机', serialNo: 'C20702457', ip: '192.168.1.65', protocol: 'hik', location: '118.7845, 32.0495', status: 'online' },
       { id: 'd14-c3', channelNo: 3, name: '通道3-库房', deviceModel: '高清网络枪机', serialNo: 'C20702458', ip: '192.168.1.66', protocol: 'onvif', status: 'offline' },
       { id: 'd14-c4', channelNo: 4, name: '通道4-后门', deviceModel: '高清半球摄像机', serialNo: 'GB28181-2231', ip: '192.168.1.67', protocol: 'gb28181', status: 'online' },
       { id: 'd14-c5', channelNo: 5, name: '通道5-机房', deviceModel: '—', serialNo: '', ip: '', protocol: 'unknown', status: 'online' },
@@ -541,8 +542,11 @@ interface DetectedCamera {
   needsAuth: boolean      // onvif / 其他协议需输入用户名密码
   selected: boolean
   channelNo: number
+  name?: string
+  location?: string
   username: string
   password: string
+  authError?: string
 }
 
 // 协议名称映射
@@ -589,7 +593,11 @@ const runDetect = () => {
       detectError.value = true
       return
     }
-    detectedCameras.value = mockDetectedCameras.map(c => ({ ...c, selected: false, channelNo: 0, username: '', password: '' }))
+    const nvr = subDeviceTargetNvr.value
+    const existingSns = new Set((nvr?.channels || []).map(c => c.serialNo).filter(Boolean))
+    detectedCameras.value = mockDetectedCameras
+      .filter(c => !c.serialNo || !existingSns.has(c.serialNo))
+      .map(c => ({ ...c, selected: false, channelNo: 0, name: '', location: '', username: '', password: '' }))
     detecting.value = false
   }, 800)
 }
@@ -613,6 +621,7 @@ const goToChannelAssign = () => {
   let nextNo = (nvr?.channels?.length ? Math.max(...nvr.channels.map(c => c.channelNo)) : 0) + 1
   for (const cam of selectedCameras.value) {
     cam.channelNo = nextNo++
+    if (!cam.name) cam.name = `${cam.channelNo}-智能设备`
   }
   subDeviceStep.value = 2
 }
@@ -623,13 +632,24 @@ const confirmAddSubDevice = () => {
   const existingNos = new Set((nvr.channels || []).map(c => c.channelNo))
   const okList: DetectedCamera[] = []
   const failList: string[] = []
+  let authFailed = false
 
   for (const cam of selectedCameras.value) {
     if (cam.needsAuth && (!cam.username.trim() || !cam.password.trim())) {
-      message.warning(`请为 ${cam.model} 填写用户名和密码`); return
+      message.warning(`请为通道 CH${cam.channelNo} 填写用户名和密码`); return
+    }
+    if (!cam.name || !cam.name.trim()) {
+      message.warning('请填写通道名称'); return
     }
     if (existingNos.has(cam.channelNo)) {
       message.warning(`通道号 CH${cam.channelNo} 已被占用，请调整`); return
+    }
+    cam.authError = ''
+    // 模拟认证：需认证设备校验凭证（原型以「用户名与密码相同」模拟错误，真实场景由设备端校验）
+    if (cam.needsAuth && cam.username.trim() === cam.password.trim()) {
+      cam.authError = '用户名或密码错误，认证不通过'
+      authFailed = true
+      continue
     }
     existingNos.add(cam.channelNo)
     // 模拟添加失败：序列号为空（无法建立有效连接）的设备添加失败
@@ -640,16 +660,22 @@ const confirmAddSubDevice = () => {
     okList.push(cam)
   }
 
+  if (authFailed) {
+    message.error('部分设备认证不通过，请检查用户名和密码后重试')
+    return
+  }
+
   if (!nvr.channels) nvr.channels = []
   for (const cam of okList) {
     nvr.channels.push({
       id: `ch-${Date.now()}-${cam.id}`,
       channelNo: cam.channelNo,
-      name: `通道${cam.channelNo}-${cam.model}`,
+      name: cam.name!.trim(),
       deviceModel: cam.model,
       serialNo: cam.serialNo,
       ip: cam.ip,
       protocol: cam.protocol,
+      location: cam.location?.trim() || '',
       status: 'online',
     })
   }
@@ -672,15 +698,17 @@ const showDeleteChannel = (nvr: DeviceItem, channel: NvrChannel) => {
 }
 
 // ==========================================
-// 子设备更名
+// 子设备编辑（名称 + GPS 详细位置）
 // ==========================================
 const channelRenameVisible = ref(false)
 const channelRenameTarget = ref<NvrChannel | null>(null)
 const channelRenameName = ref('')
+const channelRenameLocation = ref('')
 
 const showRenameChannel = (channel: NvrChannel) => {
   channelRenameTarget.value = channel
   channelRenameName.value = channel.name
+  channelRenameLocation.value = channel.location || ''
   channelRenameVisible.value = true
 }
 
@@ -691,7 +719,8 @@ const handleRenameChannel = () => {
   if (!name) { message.warning('请输入通道名称'); return }
   if (name.length > 50) { message.warning('通道名称限制50个字符以内'); return }
   target.name = name
-  message.success('更名成功')
+  target.location = channelRenameLocation.value.trim()
+  message.success('保存成功')
   channelRenameVisible.value = false
 }
 
@@ -735,10 +764,32 @@ const beforeUpload = (file: File) => {
 // 地图选点
 // ==========================================
 const mapVisible = ref(false)
-const showMapPicker = () => { mapVisible.value = true }
+type MapPickTarget =
+  | { kind: 'device' }
+  | { kind: 'addChannel'; cam: DetectedCamera }
+  | { kind: 'editChannel'; channel: NvrChannel }
+const mapPickTarget = ref<MapPickTarget>({ kind: 'device' })
+
+const showMapPicker = (target?: MapPickTarget) => {
+  if (target) mapPickTarget.value = target
+  mapVisible.value = true
+}
+
+const mapCurrentLocation = computed(() => {
+  const t = mapPickTarget.value
+  if (t.kind === 'addChannel') return t.cam.location || ''
+  if (t.kind === 'editChannel') return t.channel.location || ''
+  return deviceForm.location || ''
+})
+
 const handleMapConfirm = () => {
-  deviceForm.location = '118.7850, 32.0500'
-  mapVisible.value = false; message.success('已选择位置')
+  const t = mapPickTarget.value
+  const coords = '118.7850, 32.0500'
+  if (t.kind === 'addChannel') t.cam.location = coords
+  else if (t.kind === 'editChannel') t.channel.location = coords
+  else deviceForm.location = coords
+  mapVisible.value = false
+  message.success('已选择位置')
 }
 
 // ==========================================
@@ -948,7 +999,7 @@ const flipModeOptions = [
                   <span class="dm-channel-no">CH{{ ch.channelNo }}</span>
                   <span class="dm-channel-name">{{ ch.name }}</span>
                   <a-tag color="blue" class="dm-channel-protocol">{{ protocolLabel(ch.protocol) }}</a-tag>
-                  <span class="dm-channel-meta">SN：{{ ch.serialNo || '—' }} · IP：{{ ch.ip || '—' }}</span>
+                  <span class="dm-channel-meta">SN：{{ ch.serialNo || '—' }} · IP：{{ ch.ip || '—' }} · GPS：{{ ch.location || '—' }}</span>
                   <a-tag :color="ch.status === 'online' ? 'green' : 'red'" class="dm-channel-status">{{ ch.status === 'online' ? '在线' : '离线' }}</a-tag>
                   <div class="dm-channel-actions">
                     <a @click="showRenameChannel(ch)">编辑</a>
@@ -1036,12 +1087,12 @@ const flipModeOptions = [
             <a-col :span="12">
               <a-form-item label="详细位置">
                 <a-input v-model:value="deviceForm.location" placeholder="经纬度坐标">
-                  <template #suffix><EnvironmentOutlined class="dm-map-icon" @click="showMapPicker" title="地图选点" /></template>
+                  <template #suffix><EnvironmentOutlined class="dm-map-icon" @click="showMapPicker()" title="地图选点" /></template>
                 </a-input>
               </a-form-item>
             </a-col>
             <a-col :span="12">
-              <a-form-item label=" "><a @click="showMapPicker" class="dm-map-link"><EnvironmentOutlined /> 地图选点</a></a-form-item>
+              <a-form-item label=" "><a @click="showMapPicker()" class="dm-map-link"><EnvironmentOutlined /> 地图选点</a></a-form-item>
             </a-col>
           </a-row>
 
@@ -1137,7 +1188,7 @@ const flipModeOptions = [
 
         <div v-else class="dm-sub-detect-list">
           <div v-for="cam in detectedCameras" :key="cam.id" class="dm-sub-detect-item">
-            <a-checkbox v-model:checked="cam.selected">{{ cam.model }}</a-checkbox>
+            <a-checkbox v-model:checked="cam.selected">智能设备</a-checkbox>
             <span class="dm-sub-detect-sn">SN：{{ cam.serialNo }}</span>
             <span class="dm-sub-detect-ip">IP：{{ cam.ip }}</span>
             <a-tag v-if="cam.needsAuth" color="orange">需认证</a-tag>
@@ -1157,7 +1208,8 @@ const flipModeOptions = [
         <div class="dm-sub-assign-list">
           <div v-for="cam in selectedCameras" :key="cam.id" class="dm-sub-assign-item">
             <div class="dm-sub-assign-head">
-              <span class="dm-sub-assign-title">{{ cam.model }}</span>
+              <span class="dm-sub-assign-label">通道名称</span>
+              <a-input v-model:value="cam.name" placeholder="请输入通道名称" :maxlength="50" class="dm-sub-assign-name" />
               <span class="dm-sub-assign-meta">SN：{{ cam.serialNo }} · IP：{{ cam.ip }}</span>
             </div>
             <div class="dm-sub-assign-row">
@@ -1165,16 +1217,23 @@ const flipModeOptions = [
                 <span class="dm-sub-assign-label">通道号</span>
                 <a-input-number v-model:value="cam.channelNo" :min="1" :max="64" style="width:120px" />
               </div>
-              <template v-if="cam.needsAuth">
-                <div class="dm-sub-assign-field">
-                  <span class="dm-sub-assign-label">用户名</span>
-                  <a-input v-model:value="cam.username" placeholder="请输入用户名" style="width:180px" />
-                </div>
-                <div class="dm-sub-assign-field">
-                  <span class="dm-sub-assign-label">密码</span>
-                  <a-input-password v-model:value="cam.password" placeholder="请输入密码" style="width:180px" />
-                </div>
-              </template>
+              <div class="dm-sub-assign-field">
+                <span class="dm-sub-assign-label">详细位置</span>
+                <a-input v-model:value="cam.location" placeholder="经纬度坐标" style="width:280px">
+                  <template #suffix><EnvironmentOutlined class="dm-map-icon" @click="showMapPicker({ kind: 'addChannel', cam })" title="地图选点" /></template>
+                </a-input>
+              </div>
+            </div>
+            <div v-if="cam.needsAuth" class="dm-sub-assign-row">
+              <div class="dm-sub-assign-field">
+                <span class="dm-sub-assign-label">用户名</span>
+                <a-input v-model:value="cam.username" placeholder="请输入用户名" style="width:180px" />
+              </div>
+              <div class="dm-sub-assign-field">
+                <span class="dm-sub-assign-label">密码</span>
+                <a-input-password v-model:value="cam.password" placeholder="请输入密码" style="width:180px" />
+              </div>
+              <div v-if="cam.authError" class="dm-sub-auth-error">{{ cam.authError }}</div>
             </div>
           </div>
         </div>
@@ -1188,11 +1247,17 @@ const flipModeOptions = [
       </template>
     </a-modal>
 
-    <!-- ==================== 子设备更名弹窗 ==================== -->
-    <a-modal v-model:open="channelRenameVisible" title="编辑子设备名称" width="440px" @ok="handleRenameChannel" @cancel="channelRenameVisible = false" :destroy-on-hidden="true">
-      <a-form :model="{ name: channelRenameName }" layout="vertical" class="dm-form">
+    <!-- ==================== 子设备编辑弹窗 ==================== -->
+    <a-modal v-model:open="channelRenameVisible" title="编辑子设备" width="480px" @ok="handleRenameChannel" @cancel="channelRenameVisible = false" :destroy-on-hidden="true">
+      <a-form :model="{ name: channelRenameName, location: channelRenameLocation }" layout="vertical" class="dm-form">
         <a-form-item label="通道名称" required>
           <a-input v-model:value="channelRenameName" placeholder="请输入通道名称" :maxlength="50" />
+        </a-form-item>
+        <a-form-item label="详细位置">
+          <a-input v-model:value="channelRenameLocation" placeholder="经纬度坐标">
+            <template #suffix><EnvironmentOutlined class="dm-map-icon" @click="showMapPicker({ kind: 'editChannel', channel: channelRenameTarget! })" title="地图选点" /></template>
+          </a-input>
+          <a @click="showMapPicker({ kind: 'editChannel', channel: channelRenameTarget! })" class="dm-map-link" style="margin-top:4px;display:inline-flex"><EnvironmentOutlined /> 地图选点</a>
         </a-form-item>
       </a-form>
     </a-modal>
@@ -1228,7 +1293,7 @@ const flipModeOptions = [
               <span class="dm-view-channel-no">CH{{ ch.channelNo }}</span>
               <span class="dm-view-channel-name">{{ ch.name }}</span>
               <a-tag color="blue">{{ protocolLabel(ch.protocol) }}</a-tag>
-              <span class="dm-channel-meta">SN：{{ ch.serialNo || '—' }} · IP：{{ ch.ip || '—' }}</span>
+              <span class="dm-channel-meta">SN：{{ ch.serialNo || '—' }} · IP：{{ ch.ip || '—' }} · GPS：{{ ch.location || '—' }}</span>
               <a-tag :color="ch.status === 'online' ? 'green' : 'red'">{{ ch.status === 'online' ? '在线' : '离线' }}</a-tag>
             </div>
             <a-empty v-if="!(viewDevice.channels && viewDevice.channels.length)" description="暂无通道" :image-style="{ height: '40px' }" />
@@ -1282,11 +1347,11 @@ const flipModeOptions = [
     </a-modal>
 
     <!-- ==================== 地图选点弹窗（模拟） ==================== -->
-    <a-modal v-model:open="mapVisible" title="地图选点" width="640px" @ok="handleMapConfirm" @cancel="mapVisible = false" ok-text="确定选择" cancel-text="取消">
+    <a-modal v-model:open="mapVisible" title="地图选点" width="640px" :z-index="2000" @ok="handleMapConfirm" @cancel="mapVisible = false" ok-text="确定选择" cancel-text="取消">
       <div class="dm-map-placeholder">
         <EnvironmentOutlined style="font-size:48px;color:#1890ff" />
         <p>地图选点组件（模拟）</p>
-        <p class="dm-map-coords">当前坐标：{{ deviceForm.location || '未选择' }}</p>
+        <p class="dm-map-coords">当前坐标：{{ mapCurrentLocation || '未选择' }}</p>
         <p class="dm-map-hint">点击地图任意位置选择设备安装地点</p>
       </div>
     </a-modal>
@@ -1577,11 +1642,12 @@ const flipModeOptions = [
 .dm-sub-footer { display:flex; justify-content:flex-end; margin-top:16px; }
 
 .dm-sub-assign-list { display:flex; flex-direction:column; gap:10px; max-height:360px; overflow-y:auto; }
-.dm-sub-assign-item { padding:12px; background:#fafbfc; border:1px solid #f0f0f0; border-radius:6px; }
-.dm-sub-assign-head { display:flex; align-items:baseline; gap:8px; margin-bottom:8px; }
-.dm-sub-assign-title { font-size:13px; font-weight:600; color:#333; }
+.dm-sub-assign-item { padding:12px; background:#fafbfc; border:1px solid #f0f0f0; border-radius:6px; display:flex; flex-direction:column; gap:12px; }
+.dm-sub-assign-head { display:flex; align-items:center; flex-wrap:wrap; gap:8px; }
+.dm-sub-assign-name { width:180px; }
 .dm-sub-assign-meta { font-size:12px; color:#999; }
 .dm-sub-assign-row { display:flex; align-items:center; flex-wrap:wrap; gap:16px; }
 .dm-sub-assign-field { display:flex; align-items:center; gap:8px; }
 .dm-sub-assign-label { font-size:12px; color:#666; white-space:nowrap; }
+.dm-sub-auth-error { width:100%; color:#ff4d4f; font-size:12px; line-height:1.5; }
 </style>
