@@ -498,6 +498,7 @@ fetchData()
       </div>
 
       <a-table
+        class="plan-table"
         :columns="columns"
         :data-source="pagedData"
         :loading="loading"
@@ -661,13 +662,21 @@ fetchData()
           <span class="scope-block-title">作用组织</span>
           <a-input v-model:value="orgKeyword" placeholder="搜索组织路径" allow-clear size="small" style="width: 200px" />
         </div>
-        <a-table :columns="orgColumns" :data-source="orgPaged" :pagination="false" size="small" row-key="index">
+        <a-table :columns="orgColumns" :data-source="orgPaged" :pagination="false" size="small" row-key="index" :scroll="{ y: 240 }">
           <template #emptyText>
             <a-empty description="无匹配组织" :image-style="{ height: '40px' }" />
           </template>
         </a-table>
         <div class="scope-pagination">
-          <a-pagination v-model:current="orgPagination.current" :page-size="orgPagination.pageSize" :total="filteredOrgs.length" size="small" :show-total="(t: number) => `共 ${t} 条`" />
+          <a-pagination
+            v-model:current="orgPagination.current"
+            v-model:pageSize="orgPagination.pageSize"
+            :total="filteredOrgs.length"
+            size="small"
+            show-size-changer
+            :page-size-options="['10','20','50','100']"
+            :show-total="(t: number) => `共 ${t} 条`"
+          />
         </div>
       </div>
 
@@ -676,13 +685,21 @@ fetchData()
           <span class="scope-block-title">作用电表</span>
           <a-input v-model:value="meterKeyword" placeholder="搜索电表" allow-clear size="small" style="width: 200px" />
         </div>
-        <a-table :columns="meterColumns" :data-source="meterPaged" :pagination="false" size="small" row-key="index">
+        <a-table :columns="meterColumns" :data-source="meterPaged" :pagination="false" size="small" row-key="index" :scroll="{ y: 240 }">
           <template #emptyText>
             <a-empty description="作用于所选组织的全部电表" :image-style="{ height: '40px' }" />
           </template>
         </a-table>
         <div class="scope-pagination">
-          <a-pagination v-model:current="meterPagination.current" :page-size="meterPagination.pageSize" :total="filteredMeters.length" size="small" :show-total="(t: number) => `共 ${t} 条`" />
+          <a-pagination
+            v-model:current="meterPagination.current"
+            v-model:pageSize="meterPagination.pageSize"
+            :total="filteredMeters.length"
+            size="small"
+            show-size-changer
+            :page-size-options="['10','20','50','100']"
+            :show-total="(t: number) => `共 ${t} 条`"
+          />
         </div>
       </div>
     </a-modal>
@@ -779,7 +796,7 @@ fetchData()
 :deep(.ant-table) {
   table-layout: fixed;
 }
-:deep(.ant-table-content) > table {
+:deep(.plan-table .ant-table-content) > table {
   width: 100% !important;
   min-width: 1270px !important;
 }
