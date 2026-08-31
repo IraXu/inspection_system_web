@@ -43,6 +43,12 @@ const router = createRouter({
         { path: 'cloud-broadcast/event', name: 'EventBroadcast', component: () => import('@/views/cloud-broadcast/EventBroadcast.vue'), meta: { title: '事件广播' } },
         { path: 'cloud-broadcast/records', name: 'BroadcastRecords', component: () => import('@/views/cloud-broadcast/BroadcastRecords.vue'), meta: { title: '广播记录' } },
         { path: 'cloud-broadcast/media', name: 'MediaLibrary', component: () => import('@/views/cloud-broadcast/MediaLibrary.vue'), meta: { title: '媒体资源库' } },
+        // 能耗管理
+        { path: 'energy/overview', name: 'EnergyOverview', component: () => import('@/views/energy-management/EnergyOverview.vue'), meta: { title: '能耗概览' } },
+        { path: 'energy/alerts', name: 'EnergyAlerts', component: () => import('@/views/energy-management/EnergyAlerts.vue'), meta: { title: '异常告警' } },
+        { path: 'energy/control', name: 'EnergyControl', component: () => import('@/views/energy-management/EnergyControl.vue'), meta: { title: '远程管控' } },
+        { path: 'energy/plan', name: 'PowerPlan', component: () => import('@/views/energy-management/PowerPlan.vue'), meta: { title: '用电计划' } },
+        { path: 'energy/logs', name: 'OperationLogs', component: () => import('@/views/energy-management/OperationLogs.vue'), meta: { title: '操作日志' } },
         // 系统管理
         { path: 'system/organization', name: 'OrganizationStructure', component: () => import('@/views/system-management/UnderConstruction.vue'), meta: { title: '组织架构' } },
         { path: 'system/members', name: 'EnterpriseMembers', component: () => import('@/views/system-management/UnderConstruction.vue'), meta: { title: '企业成员' } },

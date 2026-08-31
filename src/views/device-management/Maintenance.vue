@@ -31,6 +31,7 @@ interface MaintDevice {
   id: string
   name: string
   license: string
+  deviceType?: string       // 设备类型：摄像机 / NVR / 智能电表
   status: DevStatus
   orgPath: string[]
   orgPathLabel: string
@@ -132,6 +133,8 @@ const mockDevices: MaintDevice[] = [
   // 其他区域（充实树统计）
   { id: 'm11', name: 'xx相机-入口', license: 'HB-2024-001', status: 'online', orgPath: ['root','huabei'], orgPathLabel: '华北大区', model: 'AJ-0808', firmwareVersion: 'V260409.5555', latestVersion: 'V260909.8888', hasUpdate: true, upgrading: false },
   { id: 'm12', name: 'xx相机-东门', license: 'HB-2024-002', status: 'online', orgPath: ['root','huadong','nanjing','qiaobei'], orgPathLabel: '华东/江苏/南京/桥北万象城', model: 'ZJ-8766Y', firmwareVersion: 'V260101.1234', latestVersion: 'V260101.1234', hasUpdate: false, upgrading: false },
+  { id: 'm13', name: '智能电表-总表', license: 'SN-SG-2024-0001', deviceType: '智能电表', status: 'online', orgPath: ['root','huadong','nanjing','jiangning','jn-s1'], orgPathLabel: '华东/江苏/南京/江宁万达/xxx店铺a', model: 'DDSU666', firmwareVersion: 'V1.0.2', latestVersion: 'V1.0.2', hasUpdate: false, upgrading: false },
+  { id: 'm14', name: '智能电表-冷藏区', license: 'SN-SG-2024-0002', deviceType: '智能电表', status: 'online', orgPath: ['root','huadong','nanjing','jiangning','jn-s1'], orgPathLabel: '华东/江苏/南京/江宁万达/xxx店铺a', model: 'DTS634', firmwareVersion: 'V1.0.1', latestVersion: 'V1.0.3', hasUpdate: true, upgrading: false },
 ]
 
 // ==========================================
@@ -251,6 +254,7 @@ const filteredDevices = computed(() => {
 const columns: TableColumnsType = [
   { title: '设备名称', dataIndex: 'name', key: 'name', width: 160, ellipsis: true },
   { title: 'License', dataIndex: 'license', key: 'license', width: 150 },
+  { title: '设备类型', dataIndex: 'deviceType', key: 'deviceType', width: 120 },
   { title: '设备状态', key: 'status', width: 110 },
   { title: '所属组织路径', dataIndex: 'orgPathLabel', key: 'orgPathLabel', width: 220, ellipsis: true },
   { title: '设备型号', dataIndex: 'model', key: 'model', width: 110 },
@@ -498,6 +502,9 @@ const confirmBatchUpgrade = () => {
           </template>
 
           <template #bodyCell="{ column, record }">
+            <template v-if="column.key === 'deviceType'">
+              <span>{{ record.deviceType || (record.isNvr ? 'NVR' : '摄像机') }}</span>
+            </template>
             <template v-if="column.key === 'status'">
               <a-tag :color="record.upgrading ? 'blue' : pkgStatusMap[record.status]?.color" style="margin:0">
                 {{ record.upgrading ? '升级中' : pkgStatusMap[record.status]?.label }}

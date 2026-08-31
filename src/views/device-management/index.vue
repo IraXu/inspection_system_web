@@ -211,6 +211,9 @@ const mockDevices: DeviceItem[] = [
       { id: 'd15-c1', channelNo: 1, name: '通道1-东门', deviceModel: '高清网络枪机', serialNo: 'C20800112', ip: '192.168.1.64', protocol: 'hik', status: 'online' },
       { id: 'd15-c2', channelNo: 2, name: '通道2-停车场', deviceModel: '4K云台球机', serialNo: 'RTSP-5567-9A12', ip: '192.168.1.65', protocol: 'rtsp', status: 'offline' },
     ] },
+  { id: 'd16', name: '智能电表-总表', license: 'SN-SG-2024-0001', deviceType: '智能电表', deviceModel: 'DDSU666', firmwareVersion: 'v1.0.2', sdkVersion: '—', orgPath: ['root','huadong','js','nj','xb','xb-wanda'], orgPathLabel: '华东/江苏/南京/新街口商圈/万达苏宁旗舰店', status: 'online', location: '118.7842, 32.0493', platform: '正泰', capabilities: { screen: false, alarm: false, light: false, eventTypes: [] } },
+  { id: 'd17', name: '智能电表-冷藏区', license: 'SN-SG-2024-0002', deviceType: '智能电表', deviceModel: 'DTS634', firmwareVersion: 'v1.0.2', sdkVersion: '—', orgPath: ['root','huadong','js','nj','xb','xb-wanda'], orgPathLabel: '华东/江苏/南京/新街口商圈/万达苏宁旗舰店', status: 'online', location: '118.7842, 32.0493', platform: '安科瑞', capabilities: { screen: false, alarm: false, light: false, eventTypes: [] } },
+  { id: 'd18', name: '智能电表-总表', license: 'SN-SG-2024-0003', deviceType: '智能电表', deviceModel: 'DDSU666', firmwareVersion: 'v1.0.1', sdkVersion: '—', orgPath: ['root','huanan','gd','sz_city','sz-nanshan','sz-wanxiang'], orgPathLabel: '华南/广东/深圳/南山区/万象天地', status: 'offline', location: '113.9526, 22.5176', platform: '正泰', capabilities: { screen: false, alarm: false, light: false, eventTypes: [] } },
 ]
 
 // ==========================================

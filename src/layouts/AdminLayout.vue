@@ -2,7 +2,7 @@
 import { ref, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import type { MenuProps } from 'antdv-next'
-import { DownOutlined, BankOutlined, LogoutOutlined, CheckOutlined, SlackOutlined, XFilled, FundFilled, VideoCameraFilled, CloudServerOutlined, DeploymentUnitOutlined, AlertFilled, NotificationOutlined, GlobalOutlined, RightOutlined, CheckCircleFilled } from '@antdv-next/icons'
+import { DownOutlined, BankOutlined, LogoutOutlined, CheckOutlined, SlackOutlined, XFilled, FundFilled, VideoCameraFilled, CloudServerOutlined, DeploymentUnitOutlined, AlertFilled, NotificationOutlined, GlobalOutlined, RightOutlined, CheckCircleFilled, ThunderboltOutlined } from '@antdv-next/icons'
 import touxiangImg from '@/assets/touxiang.jpg'
 import { useBrandStore } from '@/stores/brand'
 import { useEnterpriseStore } from '@/stores/enterprise'
@@ -152,6 +152,17 @@ const primaryItems: PrimaryItem[] = [
       { key: 'cb-resource-group', label: '广播资源', icon: XFilled, children: [
         { key: '/cloud-broadcast/media', label: '媒体资源库' },
       ]},
+    ],
+  },
+  {
+    key: 'energy-management', icon: ThunderboltOutlined, label: '能耗管理', routePrefix: '/energy',
+    groups: [],
+    directItems: [
+      { key: '/energy/overview', label: '能耗概览', icon: XFilled },
+      { key: '/energy/alerts', label: '异常告警', icon: XFilled },
+      { key: '/energy/plan', label: '用电计划', icon: XFilled },
+      { key: '/energy/control', label: '远程管控', icon: XFilled },
+      { key: '/energy/logs', label: '操作日志', icon: XFilled },
     ],
   },
   {
