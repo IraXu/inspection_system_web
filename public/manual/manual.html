@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>智慧巡检管理系统 · 用户使用手册</title>
+<style>
+  :root {
+    --primary: #2563eb;
+    --primary-2: #3b82f6;
+    --primary-soft: #eff6ff;
+    --primary-border: #bfdbfe;
+    --grad: linear-gradient(135deg, #1d4ed8 0%, #2563eb 45%, #60a5fa 100%);
+    --bg: #f4f6fb;
+    --card: #ffffff;
+    --text: #111827;
+    --text-2: #4b5563;
+    --text-3: #9aa3af;
+    --border: #e6e9f0;
+    --shadow-sm: 0 1px 2px rgba(16,24,40,.04), 0 1px 3px rgba(16,24,40,.06);
+    --shadow-md: 0 6px 22px rgba(16,24,40,.07);
+    --radius: 18px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.75;
+    -webkit-font-smoothing: antialiased;
+    letter-spacing: .1px;
+  }
+
+  /* ===== 顶部 Banner ===== */
+  .hero {
+    background:
+      radial-gradient(900px 460px at 86% -18%, rgba(255,255,255,.38), transparent 62%),
+      linear-gradient(120deg, #1a73e8 0%, #3f96ff 50%, #74baff 100%);
+    color: #fff;
+    padding: 64px 40px 62px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero .glow {
+    position: absolute; right: -140px; top: -180px; width: 520px; height: 520px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,255,255,.30), transparent 62%);
+    filter: blur(30px); pointer-events: none;
+  }
+  .hero::after {
+    content:""; position:absolute; left:0; right:0; bottom:0; height:48px; pointer-events:none;
+    background: linear-gradient(to top, var(--bg), rgba(244,246,251,0));
+  }
+  .hero-inner { max-width: 1150px; margin: 0 auto; position: relative; z-index: 1; }
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 9px;
+    background: rgba(255,255,255,.20); border: 1px solid rgba(255,255,255,.35);
+    border-radius: 999px; font-size: 13px; padding: 6px 18px; margin-bottom: 20px;
+    letter-spacing: .5px; font-weight: 500; color: #fff;
+  }
+  .hero-badge .dot { width:8px; height:8px; border-radius:50%; background:#7CFFB2; box-shadow:0 0 0 4px rgba(124,255,178,.22); }
+  .hero h1 { font-size: 46px; font-weight: 800; letter-spacing: -1px; margin-bottom: 14px; color:#fff; }
+  .hero .hero-sub { font-size: 16px; color: rgba(255,255,255,.95); max-width: 760px; line-height: 1.75; }
+  .hero-meta { margin-top: 30px; display: flex; flex-wrap: wrap; gap: 14px; }
+  .hero-meta .chip {
+    display: flex; align-items: center; gap: 12px;
+    min-width: 250px;
+    background: #fff; border-radius: 16px; padding: 12px 20px 12px 14px;
+    color: inherit; text-decoration: none; cursor: pointer;
+    box-shadow: 0 12px 26px rgba(12,68,190,.16);
+    transition: transform .2s ease, box-shadow .2s ease;
+  }
+  .hero-meta .chip:hover { transform: translateY(-3px); box-shadow: 0 16px 32px rgba(12,68,190,.26); }
+  .hero-meta .chip .ico { display:flex; align-items:center; justify-content:center; width:40px; height:40px; border-radius:12px; background:#eaf3ff; color:#1a73e8; flex-shrink:0; }
+  .hero-meta .chip .ico svg { display:block; }
+  .hero-meta .chip .t { display:flex; flex-direction:column; line-height:1.4; gap:1px; text-align:left; }
+  .hero-meta .chip .t .label { font-size:12px; color:#6b7c98; letter-spacing:.4px; }
+  .hero-meta .chip .t b { font-size:15px; font-weight:700; color:#0d3aa0; }
+  .hero-meta .chip .go { margin-left:auto; display:flex; align-items:center; color:#1a73e8; opacity:.7; transition:transform .2s ease, opacity .2s ease; }
+  .hero-meta .chip:hover .go { transform: translateX(3px); opacity:1; }
+
+  /* ===== 布局 ===== */
+  .layout { max-width: 1150px; margin: 0 auto; padding: 36px 24px 20px; display: flex; gap: 30px; align-items: flex-start; }
+  .toc {
+    width: 274px; position: sticky; top: 22px; flex-shrink: 0;
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 18px 14px; box-shadow: var(--shadow-sm); max-height: calc(100vh - 44px); overflow: auto;
+  }
+  .toc-head { display: flex; align-items: center; gap: 8px; padding: 2px 10px 12px; margin-bottom: 8px; border-bottom: 1px solid var(--border); }
+  .toc-head .mark { width: 28px; height: 28px; border-radius: 9px; background: var(--grad); color:#fff; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .toc-head .mark svg { display:block; }
+  .toc h3 { font-size: 15px; font-weight: 700; color: var(--text); }
+  .toc ul { list-style: none; }
+  .toc li { position: relative; }
+  .toc li a {
+    display: flex; align-items: center; gap: 10px; padding: 9px 10px; margin: 1px 0; border-radius: 10px;
+    color: var(--text-2); text-decoration: none; font-size: 14px; transition: all .16s ease;
+    border-left: 3px solid transparent;
+  }
+  .toc li a .bullet { width: 5px; height: 5px; border-radius: 50%; background: #cbd5e1; flex-shrink: 0; transition: all .16s ease; }
+  .toc li a:hover { background: var(--primary-soft); color: var(--primary); }
+  .toc li a:hover .bullet { background: var(--primary-2); }
+  .toc li a.active { background: var(--primary-soft); color: var(--primary); font-weight: 600; border-left-color: var(--primary); }
+  .toc li a.active .bullet { background: var(--primary); }
+  .toc li.lv2 a { padding-left: 24px; font-size: 13px; color: var(--text-3); }
+
+  .content { flex: 1; min-width: 0; }
+
+  /* ===== 章节卡片 ===== */
+  section.card {
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 34px 36px; margin-bottom: 28px; box-shadow: var(--shadow-sm); scroll-margin-top: 18px;
+    transition: box-shadow .2s ease;
+  }
+  section.card:hover { box-shadow: var(--shadow-md); }
+  .card h2 { font-size: 25px; font-weight: 800; display: flex; align-items: center; gap: 14px; margin-bottom: 8px; letter-spacing: -.3px; }
+  .card h2 .num {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 38px; height: 38px; border-radius: 11px; background: var(--grad);
+    color: #fff; font-size: 18px; font-weight: 800; flex-shrink: 0; box-shadow: 0 6px 14px rgba(37,99,235,.32);
+  }
+  .card h3 { font-size: 18px; font-weight: 700; margin: 26px 0 8px; display: flex; align-items: center; gap: 10px; color: #0f172a; }
+  .card h3 .dot { width: 8px; height: 8px; border-radius: 3px; background: var(--primary); flex-shrink: 0; transform: rotate(45deg); }
+  .card .lead { color: var(--text-2); margin-bottom: 6px; font-size: 15px; }
+  .card p { margin: 8px 0; color: var(--text-2); font-size: 15px; }
+  .card ul, .card ol { margin: 8px 0 8px 22px; color: var(--text-2); }
+  .card li { margin: 5px 0; }
+
+  .divider { height: 1px; background: var(--border); margin: 28px 0; }
+
+  /* ===== 截图 ===== */
+  .shot { margin: 22px 0 10px; }
+  .shot img {
+    width: 100%; display: block; border-radius: 14px; border: 1px solid var(--border);
+    box-shadow: 0 10px 28px rgba(16,24,40,.09); background: #fff; transition: transform .25s ease, box-shadow .25s ease;
+  }
+  .shot:hover img { transform: translateY(-2px); box-shadow: 0 16px 36px rgba(16,24,40,.13); }
+  .shot figcaption { text-align: center; color: var(--text-3); font-size: 13px; margin-top: 10px; }
+  .shot .numtag {
+    display: block; text-align: center; margin-bottom: 10px;
+    color: var(--primary); font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+  }
+  .shot .numtag::before, .shot .numtag::after { content: "—"; color: #cbd5e1; margin: 0 8px; }
+
+  /* ===== 步骤 / 提示 ===== */
+  .steps { list-style: none; margin: 14px 0 !important; }
+  .steps li { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px dashed var(--border); align-items: flex-start; }
+  .steps li:last-child { border-bottom: none; }
+  .steps .step-no {
+    width: 28px; height: 28px; border-radius: 50%; background: var(--primary-soft);
+    color: var(--primary); font-weight: 800; font-size: 14px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; margin-top: 1px;
+  }
+  .tip {
+    background: #fffbeb; border: 1px solid #fde68a; border-radius: 12px; padding: 13px 18px; margin: 16px 0; font-size: 14px; color: #78350f;
+  }
+  .tip.info { background: var(--primary-soft); border: 1px solid var(--primary-border); color: #1e3a8a; }
+  .tip b { color: inherit; }
+  .info-block { background: var(--primary-soft); border: 1px solid var(--primary-border); border-radius: 14px; padding: 18px 20px; margin: 18px 0; }
+  .info-block .info-title { font-weight: 700; color: var(--primary); margin-bottom: 6px; }
+
+  .badge { display: inline-block; padding: 2px 11px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+  .badge-blue { background: var(--primary-soft); color: var(--primary); }
+  .badge-green { background: #ecfdf5; color: #059669; }
+  .badge-orange { background: #fff7ed; color: #ea580c; }
+  .badge-red { background: #fef2f2; color: #dc2626; }
+  .badge-gray { background: #f1f5f9; color: var(--text-2); }
+  .badge-purple { background: #f5f3ff; color: #7c3aed; }
+
+  table.kv { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
+  table.kv th, table.kv td { border: 1px solid var(--border); padding: 12px 16px; text-align: left; }
+  table.kv th { background: #f8fafc; font-weight: 700; white-space: nowrap; color: #0f172a; }
+  table.kv td { color: var(--text-2); }
+  table.kv tr:hover td { background: #fafbff; }
+
+  /* ===== 页脚 ===== */
+  .footer { text-align: center; color: var(--text-3); font-size: 13px; padding: 34px 20px 50px; }
+  .footer .brand { font-size: 15px; color: var(--text-2); margin-bottom: 6px; font-weight: 600; }
+
+  .back-top { position: fixed; right: 30px; bottom: 38px; width: 46px; height: 46px; border-radius: 50%; background: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center; text-decoration: none; box-shadow: 0 8px 20px rgba(37,99,235,.42); font-size: 18px; opacity: 0; transform: translateY(12px); pointer-events: none; transition: all .25s ease; z-index: 5; }
+  .back-top.show { opacity: 1; transform: translateY(0); pointer-events: auto; }
+  .back-top:hover { background: var(--primary-2); }
+
+  @media (max-width: 940px) {
+    .layout { flex-direction: column; }
+    .toc { width: 100%; position: static; max-height: none; }
+    .hero h1 { font-size: 30px; }
+    .card { padding: 24px 20px; }
+    .toc ul { display: flex; flex-wrap: wrap; }
+    .toc li { flex: 1 1 auto; }
+    .toc li.lv2 a { padding-left: 10px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== Banner ===== -->
+<header class="hero">
+  <div class="glow"></div>
+  <div class="hero-inner">
+    <span class="hero-badge"><span class="dot"></span>智慧巡检管理系统 · User Manual</span>
+    <h1>用户使用手册</h1>
+    <p class="hero-sub">本手册基于当前最新版本系统编写，涵盖登录、工作台、实时视频、消息通知、设备管理、智慧巡检、云广播、系统管理八大功能模块，帮助管理人员快速上手并高效开展日常巡检与设备运营工作。</p>
+    <div class="hero-meta">
+      <a class="chip" href="https://inspection.smartcloudcon.com" target="_blank" rel="noopener"><span class="ico"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></span><span class="t"><span class="label">中国大陆入口</span><b>inspection.smartcloudcon.com</b></span><span class="go"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span></a>
+      <a class="chip" href="https://inspection-asia.smartcloudcon.com" target="_blank" rel="noopener"><span class="ico"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></span><span class="t"><span class="label">亚太地区入口</span><b>inspection-asia.smartcloudcon.com</b></span><span class="go"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span></a>
+    </div>
+  </div>
+</header>
+
+<!-- ===== 布局 ===== -->
+<div class="layout">
+  <!-- 目录（滚动定位） -->
+  <nav class="toc">
+    <div class="toc-head"><span class="mark"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="4" cy="6" r="1.2"/><circle cx="4" cy="12" r="1.2"/><circle cx="4" cy="18" r="1.2"/></svg></span><h3>手册目录</h3></div>
+    <ul>
+      <li><a href="#intro"><span class="bullet"></span>系统简介</a></li>
+      <li><a href="#login"><span class="bullet"></span>登录与进入系统</a></li>
+      <li><a href="#workbench"><span class="bullet"></span>工作台</a></li>
+      <li><a href="#realtime-video"><span class="bullet"></span>实时视频</a></li>
+      <li><a href="#notification"><span class="bullet"></span>消息通知</a></li>
+      <li><a href="#device"><span class="bullet"></span>设备管理</a></li>
+      <li><a href="#inspection"><span class="bullet"></span>智慧巡检</a></li>
+      <li class="lv2"><a href="#ins-template"><span class="bullet"></span>巡检模板</a></li>
+      <li class="lv2"><a href="#ins-plan"><span class="bullet"></span>巡检计划</a></li>
+      <li class="lv2"><a href="#ins-daily"><span class="bullet"></span>日常巡检</a></li>
+      <li class="lv2"><a href="#ins-ai"><span class="bullet"></span>AI 巡检</a></li>
+      <li class="lv2"><a href="#ins-todo"><span class="bullet"></span>待办事项</a></li>
+      <li><a href="#broadcast"><span class="bullet"></span>云广播</a></li>
+      <li><a href="#system"><span class="bullet"></span>系统管理</a></li>
+      <li><a href="#faq"><span class="bullet"></span>常见问题</a></li>
+    </ul>
+  </nav>
+
+  <!-- 正文 -->
+  <main class="content">
+
+    <!-- 系统简介 -->
+    <section class="card" id="intro">
+      <h2><span class="num">0</span>系统简介</h2>
+      <p class="lead">智慧巡检管理系统是一套面向多行业客户的「设备 + 巡检 + 广播 + 运营」一体化管理平台，可广泛应用于门店、仓储、物业、学校、园区等多种场景。</p>
+      <p>系统通过摄像头等物联设备，为各类行业场所提供视频实时监控、智慧巡检、视频点检、AI 智能识别、云广播等能力，帮助运营人员统一管理分布在不同区域的项目点，及时发现与处置异常，保障各场所规范运营与安全。</p>
+      <div class="divider"></div>
+      <h3><span class="dot"></span>系统主要能力</h3>
+      <table class="kv">
+        <thead><tr><th>能力</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td><span class="badge badge-blue">实时视频</span></td><td>实时查看各场所摄像头画面，掌握现场动态</td></tr>
+          <tr><td><span class="badge badge-blue">设备管理</span></td><td>统一管理设备列表、设备维护、算法服务商城与安装记录</td></tr>
+          <tr><td><span class="badge badge-green">智慧巡检</span></td><td>巡检模板 → 巡检计划 → 巡检任务 → 执行记录的全流程闭环</td></tr>
+          <tr><td><span class="badge badge-green">AI 巡检</span></td><td>基于智能算法自动识别异常，输出分析结果与合格率</td></tr>
+          <tr><td><span class="badge badge-orange">云广播</span></td><td>实时 / 定时 / 事件广播，并管理广播媒体资源库</td></tr>
+          <tr><td><span class="badge badge-gray">系统管理</span></td><td>角色、组织、成员、日志、企业、品牌等基础配置</td></tr>
+        </tbody>
+      </table>
+      <div class="tip info"><b>提示：</b>不同角色的账号权限不同，菜单可见项以登录账号的实际权限为准。</div>
+    </section>
+
+    <!-- 登录 -->
+    <section class="card" id="login">
+      <h2><span class="num">1</span>登录与进入系统</h2>
+      <p class="lead">使用手机号 + 密码登录，登录成功后选择所属企业进入系统。</p>
+      <ol class="steps">
+        <li><span class="step-no">1</span><span>打开浏览器访问 <b>inspection.smartcloudcon.com</b>，进入系统登录页。</span></li>
+        <li><span class="step-no">2</span><span>输入手机号与密码，点击登录（首次使用请通过管理员开通账号）。</span></li>
+        <li><span class="step-no">3</span><span>登录成功后进入「选择企业」页面，点击您的企业卡片，再点击「进入系统」。</span></li>
+      </ol>
+      <div class="shot">
+        <span class="numtag">图 1-1 · 登录页</span>
+        <figure><img src="images/login.png" alt="智慧巡检管理系统登录页" /><figcaption>输入手机号与密码登录系统</figcaption></figure>
+      </div>
+      <div class="shot">
+        <span class="numtag">图 1-2 · 选择企业</span>
+        <figure><img src="images/select-company.png" alt="选择企业进入系统" /><figcaption>选择所属企业，点击「进入系统」</figcaption></figure>
+      </div>
+      <div class="tip"><b>注意事项：</b>如果您看不到某些菜单，说明当前账号未开通对应模块权限，请联系系统管理员开通。</div>
+    </section>
+
+    <!-- 工作台 -->
+    <section class="card" id="workbench">
+      <h2><span class="num">2</span>工作台</h2>
+      <p class="lead">登录后的默认首页，是各项目点运营数据的「第一屏」。</p>
+      <p>工作台集中呈现账户信息、企业信息、基础设置引导、待我处理、今日设备概览、巡检总览与告警推送，让管理人员一眼掌握全局。</p>
+      <div class="shot">
+        <span class="numtag">图 2-1 · 工作台首页</span>
+        <figure><img src="images/tp-workbench.png" alt="工作台首页" /><figcaption>工作台汇总待办、设备概览、巡检总览与告警推送</figcaption></figure>
+      </div>
+      <table class="kv">
+        <thead><tr><th>板块</th><th>内容</th></tr></thead>
+        <tbody>
+          <tr><td>账户信息</td><td>当前账号、所属企业与角色</td></tr>
+          <tr><td>企业信息</td><td>企业名称与联系方式</td></tr>
+          <tr><td>基础设置</td><td>新建组织 / 角色 / 成员 / 设备的开通引导</td></tr>
+          <tr><td>待我处理</td><td>待执行任务 / 待整改问题 / 待审核问题</td></tr>
+          <tr><td>今日设备概览</td><td>在线率，以及在线 / 休眠 / 离线数量与总数</td></tr>
+          <tr><td>巡检总览</td><td>任务总数 / 已执行 / 完成率</td></tr>
+          <tr><td>告警推送</td><td>实时设备告警列表</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- 实时视频 -->
+    <section class="card" id="realtime-video">
+      <h2><span class="num">3</span>实时视频</h2>
+      <p class="lead">集中查看各场所摄像头的实时画面，掌握现场运营与安全状况。</p>
+      <p>通过视频广场按组织快速筛选设备，进行实时观看，是远程巡查现场的常用入口。</p>
+      <div class="shot">
+        <span class="numtag">图 3-1 · 实时视频</span>
+        <figure><img src="images/realtime-video.png" alt="实时视频" /><figcaption>实时视频墙，按组织查看各场所画面</figcaption></figure>
+      </div>
+    </section>
+
+    <!-- 消息通知 -->
+    <section class="card" id="notification">
+      <h2><span class="num">4</span>消息通知</h2>
+      <p class="lead">统一定向投放与查看设备事件告警消息，便于及时响应。</p>
+      <p>消息通知页内提供「设备事件告警」等标签页，可按类型查看系统推送的告警与通知内容。</p>
+      <div class="shot">
+        <span class="numtag">图 4-1 · 消息通知</span>
+        <figure><img src="images/notification.png" alt="消息通知" /><figcaption>消息通知页，查看设备事件告警</figcaption></figure>
+      </div>
+    </section>
+
+    <!-- 设备管理 -->
+    <section class="card" id="device">
+      <h2><span class="num">5</span>设备管理</h2>
+      <p class="lead">统一管理摄像头等物联设备，覆盖设备列表、维护、算法商城与安装记录。</p>
+
+      <h3><span class="dot"></span>5.1 设备列表</h3>
+      <p>按组织树检索设备，支持按设备名称 / License / 状态筛选。列表展示设备名称、License、设备类型、组织路径、设备状态，并提供编辑、设置、观看等操作。</p>
+      <div class="shot">
+        <span class="numtag">图 5-1 · 设备列表</span>
+        <figure><img src="images/device-list.png" alt="设备列表" /><figcaption>设备列表：维护设备信息与启用状态</figcaption></figure>
+      </div>
+
+      <h3><span class="dot"></span>5.2 设备维护</h3>
+      <p>查看设备型号与固件版本，对需要升级的设备进行固件升级，保障设备稳定运行。</p>
+      <div class="shot">
+        <span class="numtag">图 5-2 · 设备维护</span>
+        <figure><img src="images/device-maintenance.png" alt="设备维护" /><figcaption>设备维护：查看型号、固件版本并升级</figcaption></figure>
+      </div>
+
+      <h3><span class="dot"></span>5.3 智能服务商城</h3>
+      <p>按需开通 AI 算法服务包，为设备叠加智能识别能力（如区域入侵、客流等），是 AI 巡检的能力来源。</p>
+      <div class="shot">
+        <span class="numtag">图 5-3 · 智能服务商城</span>
+        <figure><img src="images/service-mall.png" alt="智能服务商城" /><figcaption>智能服务商城：选购 AI 智能算法服务</figcaption></figure>
+      </div>
+
+      <h3><span class="dot"></span>5.4 安装记录</h3>
+      <p>记录设备装配与上线的明细，便于追溯每台设备的安装与交付情况。</p>
+      <div class="shot">
+        <span class="numtag">图 5-4 · 安装记录</span>
+        <figure><img src="images/install-records.png" alt="安装记录" /><figcaption>安装记录：设备装配明细</figcaption></figure>
+      </div>
+      <div class="tip"><b>提示：</b>「服务开通记录」用于查看已开通服务的历史记录，使用方法与安装记录类似。</div>
+    </section>
+
+    <!-- 智慧巡检（本地原型） -->
+    <section class="card" id="inspection">
+      <h2><span class="num">6</span>智慧巡检</h2>
+      <p class="lead">系统核心模块，将「模板 → 计划 → 任务 → 执行 → 分析」形成完整闭环，并支持 AI 智能识别。</p>
+      <p>智慧巡检在左侧导航下按照「巡检模板、巡检计划、日常巡检、AI 巡检、待办事项」五个子模块组织，左侧提供组织树便于按区域筛选。</p>
+
+      <h3 id="ins-template"><span class="dot"></span>6.1 巡检模板</h3>
+      <p>巡检模板包含「基础问题库」与「巡检模板」两部分。先在「基础问题库」中维护巡检项（按巡检类如环境卫生 / 行为规范 / 安全管理分组），再据此创建巡检模板供计划引用。</p>
+      <div class="shot">
+        <span class="numtag">图 6-1 · 基础问题库</span>
+        <figure><img src="images/tp-item-library.png" alt="基础问题库" /><figcaption>基础问题库：按巡检类维护巡检项，支持标准图与描述</figcaption></figure>
+      </div>
+      <div class="shot">
+        <span class="numtag">图 6-2 · 巡检模板</span>
+        <figure><img src="images/tp-template.png" alt="巡检模板" /><figcaption>巡检模板：配置各场景巡检查项（门店基础 / 明星店铺综合 / 陈列展示）</figcaption></figure>
+      </div>
+
+      <h3 id="ins-plan"><span class="dot"></span>6.2 巡检计划</h3>
+      <p>「巡检计划配置」用于创建巡检计划（如计划 A~F），设置执行区域/场所、巡检方式（在线 / 线下巡检）、循环方式（每日、每周、单次等）；计划下发后会在「巡检任务清单」中自动生成具体任务，可按区域、巡检方式、关联计划、计划状态等条件筛选。</p>
+      <div class="shot">
+        <span class="numtag">图 6-3 · 巡检计划配置</span>
+        <figure><img src="images/tp-plan-config.png" alt="巡检计划配置" /><figcaption>巡检计划配置：管理巡检计划与循环规则</figcaption></figure>
+      </div>
+      <div class="shot">
+        <span class="numtag">图 6-4 · 巡检任务清单</span>
+        <figure><img src="images/tp-task-list.png" alt="巡检任务清单" /><figcaption>巡检任务清单：任务编号、执行时间、计划状态与推送状态</figcaption></figure>
+      </div>
+
+      <h3 id="ins-daily"><span class="dot"></span>6.3 日常巡检</h3>
+      <p>日常巡检提供「在线巡检」与「视频点检」两种方式，并通过左侧组织树按区域筛选。进入项目卡片点击「立即巡检」或「立即点检」即可发起，历史结果可在「视频点检记录」中复核。</p>
+      <div class="shot">
+        <span class="numtag">图 6-5 · 在线巡检</span>
+        <figure><img src="images/tp-online.png" alt="在线巡检" /><figcaption>在线巡检：按区域展示待执行巡检的项目卡片</figcaption></figure>
+      </div>
+      <div class="shot">
+        <span class="numtag">图 6-6 · 视频点检</span>
+        <figure><img src="images/tp-spot-check.png" alt="视频点检" /><figcaption>视频点检：按项目卡片发起视频点检</figcaption></figure>
+      </div>
+      <div class="shot">
+        <span class="numtag">图 6-7 · 视频点检记录</span>
+        <figure><img src="images/tp-spot-check-records.png" alt="视频点检记录" /><figcaption>视频点检记录：按日期 / 现场复核历史点检结果</figcaption></figure>
+      </div>
+
+      <h3 id="ins-ai"><span class="dot"></span>6.4 AI 巡检</h3>
+      <p>AI 巡检由「AI 巡检任务」与「AI 分析结果」两部分组成。系统基于 AI 算法自动创建检测任务，并对采集结果进行智能分析，输出分析图片、发现问题数量与合格率。</p>
+      <div class="shot">
+        <span class="numtag">图 6-8 · AI 巡检任务</span>
+        <figure><img src="images/tp-ai-task.png" alt="AI巡检任务" /><figcaption>AI 巡检任务：管理智能检测任务清单</figcaption></figure>
+      </div>
+      <div class="shot">
+        <span class="numtag">图 6-9 · AI 分析结果</span>
+        <figure><img src="images/tp-ai-result.png" alt="AI分析结果" /><figcaption>AI 分析结果：分析图片、发现问题与合格率统计</figcaption></figure>
+      </div>
+
+      <h3 id="ins-todo"><span class="dot"></span>6.5 待办事项</h3>
+      <p>集中处理巡检相关待办，分为「待执行、待整改、待审核、已完成」四类，工作人员根据待办及时处理，确保巡检形成闭环。</p>
+      <div class="shot">
+        <span class="numtag">图 6-10 · 待办事项</span>
+        <figure><img src="images/tp-todos.png" alt="待办事项" /><figcaption>待办事项：按状态分类处理巡检待办</figcaption></figure>
+      </div>
+    </section>
+
+    <!-- 云广播（本地原型） -->
+    <section class="card" id="broadcast">
+      <h2><span class="num">7</span>云广播</h2>
+      <p class="lead">通过联网广播设备向各场所下发语音指令，支持实时、定时、事件多种触发方式，并统一管理广播媒体资源。</p>
+      <p>云广播在左侧导航下分为「广播管理」与「广播资源」两部分，左侧提供组织区域树，便于按区域批量下发。</p>
+
+      <h3><span class="dot"></span>7.1 广播管理</h3>
+      <p>「实时广播」支持选择组织 / 目标设备，设置播报方式（媒体库 / 在线朗读 / TTS 合成）后点击「开始广播」，并可随时停止。</p>
+      <div class="shot">
+        <span class="numtag">图 7-1 · 实时广播</span>
+        <figure><img src="images/tp-broadcast-realtime.png" alt="实时广播" /><figcaption>实时广播：选择目标设备并立即下发语音</figcaption></figure>
+      </div>
+      <div class="shot">
+        <span class="numtag">图 7-2 · 定时广播</span>
+        <figure><img src="images/tp-broadcast-scheduled.png" alt="定时广播" /><figcaption>定时广播：设置日期范围、时间点与音频，可按需启用</figcaption></figure>
+      </div>
+      <div class="shot">
+        <span class="numtag">图 7-3 · 事件广播</span>
+        <figure><img src="images/tp-broadcast-event.png" alt="事件广播" /><figcaption>事件广播：由告警 / AI / 设备事件触发自动广播</figcaption></figure>
+      </div>
+      <div class="shot">
+        <span class="numtag">图 7-4 · 广播记录</span>
+        <figure><img src="images/tp-broadcast-records.png" alt="广播记录" /><figcaption>广播记录：查看广播历史与成功 / 失败状态</figcaption></figure>
+      </div>
+      <div class="tip info"><b>提示：</b>「定时广播」可配置每日定时播报、特定时段等例行播报任务；「事件广播」可绑定消防告警、AI 闯入等事件，实现自动响应。</div>
+
+      <div class="divider"></div>
+      <h3><span class="dot"></span>7.2 广播资源</h3>
+      <p>「媒体资源库」统一管理广播使用的音频素材，支持按分类管理、上传、录音与 TTS 合成，供各广播任务引用。</p>
+      <div class="shot">
+        <span class="numtag">图 7-5 · 媒体资源库</span>
+        <figure><img src="images/tp-broadcast-media.png" alt="媒体资源库" /><figcaption>媒体资源库：管理广播音频素材</figcaption></figure>
+      </div>
+    </section>
+
+    <!-- 系统管理 -->
+    <section class="card" id="system">
+      <h2><span class="num">8</span>系统管理</h2>
+      <p class="lead">面向管理员的系统基础配置，包括角色、组织、成员、日志、企业与品牌设置。</p>
+
+      <h3><span class="dot"></span>8.1 角色管理</h3>
+      <p>管理系统角色及其功能权限，不同角色登录后看到的菜单与操作范围不同。</p>
+      <div class="shot">
+        <span class="numtag">图 8-1 · 角色管理</span>
+        <figure><img src="images/system-role.png" alt="角色管理" /><figcaption>角色管理：配置角色与权限</figcaption></figure>
+      </div>
+
+      <h3><span class="dot"></span>8.2 组织管理</h3>
+      <p>搭建企业组织架构与层级，是设备、巡检、广播等数据归属的基础。</p>
+      <div class="shot">
+        <span class="numtag">图 8-2 · 组织管理</span>
+        <figure><img src="images/organization.png" alt="组织管理" /><figcaption>组织管理：维护组织架构与层级</figcaption></figure>
+      </div>
+
+      <h3><span class="dot"></span>8.3 系统成员</h3>
+      <p>管理企业内成员账号，为成员分配角色与所属组织。</p>
+      <div class="shot">
+        <span class="numtag">图 8-3 · 系统成员</span>
+        <figure><img src="images/system-member.png" alt="系统成员" /><figcaption>系统成员：成员列表与角色分配</figcaption></figure>
+      </div>
+
+      <h3><span class="dot"></span>8.4 日志管理</h3>
+      <p>记录系统登录与操作日志（如登录日志），便于安全审计与追溯。</p>
+      <div class="shot">
+        <span class="numtag">图 8-4 · 日志管理</span>
+        <figure><img src="images/log-management.png" alt="日志管理" /><figcaption>日志管理：查看登录日志等操作记录</figcaption></figure>
+      </div>
+
+      <h3><span class="dot"></span>8.5 企业管理</h3>
+      <p>维护企业基础信息与联系人信息，是系统的企业级配置入口。</p>
+      <div class="shot">
+        <span class="numtag">图 8-5 · 企业管理</span>
+        <figure><img src="images/company-management.png" alt="企业管理" /><figcaption>企业管理：企业基础信息与联系人</figcaption></figure>
+      </div>
+
+      <h3><span class="dot"></span>8.6 品牌设置</h3>
+      <p>自定义系统的品牌元素，包括浏览器标签、登录页与主界面 Logo / 标题，实现品牌个性化展示。</p>
+      <div class="shot">
+        <span class="numtag">图 8-6 · 品牌设置</span>
+        <figure><img src="images/brand-settings.png" alt="品牌设置" /><figcaption>品牌设置：配置登录页与主界面品牌</figcaption></figure>
+      </div>
+    </section>
+
+    <!-- 常见问题 -->
+    <section class="card" id="faq">
+      <h2><span class="num">9</span>常见问题</h2>
+      <table class="kv">
+        <thead><tr><th style="width:38%">问题</th><th>解决方法</th></tr></thead>
+        <tbody>
+          <tr><td>登录后看不到某些菜单？</td><td>当前账号未开通对应模块权限，请联系系统管理员在「角色管理」中授权。</td></tr>
+          <tr><td>忘记登录密码怎么办？</td><td>请联系企业管理员或系统管理员重置密码。</td></tr>
+          <tr><td>设备显示「离线」？</td><td>请检查设备电源与网络连接，确认摄像头在线后再操作；也可在「设备维护」中处理固件升级。</td></tr>
+          <tr><td>巡检任务如何生成？</td><td>在「巡检计划配置」中创建计划并设置循环方式后，系统会按规则自动下发巡检任务。</td></tr>
+          <tr><td>AI 分析结果为空？</td><td>确认已为设备开通对应的 AI 算法服务（智能服务商城），并创建了 AI 巡检任务。</td></tr>
+          <tr><td>广播播报失败？</td><td>请检查目标设备是否在线，以及媒体资源库中音频是否有效。</td></tr>
+        </tbody>
+      </table>
+      <div class="tip info"><b>提示：</b>本手册随系统迭代持续更新，如与实际页面存在差异，请以系统实际操作界面为准。</div>
+    </section>
+
+  </main>
+</div>
+
+<footer class="footer">
+  <div class="brand">智慧巡检管理系统 · 用户使用手册</div>
+  <div>本手册基于当前最新版本系统编写，配合界面截图，仅用于指导系统使用。</div>
+</footer>
+
+<a class="back-top" id="backTop" href="#" title="回到顶部">↑</a>
+
+<script>
+  // ===== 目录滚动定位（scroll-spy） =====
+  (function () {
+    var tocLinks = Array.prototype.slice.call(document.querySelectorAll('.toc ul a'));
+    var sections = [];
+    tocLinks.forEach(function (link) {
+      var id = link.getAttribute('href').slice(1);
+      var sec = document.getElementById(id);
+      if (sec) sections.push({ link: link, sec: sec });
+    });
+
+    function setActive() {
+      var scrollTop = window.pageYOffset;
+      // 当前活动的 section = 最后一个 top 在滚动线以上的 section
+      var active = sections[0];
+      sections.forEach(function (s) {
+        var top = s.sec.getBoundingClientRect().top + scrollTop - 90; // 留出顶部偏移
+        if (top <= scrollTop) active = s;
+      });
+      tocLinks.forEach(function (l) { l.classList.remove('active'); });
+      if (active) active.link.classList.add('active');
+    }
+
+    var ticking = false;
+    function onScroll() {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(function () { setActive(); ticking = false; });
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    setActive();
+
+    // ===== 回到顶部按钮显隐 =====
+    var backTop = document.getElementById('backTop');
+    window.addEventListener('scroll', function () {
+      if (window.pageYOffset > 300) backTop.classList.add('show');
+      else backTop.classList.remove('show');
+    }, { passive: true });
+
+    // 平滑滚动（借助 scroll-behavior: smooth，这里补充处理 anchor）
+    tocLinks.forEach(function (link) {
+      link.addEventListener('click', function (e) {
+        e.preventDefault();
+        var id = link.getAttribute('href').slice(1);
+        var el = document.getElementById(id);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    });
+  })();
+</script>
+</body>
+</html>

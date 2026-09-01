@@ -7,7 +7,8 @@ const route = useRoute()
 // 首页（工作台）常驻显示，其他页面向右隐藏仅漏出一半
 const isHome = computed(() => route.path === '/' || route.path === '/workbench')
 
-const MANUAL_URL = ''
+// 用户使用手册：使用相对路径，构建部署到任意子路径也能正确加载
+const MANUAL_URL = 'manual/manual.html'
 const openManual = () => {
   if (MANUAL_URL) window.open(MANUAL_URL, '_blank', 'noopener')
 }
