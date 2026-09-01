@@ -2,22 +2,55 @@
 import { ref, reactive, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { message, Modal } from 'antdv-next'
-import { ArrowLeftOutlined, PictureOutlined, FileSearchOutlined, FullscreenOutlined, FullscreenExitOutlined, DownOutlined, LeftOutlined, RightOutlined, VideoCameraOutlined } from '@antdv-next/icons'
+import { ArrowLeftOutlined, PictureOutlined, FileSearchOutlined, FullscreenOutlined, FullscreenExitOutlined, DownOutlined, LeftOutlined, RightOutlined, VideoCameraOutlined, CloudServerOutlined } from '@antdv-next/icons'
 
 const route = useRoute()
 const router = useRouter()
 const taskId = route.query.taskId as string || 'T200-P111-xxxxxxxxA'
 const taskName = 'xxxxxxxxxx巡检任务'
 
-// ========== 摄像头（含在线状态模拟） ==========
-interface Camera { name:string; online:boolean }
-const cameras: Camera[] = [
-  { name:'xxx门店大门监控', online:true },
-  { name:'xxx门店货架监控1', online:true },
-  { name:'xxx门店货架监控2', online:true },
-  { name:'xxx门店仓库监控', online:false },
-  { name:'xxx门店收银监控', online:true },
+// ========== 设备（独立摄像机 + NVR 及其通道） ==========
+interface Camera { name:string; online:boolean; protocol?:string; serialNo?:string; ip?:string }
+type DeviceNode =
+  | { type:'camera'; name:string; online:boolean }
+  | { type:'nvr'; name:string; channels: Camera[] }
+
+const devices: DeviceNode[] = [
+  { type:'nvr', name:'NVR-1F机房', channels:[
+    { name:'通道1-大门', online:true, protocol:'private', serialNo:'C20702456', ip:'192.168.1.64' },
+    { name:'通道2-收银台', online:true, protocol:'hik', serialNo:'C20702457', ip:'192.168.1.65' },
+    { name:'通道3-库房', online:false, protocol:'onvif', serialNo:'C20702458', ip:'192.168.1.66' },
+    { name:'通道4-后门', online:true, protocol:'gb28181', serialNo:'GB28181-2231', ip:'192.168.1.67' },
+  ]},
+  { type:'camera', name:'xxx门店大门监控', online:true },
+  { type:'camera', name:'xxx门店货架监控1', online:true },
+  { type:'camera', name:'xxx门店货架监控2', online:true },
+  { type:'camera', name:'xxx门店仓库监控', online:false },
+  { type:'camera', name:'xxx门店收银监控', online:true },
 ]
+
+// 协议中文名映射
+const protocolLabels: Record<string, string> = { private:'鹤梦云协议', hik:'海康协议', onvif:'ONVIF', gb28181:'GB28181', rtsp:'RTSP', unknown:'其他协议' }
+const protocolLabel = (p?: string) => p ? (protocolLabels[p] || p) : '—'
+
+// 展平的可播放单元（独立摄像机 + NVR 通道），供视频网格使用
+const cameras: Camera[] = []
+// 顶部芯片栏：NVR（含通道下拉） + 独立摄像机
+type Chip =
+  | { kind:'nvr'; label:string; online:boolean; count:number; channels:{ name:string; online:boolean; cameraIdx:number; protocol?:string; serialNo?:string; ip?:string }[] }
+  | { kind:'camera'; label:string; online:boolean; cameraIdx:number }
+
+const chips: Chip[] = []
+devices.forEach(d => {
+  if (d.type === 'nvr') {
+    const channels = d.channels.map(c => ({ name: c.name, online: c.online, cameraIdx: cameras.push(c) - 1, protocol: c.protocol, serialNo: c.serialNo, ip: c.ip }))
+    chips.push({ kind:'nvr', label: d.name, online: d.channels.some(c => c.online), count: d.channels.length, channels })
+  } else {
+    const idx = cameras.push({ name: d.name, online: d.online }) - 1
+    chips.push({ kind:'camera', label: d.name, online: d.online, cameraIdx: idx })
+  }
+})
+
 const activeCamera = ref(-1) // 默认无设备选中
 const cameraScroll = ref(0)
 
@@ -113,14 +146,20 @@ const autoAssignAll = () => {
   }
 }
 const perView = 4
-
 const scrollLeft = () => { if (cameraScroll.value > 0) cameraScroll.value-- }
-const scrollRight = () => { if (cameraScroll.value + perView < cameras.length) cameraScroll.value++ }
-const visibleCameras = () => cameras.slice(cameraScroll.value, cameraScroll.value + perView)
+const scrollRight = () => { if (cameraScroll.value + perView < chips.length) cameraScroll.value++ }
+const visibleChips = () => chips.slice(cameraScroll.value, cameraScroll.value + perView)
 const showLeft = () => cameraScroll.value > 0
-const showRight = () => cameraScroll.value + perView < cameras.length
+const showRight = () => cameraScroll.value + perView < chips.length
 const camDropdownOpen = ref(false)
-const jumpToCamera = (idx: number) => { cameraScroll.value = Math.max(0, Math.min(idx, cameras.length - perView)); dblClickCamera(idx); camDropdownOpen.value = false }
+const jumpToCamera = (idx: number) => {
+  const chipIdx = chips.findIndex(c => c.kind === 'camera' && c.cameraIdx === idx)
+  const nvrIdx = chips.findIndex(c => c.kind === 'nvr' && c.channels.some(ch => ch.cameraIdx === idx))
+  const scrollIdx = chipIdx !== -1 ? chipIdx : nvrIdx
+  if (scrollIdx !== -1) cameraScroll.value = Math.max(0, Math.min(scrollIdx, chips.length - perView))
+  dblClickCamera(idx)
+  camDropdownOpen.value = false
+}
 
 // ========== 分屏 + 全屏 ==========
 const splitMode = ref(4) // 默认2×2
@@ -259,15 +298,50 @@ const submitInspection = () => {
         <div class="exe-cam-tabs">
           <!-- 左箭头 -->
           <span class="exe-cam-arrow" :class="{ disabled: !showLeft() }" @click="showLeft() && scrollLeft()"><LeftOutlined /></span>
-          <!-- 摄像头芯片 -->
-          <span v-for="(cam, i) in visibleCameras()" :key="i" class="exe-cam-chip"
-            :class="{ active: (cameraScroll + i) === activeCamera, offline: !cam.online, linked: isCameraPlaying(cameraScroll + i) && selectedCellIdx === findCameraCell(cameraScroll + i) }"
-            @click="clickCamera(cameraScroll + i)"
-            @dblclick="dblClickCamera(cameraScroll + i)">
-            <span class="exe-cam-dot" :class="{ on: cam.online, off: !cam.online }"></span>
-            <VideoCameraOutlined class="exe-cam-chip-icon" />
-            <span class="exe-cam-chip-name">{{ cam.name }}</span>
-          </span>
+          <!-- 芯片区（占满剩余宽度） -->
+          <div class="exe-cam-chips">
+            <template v-for="(chip, i) in visibleChips()" :key="i">
+              <!-- NVR 分组（容器，点击展开通道下拉） -->
+              <a-popover v-if="chip.kind === 'nvr'" trigger="click" placement="bottom"
+                overlay-class-name="nvr-channel-popover">
+                <span class="exe-cam-chip exe-cam-nvr" :class="{ offline: !chip.online }">
+                  <CloudServerOutlined class="exe-cam-chip-icon" />
+                  <span class="exe-cam-chip-name">{{ chip.label }}</span>
+                  <span class="exe-cam-count">{{ chip.count }}路</span>
+                  <DownOutlined class="exe-cam-nvr-arrow" />
+                </span>
+                <template #content>
+                  <div class="nvr-channel-list">
+                    <a-tooltip v-for="ch in chip.channels" :key="ch.cameraIdx" placement="right" overlay-class-name="cam-tooltip">
+                      <template #title>
+                        <b>{{ ch.name }}</b><br />
+                        协议：{{ protocolLabel(ch.protocol) }}<br />
+                        SN：{{ ch.serialNo || '—' }}<br />
+                        IP：{{ ch.ip || '—' }}<br />
+                        状态：{{ ch.online ? '在线' : '离线' }}
+                      </template>
+                      <div class="nvr-channel-item"
+                        :class="{ active: ch.cameraIdx === activeCamera, off: !ch.online }"
+                        @click="dblClickCamera(ch.cameraIdx)">
+                        <span class="exe-cam-dot" :class="{ on: ch.online, off: !ch.online }"></span>
+                        <VideoCameraOutlined style="font-size:12px" />
+                        <span class="nvr-channel-name">{{ ch.name }}</span>
+                      </div>
+                    </a-tooltip>
+                  </div>
+                </template>
+              </a-popover>
+              <!-- 独立摄像机（可播放） -->
+              <span v-else class="exe-cam-chip"
+                :class="{ active: chip.cameraIdx === activeCamera, offline: !chip.online, linked: isCameraPlaying(chip.cameraIdx) && selectedCellIdx === findCameraCell(chip.cameraIdx) }"
+                @click="clickCamera(chip.cameraIdx)"
+                @dblclick="dblClickCamera(chip.cameraIdx)">
+                <span class="exe-cam-dot" :class="{ on: chip.online, off: !chip.online }"></span>
+                <VideoCameraOutlined class="exe-cam-chip-icon" />
+                <span class="exe-cam-chip-name">{{ chip.label }}</span>
+              </span>
+            </template>
+          </div>
           <!-- 右箭头 -->
           <span class="exe-cam-arrow" :class="{ disabled: !showRight() }" @click="showRight() && scrollRight()"><RightOutlined /></span>
           <!-- 全部摄像头下拉 -->
@@ -277,13 +351,38 @@ const submitInspection = () => {
             </span>
             <template #content>
               <div class="cam-drop-list">
-                <div v-for="(cam, idx) in cameras" :key="idx" class="cam-drop-item"
-                  :class="{ active: idx === activeCamera, off: !cam.online }"
-                  @click="jumpToCamera(idx)">
-                  <span class="exe-cam-dot" :class="{ on: cam.online, off: !cam.online }"></span>
-                  <VideoCameraOutlined style="font-size:12px" />
-                  <span class="cam-drop-name">{{ cam.name }}</span>
-                </div>
+                <template v-for="(chip, idx) in chips" :key="idx">
+                  <div v-if="chip.kind === 'nvr'" class="cam-drop-group">
+                    <CloudServerOutlined style="font-size:12px" />
+                    <span class="cam-drop-name">{{ chip.label }}</span>
+                    <span class="exe-cam-count">{{ chip.count }}路</span>
+                  </div>
+                  <template v-if="chip.kind === 'nvr'">
+                    <a-tooltip v-for="ch in chip.channels" :key="ch.cameraIdx" placement="right" overlay-class-name="cam-tooltip">
+                      <template #title>
+                        <b>{{ ch.name }}</b><br />
+                        协议：{{ protocolLabel(ch.protocol) }}<br />
+                        SN：{{ ch.serialNo || '—' }}<br />
+                        IP：{{ ch.ip || '—' }}<br />
+                        状态：{{ ch.online ? '在线' : '离线' }}
+                      </template>
+                      <div class="cam-drop-item cam-drop-sub"
+                        :class="{ active: ch.cameraIdx === activeCamera, off: !ch.online }"
+                        @click="jumpToCamera(ch.cameraIdx)">
+                        <span class="exe-cam-dot" :class="{ on: ch.online, off: !ch.online }"></span>
+                        <VideoCameraOutlined style="font-size:12px" />
+                        <span class="cam-drop-name">{{ ch.name }}</span>
+                      </div>
+                    </a-tooltip>
+                  </template>
+                  <div v-else class="cam-drop-item"
+                    :class="{ active: chip.cameraIdx === activeCamera, off: !chip.online }"
+                    @click="jumpToCamera(chip.cameraIdx)">
+                    <span class="exe-cam-dot" :class="{ on: chip.online, off: !chip.online }"></span>
+                    <VideoCameraOutlined style="font-size:12px" />
+                    <span class="cam-drop-name">{{ chip.label }}</span>
+                  </div>
+                </template>
               </div>
             </template>
           </a-popover>
@@ -447,12 +546,13 @@ const submitInspection = () => {
 .exe-cam-tabs {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   margin-bottom: 10px;
   padding: 4px 0;
   flex-wrap: nowrap;
   overflow: hidden;
 }
+.exe-cam-chips { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; overflow: hidden; }
 .exe-cam-arrow {
   display: flex;
   align-items: center;
@@ -474,6 +574,7 @@ const submitInspection = () => {
 .exe-cam-chip {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
   padding: 6px 14px 6px 10px;
   border-radius: 20px;
@@ -484,7 +585,8 @@ const submitInspection = () => {
   background: #fff;
   border: 1.5px solid #e8e8e8;
   transition: all .2s;
-  flex-shrink: 0;
+  flex: 1;
+  min-width: 0;
   user-select: none;
 }
 .exe-cam-chip:hover { border-color: #bae7ff; background: #f6fbff; }
@@ -522,6 +624,20 @@ const submitInspection = () => {
 /* 芯片内图标和文字 */
 .exe-cam-chip-icon { font-size: 13px; flex-shrink: 0; }
 .exe-cam-chip-name { overflow: hidden; text-overflow: ellipsis; max-width: 140px; }
+.exe-cam-nvr { background: #f0f5ff; border-color: #adc6ff; color: #1d39c4; }
+.exe-cam-nvr .exe-cam-chip-icon { color: #2f54eb; }
+.exe-cam-nvr.offline { background: #f5f5f5; border-color: #e0e0e0; color: #bbb; }
+.exe-cam-nvr.offline .exe-cam-chip-icon { color: #bbb; }
+.exe-cam-count { font-size: 11px; color: #1890ff; background: #e6f7ff; border: 1px solid #91d5ff; padding: 0 6px; border-radius: 10px; line-height: 1.5; flex-shrink: 0; }
+.exe-cam-nvr .exe-cam-count { color: #2f54eb; background: #e6f2ff; border-color: #adc6ff; }
+.exe-cam-nvr-arrow { font-size: 10px; color: #2f54eb; flex-shrink: 0; }
+.nvr-channel-list { display: flex; flex-direction: column; min-width: 200px; max-height: 280px; overflow-y: auto; padding: 4px; }
+.nvr-channel-item { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 13px; color: #555; transition: background .15s; }
+.nvr-channel-item:hover { background: #f0f5ff; }
+.nvr-channel-item.active { background: #e6f7ff; color: #1890ff; font-weight: 600; }
+.nvr-channel-item.off { opacity: 0.5; }
+.nvr-channel-item.off .exe-cam-dot { opacity: 1; }
+.nvr-channel-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
 /* 徽章 */
 .exe-cam-badge {
   font-size: 11px;
@@ -550,7 +666,7 @@ const submitInspection = () => {
 }
 .exe-cam-more:hover { border-color: #1890ff; color: #1890ff; background: #e6f7ff; }
 /* 下拉列表 */
-.cam-drop-list { display: flex; flex-direction: column; min-width: 220px; max-height: 260px; overflow-y: auto; padding: 4px; }
+.cam-drop-list { display: flex; flex-direction: column; min-width: 240px; max-height: 300px; overflow-y: auto; padding: 4px; }
 .cam-drop-item {
   display: flex;
   align-items: center;
@@ -567,6 +683,10 @@ const submitInspection = () => {
 .cam-drop-item.off { opacity: 0.5; }
 .cam-drop-item.off .exe-cam-dot { opacity: 1; }
 .cam-drop-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+.cam-drop-group { display: flex; align-items: center; gap: 8px; padding: 6px 10px; margin-top: 4px; font-size: 12px; font-weight: 600; color: #1d39c4; background: #f5f8ff; border-bottom: 1px solid #eef1f7; }
+.cam-drop-group:first-child { margin-top: 0; }
+.cam-drop-group .cam-drop-name { font-weight: 600; }
+.cam-drop-sub { padding-left: 28px; }
 .exe-grid { flex: 1; display: grid; gap: 3px; }
 /* 简单布局：直接用行列数 */
 .exe-grid.g-1 { grid-template-columns: 1fr; grid-template-rows: 1fr; }
@@ -842,4 +962,8 @@ const submitInspection = () => {
 .split-popover .ant-popover-inner-content { padding: 0 !important; }
 .cam-drop-popover .ant-popover-inner { padding: 4px !important; }
 .cam-drop-popover .ant-popover-inner-content { padding: 0 !important; }
+.nvr-channel-popover .ant-popover-inner { padding: 4px !important; }
+.nvr-channel-popover .ant-popover-inner-content { padding: 0 !important; }
+.cam-tooltip .ant-tooltip-inner { text-align: left; line-height: 1.7; }
+.cam-tooltip .ant-tooltip-inner b { display: block; margin-bottom: 2px; font-size: 13px; }
 </style>
