@@ -31,6 +31,7 @@ const router = createRouter({
         { path: 'video-square', name: 'VideoSquare', component: () => import('@/views/video-square/VideoSquare.vue'), meta: { title: '视频广场' } },
         // 告警中心
         { path: 'alert-center', name: 'AlertCenter', component: () => import('@/views/alert-center/index.vue'), meta: { title: '告警中心' } },
+        { path: 'alert-center/sms-config', name: 'AlertSmsConfig', component: () => import('@/views/alert-center/SmsConfig.vue'), meta: { title: '短信通知配置' } },
         // 设备管理
         { path: 'device/management', name: 'DeviceManagement', component: () => import('@/views/device-management/index.vue'), meta: { title: '设备管理' } },
         { path: 'device/maintenance', name: 'DeviceMaintenance', component: () => import('@/views/device-management/Maintenance.vue'), meta: { title: '设备维护' } },

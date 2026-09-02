@@ -1,13 +1,16 @@
 <script setup lang="ts">
 import { ref, reactive, computed, watch, onMounted, h } from 'vue'
+import { useRouter } from 'vue-router'
 import { message } from 'antdv-next'
 import {
   SearchOutlined, DeleteOutlined, ReloadOutlined,
   ExclamationCircleOutlined,
   BankOutlined, ApartmentOutlined, ShopOutlined,
   EnvironmentOutlined, VideoCameraOutlined, CloudServerOutlined,
+  MessageOutlined, RightOutlined,
 } from '@antdv-next/icons'
 import dayjs, { type Dayjs } from 'dayjs'
+import { useSmsStore } from '@/stores/sms'
 
 // ==================== 组织设备树 ====================
 interface TreeNode {
@@ -331,6 +334,11 @@ const confirmDelete = () => {
   deleteModalVisible.value = false; deleteTargetId.value = ''; fetchAlertList()
 }
 
+// ==================== 短信通知入口 ====================
+const router = useRouter()
+const smsStore = useSmsStore()
+const goSmsConfig = () => router.push('/alert-center/sms-config')
+
 // ==================== 表格 ====================
 const columns = [
   { title: '所属组织路径', dataIndex: 'orgPath', key: 'orgPath', width: 190, ellipsis: true },
@@ -414,6 +422,14 @@ onMounted(() => { initToday(); fetchAlertList() })
       <div class="ac-bar">
         <a-button danger :disabled="!selectedRowKeys.length" @click="onBatchDelete" :icon="h(DeleteOutlined)">批量删除</a-button>
         <span v-if="selectedRowKeys.length" class="ac-bar-hint">已选 {{ selectedRowKeys.length }} 项</span>
+        <div class="ac-sms-pill" @click="goSmsConfig">
+          <MessageOutlined class="ac-sms-pill-icon" />
+          <span class="ac-sms-pill-label">短信通知</span>
+          <span class="ac-sms-pill-stat">剩余 <b>{{ smsStore.balance.toLocaleString() }}</b> 次</span>
+          <span class="ac-sms-pill-divider"></span>
+          <span class="ac-sms-pill-stat">启用 <b>{{ smsStore.activeRecipients.length }}</b> 个</span>
+          <RightOutlined class="ac-sms-pill-arrow" />
+        </div>
       </div>
 
       <!-- 表格 -->
@@ -485,6 +501,31 @@ onMounted(() => { initToday(); fetchAlertList() })
   background: #f7f8fa;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif;
 }
+
+/* ========== 短信通知胶囊入口 ========== */
+.ac-sms-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  padding: 0 12px;
+  background: #eef5ff;
+  border: 1px solid #d6e8ff;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all .2s;
+  white-space: nowrap;
+}
+.ac-sms-pill:hover {
+  background: #e6f4ff;
+  border-color: #91caff;
+}
+.ac-sms-pill-icon { font-size: 14px; color: #1677ff; }
+.ac-sms-pill-label { font-size: 13px; font-weight: 600; color: #1e293b; }
+.ac-sms-pill-stat { font-size: 12px; color: #64748b; }
+.ac-sms-pill-stat b { color: #1677ff; font-weight: 600; }
+.ac-sms-pill-divider { width: 1px; height: 12px; background: #c9e2ff; }
+.ac-sms-pill-arrow { font-size: 12px; color: #1677ff; }
 
 /* ========== 左侧面板 ========== */
 .ac-panel {
