@@ -338,18 +338,12 @@ const confirmDetect = () => {
 // ==========================================
 // 单条升级
 // ==========================================
-const upgradeTarget = ref<{ kind: 'device' | 'channel'; device: MaintDevice; channel?: ChannelItem; label: string } | null>(null)
+const upgradeTarget = ref<{ device: MaintDevice; label: string } | null>(null)
 const upgradeVisible = ref(false)
 
 const showUpgrade = (device: MaintDevice) => {
   if (!canUpgrade(device)) { message.warning('该设备当前不满足升级条件'); return }
-  upgradeTarget.value = { kind: 'device', device, label: device.name }
-  upgradeVisible.value = true
-}
-
-const showChannelUpgrade = (device: MaintDevice, channel: ChannelItem) => {
-  if (!canUpgrade(channel, channel.protocol)) { message.warning('该通道当前不满足升级条件'); return }
-  upgradeTarget.value = { kind: 'channel', device, channel, label: `${device.name} / ${channel.name}` }
+  upgradeTarget.value = { device, label: device.name }
   upgradeVisible.value = true
 }
 
@@ -380,10 +374,8 @@ const confirmUpgrade = () => {
   const t = upgradeTarget.value
   if (!t) return
   upgradeVisible.value = false
-  const label = t.label
-  message.success(`升级任务已成功下发：${label}`)
-  if (t.kind === 'channel' && t.channel) setUpgrading(t.channel)
-  else setUpgrading(t.device)
+  message.success(`升级任务已成功下发：${t.label}`)
+  setUpgrading(t.device)
 }
 
 // ==========================================
@@ -465,6 +457,9 @@ const confirmBatchUpgrade = () => {
               <div class="mt-channel-header">
                 <span class="mt-channel-title">{{ channelsTitle(record) }}</span>
               </div>
+              <div class="mt-channel-guide">
+                <ExclamationCircleOutlined /> NVR 子设备不支持在系统内升级，请前往 NVR 设备端进行固件升级。
+              </div>
               <!-- 通道列表头 -->
               <div class="mt-channel-head">
                 <span class="mtc-no">通道号</span>
@@ -473,7 +468,6 @@ const confirmBatchUpgrade = () => {
                 <span class="mtc-status">状态</span>
                 <span class="mtc-model">设备型号</span>
                 <span class="mtc-fw">固件版本</span>
-                <span class="mtc-action">操作</span>
               </div>
               <div v-for="ch in record.channels || []" :key="ch.id" class="mt-channel-item">
                 <span class="mtc-no">CH{{ ch.channelNo }}</span>
@@ -491,11 +485,6 @@ const confirmBatchUpgrade = () => {
                     <span v-if="ch.hasUpdate" class="mt-red-dot"></span>
                     <a-tag :bordered="true" style="margin:0">{{ ch.hasUpdate ? ch.latestVersion : ch.firmwareVersion }}</a-tag>
                   </span>
-                </span>
-                <span class="mtc-action">
-                  <a v-if="canUpgrade(ch, ch.protocol)" class="mt-upgrade-link" @click="showChannelUpgrade(record, ch)">升级</a>
-                  <span v-else-if="ch.upgrading" class="mt-upgrading-text"><SyncOutlined spin /> 升级中</span>
-                  <span v-else class="mt-upgrade-disabled">升级</span>
                 </span>
               </div>
             </div>
@@ -598,9 +587,10 @@ const confirmBatchUpgrade = () => {
 .mt-channel-panel { padding:4px 12px 8px; }
 .mt-channel-header { margin-bottom:8px; }
 .mt-channel-title { font-size:13px; font-weight:600; color:#333; }
+.mt-channel-guide { display:flex; align-items:center; gap:6px; padding:6px 12px; margin-bottom:8px; background:#fffbe6; border:1px solid #ffe58f; border-radius:6px; color:#ad6800; font-size:12px; line-height:1.5; }
 .mt-channel-head, .mt-channel-item {
   display:grid;
-  grid-template-columns:60px minmax(120px,1fr) 90px 90px 110px 170px 120px;
+  grid-template-columns:60px minmax(120px,1fr) 90px 90px 110px 170px;
   align-items:center;
   gap:12px;
   padding:8px 12px;
@@ -609,6 +599,6 @@ const confirmBatchUpgrade = () => {
 .mt-channel-item { font-size:13px; color:#333; border-bottom:1px solid #f5f5f5; }
 .mtc-no { color:#1677ff; font-weight:600; }
 .mtc-name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.mtc-protocol, .mtc-status, .mtc-fw, .mtc-action { display:flex; align-items:center; }
+.mtc-protocol, .mtc-status, .mtc-fw { display:flex; align-items:center; }
 .mtc-model { color:#666; }
 </style>

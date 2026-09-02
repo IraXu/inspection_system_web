@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref, reactive, computed, watch } from 'vue'
+import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { message } from 'antdv-next'
 import {
   SearchOutlined, PlusOutlined, DeleteOutlined, ReloadOutlined,
   ExclamationCircleOutlined, EnvironmentOutlined, DownloadOutlined, UploadOutlined,
+  SyncOutlined,
 } from '@antdv-next/icons'
 import type { TableColumnsType } from 'antdv-next'
 import type { DevicePackageInfo, CloudStoragePackage, AIAlgorithmPackage } from '@/types'
@@ -534,23 +535,8 @@ const handleFormSubmit = () => {
 }
 
 // ==========================================
-// NVR 添加子设备（自动搜索检测 → 勾选 → 通道分配/认证）
+// NVR 子设备同步（子设备在 NVR 设备端添加，此处仅同步最新列表）
 // ==========================================
-interface DetectedCamera {
-  id: string
-  serialNo: string
-  ip: string
-  model: string
-  protocol: 'private' | 'hik' | 'onvif' | 'gb28181' | 'rtsp' | 'unknown'
-  needsAuth: boolean      // onvif / 其他协议需输入用户名密码
-  selected: boolean
-  channelNo: number
-  name?: string
-  location?: string
-  username: string
-  password: string
-  authError?: string
-}
 
 // 协议名称映射
 const protocolLabelMap: Record<string, string> = {
@@ -565,133 +551,30 @@ const protocolLabelMap: Record<string, string> = {
 /** 协议展示名：检测不到协议时兜底为「其他协议」 */
 const protocolLabel = (protocol?: string) => protocolLabelMap[protocol || 'unknown'] || '其他协议'
 
-const subDeviceModalVisible = ref(false)
-const subDeviceStep = ref<1 | 2>(1)
-const subDeviceTargetNvr = ref<DeviceItem | null>(null)
-const detecting = ref(false)
-const detectError = ref(false)
-const detectedCameras = ref<DetectedCamera[]>([])
+const syncingNvrId = ref<string | null>(null)
 
-// 模拟 NVR 扫描到的、已通过网线连接的摄像头
-const mockDetectedCameras: DetectedCamera[] = [
-  { id: 'det-1', serialNo: 'C20702461', ip: '192.168.1.64', model: '高清网络枪机', protocol: 'private', needsAuth: false, selected: false, channelNo: 0, username: '', password: '' },
-  { id: 'det-2', serialNo: 'C20702462', ip: '192.168.1.65', model: 'AI智能摄像机', protocol: 'private', needsAuth: false, selected: false, channelNo: 0, username: '', password: '' },
-  { id: 'det-3', serialNo: 'C20702463', ip: '192.168.1.66', model: '高清网络枪机', protocol: 'hik', needsAuth: false, selected: false, channelNo: 0, username: '', password: '' },
-  { id: 'det-4', serialNo: 'ONVIF-8842-9F31', ip: '192.168.1.67', model: '4K云台球机', protocol: 'onvif', needsAuth: true, selected: false, channelNo: 0, username: '', password: '' },
-  { id: 'det-5', serialNo: 'GB28181-1023', ip: '192.168.1.68', model: '高清半球摄像机', protocol: 'gb28181', needsAuth: true, selected: false, channelNo: 0, username: '', password: '' },
-  { id: 'det-6', serialNo: 'RTSP-5567-9A12', ip: '192.168.1.69', model: '4K云台球机', protocol: 'rtsp', needsAuth: true, selected: false, channelNo: 0, username: '', password: '' },
-  { id: 'det-7', serialNo: '', ip: '192.168.1.70', model: '未知型号', protocol: 'unknown', needsAuth: false, selected: false, channelNo: 0, username: '', password: '' },
-]
-
-const selectedCameras = computed(() => detectedCameras.value.filter(c => c.selected))
-
-const runDetect = () => {
-  detecting.value = true
-  detectError.value = false
-  detectedCameras.value = []
+/** 同步 NVR 子设备：子设备在 NVR 设备端添加，此处仅拉取最新列表 */
+const syncSubDevices = (nvr: DeviceItem) => {
+  if (nvr.status === 'offline') {
+    message.warning('NVR 已离线，无法同步子设备，请确认设备在线后再试')
+    return
+  }
+  if (syncingNvrId.value) return
+  syncingNvrId.value = nvr.id
   setTimeout(() => {
-    // 模拟搜索：小概率失败，演示搜索异常兜底（实际由 NVR SDK 返回结果）
-    if (Math.random() < 0.15) {
-      detecting.value = false
-      detectError.value = true
-      return
-    }
-    const nvr = subDeviceTargetNvr.value
-    const existingSns = new Set((nvr?.channels || []).map(c => c.serialNo).filter(Boolean))
-    detectedCameras.value = mockDetectedCameras
-      .filter(c => !c.serialNo || !existingSns.has(c.serialNo))
-      .map(c => ({ ...c, selected: false, channelNo: 0, name: '', location: '', username: '', password: '' }))
-    detecting.value = false
+    syncingNvrId.value = null
+    const count = nvr.channels?.length || 0
+    message.success(`同步完成，共 ${count} 路子设备`)
   }, 800)
 }
 
-const showAddSubDevice = (nvr: DeviceItem) => {
-  if (nvr.status === 'offline') {
-    message.warning('NVR 已离线，无法搜索子设备，请确认设备在线后再试')
-    return
+// 进入列表自动执行一次子设备同步
+onMounted(() => {
+  const nvrs = allDevices.value.filter(d => d.deviceType === 'NVR' && d.status !== 'offline')
+  if (nvrs.length) {
+    message.info(`已自动同步 ${nvrs.length} 台 NVR 的子设备，展开子设备列表可查看最新结果`)
   }
-  subDeviceTargetNvr.value = nvr
-  subDeviceStep.value = 1
-  subDeviceModalVisible.value = true
-  runDetect()
-}
-
-const rescanSubDevices = () => { runDetect() }
-
-const goToChannelAssign = () => {
-  if (selectedCameras.value.length === 0) { message.warning('请至少勾选一台设备'); return }
-  const nvr = subDeviceTargetNvr.value
-  let nextNo = (nvr?.channels?.length ? Math.max(...nvr.channels.map(c => c.channelNo)) : 0) + 1
-  for (const cam of selectedCameras.value) {
-    cam.channelNo = nextNo++
-    if (!cam.name) cam.name = `${cam.channelNo}-智能设备`
-  }
-  subDeviceStep.value = 2
-}
-
-const confirmAddSubDevice = () => {
-  const nvr = subDeviceTargetNvr.value
-  if (!nvr) return
-  const existingNos = new Set((nvr.channels || []).map(c => c.channelNo))
-  const okList: DetectedCamera[] = []
-  const failList: string[] = []
-  let authFailed = false
-
-  for (const cam of selectedCameras.value) {
-    if (cam.needsAuth && (!cam.username.trim() || !cam.password.trim())) {
-      message.warning(`请为通道 CH${cam.channelNo} 填写用户名和密码`); return
-    }
-    if (!cam.name || !cam.name.trim()) {
-      message.warning('请填写通道名称'); return
-    }
-    if (existingNos.has(cam.channelNo)) {
-      message.warning(`通道号 CH${cam.channelNo} 已被占用，请调整`); return
-    }
-    cam.authError = ''
-    // 模拟认证：需认证设备校验凭证（原型以「用户名与密码相同」模拟错误，真实场景由设备端校验）
-    if (cam.needsAuth && cam.username.trim() === cam.password.trim()) {
-      cam.authError = '用户名或密码错误，认证不通过'
-      authFailed = true
-      continue
-    }
-    existingNos.add(cam.channelNo)
-    // 模拟添加失败：序列号为空（无法建立有效连接）的设备添加失败
-    if (!cam.serialNo) {
-      failList.push(cam.model || '未知设备')
-      continue
-    }
-    okList.push(cam)
-  }
-
-  if (authFailed) {
-    message.error('部分设备认证不通过，请检查用户名和密码后重试')
-    return
-  }
-
-  if (!nvr.channels) nvr.channels = []
-  for (const cam of okList) {
-    nvr.channels.push({
-      id: `ch-${Date.now()}-${cam.id}`,
-      channelNo: cam.channelNo,
-      name: cam.name!.trim(),
-      deviceModel: cam.model,
-      serialNo: cam.serialNo,
-      ip: cam.ip,
-      protocol: cam.protocol,
-      location: cam.location?.trim() || '',
-      status: 'online',
-    })
-  }
-
-  subDeviceModalVisible.value = false
-  if (failList.length === 0) {
-    message.success(`成功添加 ${okList.length} 路子设备`)
-  } else if (okList.length === 0) {
-    message.error(`添加失败：${failList.join('、')} 未能建立连接`)
-  } else {
-    message.warning(`成功添加 ${okList.length} 路，${failList.length} 路失败（${failList.join('、')}）`)
-  }
-}
+})
 
 const showDeleteChannel = (nvr: DeviceItem, channel: NvrChannel) => {
   if (nvr.channels) {
@@ -769,7 +652,6 @@ const beforeUpload = (file: File) => {
 const mapVisible = ref(false)
 type MapPickTarget =
   | { kind: 'device' }
-  | { kind: 'addChannel'; cam: DetectedCamera }
   | { kind: 'editChannel'; channel: NvrChannel }
 const mapPickTarget = ref<MapPickTarget>({ kind: 'device' })
 
@@ -780,7 +662,6 @@ const showMapPicker = (target?: MapPickTarget) => {
 
 const mapCurrentLocation = computed(() => {
   const t = mapPickTarget.value
-  if (t.kind === 'addChannel') return t.cam.location || ''
   if (t.kind === 'editChannel') return t.channel.location || ''
   return deviceForm.location || ''
 })
@@ -788,8 +669,7 @@ const mapCurrentLocation = computed(() => {
 const handleMapConfirm = () => {
   const t = mapPickTarget.value
   const coords = '118.7850, 32.0500'
-  if (t.kind === 'addChannel') t.cam.location = coords
-  else if (t.kind === 'editChannel') t.channel.location = coords
+  if (t.kind === 'editChannel') t.channel.location = coords
   else deviceForm.location = coords
   mapVisible.value = false
   message.success('已选择位置')
@@ -993,9 +873,12 @@ const flipModeOptions = [
             <div class="dm-channel-panel">
               <div class="dm-channel-header">
                 <span class="dm-channel-title">子设备列表（{{ record.channels?.length || 0 }} 路）</span>
-                <a-button size="small" type="primary" @click="showAddSubDevice(record)">
-                  <template #icon><PlusOutlined /></template>添加子设备
+                <a-button size="small" type="primary" :loading="syncingNvrId === record.id" @click="syncSubDevices(record)">
+                  <template #icon><SyncOutlined /></template>同步子设备
                 </a-button>
+              </div>
+              <div class="dm-channel-guide">
+                <SyncOutlined /> 子设备需在 NVR 设备端添加，添加完成后点击右上角「同步子设备」即可拉取最新子设备。
               </div>
               <div v-if="record.channels && record.channels.length" class="dm-channel-list">
                 <div v-for="ch in record.channels" :key="ch.id" class="dm-channel-item">
@@ -1011,7 +894,7 @@ const flipModeOptions = [
                   </div>
                 </div>
               </div>
-              <a-empty v-else description="暂无子设备，点击右上角添加" :image-style="{ height: '40px' }" />
+              <a-empty v-else description="暂无子设备，请在 NVR 设备端添加后点击同步" :image-style="{ height: '40px' }" />
             </div>
           </template>
           <template #bodyCell="{ column, record }">
@@ -1150,104 +1033,6 @@ const flipModeOptions = [
           </a-form-item>
         </template>
       </a-form>
-    </a-modal>
-
-    <!-- ==================== 添加子设备弹窗（NVR 自动搜索） ==================== -->
-    <a-modal v-model:open="subDeviceModalVisible" :title="subDeviceStep === 1 ? '添加子设备' : '通道分配'" width="720px"
-      :footer="null" :destroy-on-hidden="true">
-      <a-steps :current="subDeviceStep - 1" size="small" style="margin-bottom:20px">
-        <a-step title="搜索检测" />
-        <a-step title="通道分配" />
-      </a-steps>
-
-      <!-- 步骤 1：自动搜索检测 -->
-      <template v-if="subDeviceStep === 1">
-        <div class="dm-sub-tip">
-          <template v-if="detecting">
-            <a-spin size="small" /> 正在搜索已通过网线连接 NVR 的摄像头...
-          </template>
-          <template v-else-if="detectError">
-            <span class="dm-sub-error-text">搜索失败，请检查 NVR 网络连接后重试</span>
-            <a-button size="small" type="link" @click="rescanSubDevices"><template #icon><ReloadOutlined /></template>重试</a-button>
-          </template>
-          <template v-else>
-            共检测到 <b>{{ detectedCameras.length }}</b> 台设备，已选 <b>{{ selectedCameras.length }}</b> 台
-            <a-button size="small" type="link" @click="rescanSubDevices"><template #icon><ReloadOutlined /></template>重新搜索</a-button>
-          </template>
-        </div>
-
-        <div v-if="detecting" class="dm-sub-searching">
-          <a-spin />
-          <p>设备搜索中，请稍候...</p>
-        </div>
-
-        <div v-else-if="detectError" class="dm-sub-searching">
-          <a-result status="error" title="搜索失败" sub-title="未能搜索到子设备，请检查 NVR 连接后重试">
-            <template #extra>
-              <a-button type="primary" @click="rescanSubDevices"><template #icon><ReloadOutlined /></template>重新搜索</a-button>
-            </template>
-          </a-result>
-        </div>
-
-        <div v-else class="dm-sub-detect-list">
-          <div v-for="cam in detectedCameras" :key="cam.id" class="dm-sub-detect-item">
-            <a-checkbox v-model:checked="cam.selected">智能设备</a-checkbox>
-            <span class="dm-sub-detect-sn">SN：{{ cam.serialNo }}</span>
-            <span class="dm-sub-detect-ip">IP：{{ cam.ip }}</span>
-            <a-tag v-if="cam.needsAuth" color="orange">需认证</a-tag>
-          </div>
-        </div>
-
-        <div class="dm-sub-footer">
-          <a-space>
-            <a-button @click="subDeviceModalVisible = false">取消</a-button>
-            <a-button type="primary" :disabled="selectedCameras.length === 0" @click="goToChannelAssign">下一步</a-button>
-          </a-space>
-        </div>
-      </template>
-
-      <!-- 步骤 2：通道分配 + 协议认证 -->
-      <template v-else>
-        <div class="dm-sub-assign-list">
-          <div v-for="cam in selectedCameras" :key="cam.id" class="dm-sub-assign-item">
-            <div class="dm-sub-assign-head">
-              <span class="dm-sub-assign-label">通道名称</span>
-              <a-input v-model:value="cam.name" placeholder="请输入通道名称" :maxlength="50" class="dm-sub-assign-name" />
-              <span class="dm-sub-assign-meta">SN：{{ cam.serialNo }} · IP：{{ cam.ip }}</span>
-            </div>
-            <div class="dm-sub-assign-row">
-              <div class="dm-sub-assign-field">
-                <span class="dm-sub-assign-label">通道号</span>
-                <a-input-number v-model:value="cam.channelNo" :min="1" :max="64" style="width:120px" />
-              </div>
-              <div class="dm-sub-assign-field">
-                <span class="dm-sub-assign-label">详细位置</span>
-                <a-input v-model:value="cam.location" placeholder="经纬度坐标" style="width:280px">
-                  <template #suffix><EnvironmentOutlined class="dm-map-icon" @click="showMapPicker({ kind: 'addChannel', cam })" title="地图选点" /></template>
-                </a-input>
-              </div>
-            </div>
-            <div v-if="cam.needsAuth" class="dm-sub-assign-row">
-              <div class="dm-sub-assign-field">
-                <span class="dm-sub-assign-label">用户名</span>
-                <a-input v-model:value="cam.username" placeholder="请输入用户名" style="width:180px" />
-              </div>
-              <div class="dm-sub-assign-field">
-                <span class="dm-sub-assign-label">密码</span>
-                <a-input-password v-model:value="cam.password" placeholder="请输入密码" style="width:180px" />
-              </div>
-              <div v-if="cam.authError" class="dm-sub-auth-error">{{ cam.authError }}</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="dm-sub-footer">
-          <a-space>
-            <a-button @click="subDeviceStep = 1">上一步</a-button>
-            <a-button type="primary" @click="confirmAddSubDevice">确认添加</a-button>
-          </a-space>
-        </div>
-      </template>
     </a-modal>
 
     <!-- ==================== 子设备编辑弹窗 ==================== -->
@@ -1620,6 +1405,7 @@ const flipModeOptions = [
 .dm-channel-panel { padding:4px 8px 8px; }
 .dm-channel-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
 .dm-channel-title { font-size:13px; font-weight:600; color:#333; }
+.dm-channel-guide { display:flex; align-items:center; gap:6px; padding:6px 12px; margin-bottom:8px; background:#e6f7ff; border:1px solid #91d5ff; border-radius:6px; color:#0958d9; font-size:12px; line-height:1.5; }
 .dm-channel-list { display:flex; flex-direction:column; gap:6px; }
 .dm-channel-item { display:grid; grid-template-columns:56px minmax(120px,1fr) 88px 220px 60px 132px; align-items:center; gap:12px; padding:8px 12px; background:#fafbfc; border:1px solid #f0f0f0; border-radius:6px; }
 .dm-channel-no { font-size:12px; font-weight:600; color:#1677ff; }
