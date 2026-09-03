@@ -35,7 +35,7 @@ const router = createRouter({
         // 设备管理
         { path: 'device/management', name: 'DeviceManagement', component: () => import('@/views/device-management/index.vue'), meta: { title: '设备管理' } },
         { path: 'device/maintenance', name: 'DeviceMaintenance', component: () => import('@/views/device-management/Maintenance.vue'), meta: { title: '设备维护' } },
-        { path: 'device/service-mall', name: 'ServiceMall', component: () => import('@/views/system-management/UnderConstruction.vue'), meta: { title: '智能服务商城' } },
+        { path: 'device/service-mall', name: 'ServiceMall', component: () => import('@/views/device-management/ServiceMall.vue'), meta: { title: '智能服务商城' } },
         { path: 'device/service-records', name: 'ServiceRecords', component: () => import('@/views/system-management/UnderConstruction.vue'), meta: { title: '服务开通记录' } },
         { path: 'device/install-records', name: 'InstallRecords', component: () => import('@/views/device-management/InstallRecords.vue'), meta: { title: '设备装维记录' } },
         // 云广播
