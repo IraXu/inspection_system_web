@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { ref, reactive, computed, watch, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { message } from 'antdv-next'
 import {
   SearchOutlined, PlusOutlined, DeleteOutlined, ReloadOutlined,
   ExclamationCircleOutlined, EnvironmentOutlined, DownloadOutlined, UploadOutlined,
-  SyncOutlined,
+  SyncOutlined, UpOutlined, DownOutlined, LeftOutlined, RightOutlined, MinusOutlined, AimOutlined,
 } from '@antdv-next/icons'
 import type { TableColumnsType } from 'antdv-next'
 import type { DevicePackageInfo, CloudStoragePackage, AIAlgorithmPackage } from '@/types'
@@ -19,6 +20,8 @@ interface DeviceCapabilities {
   alarm: boolean        // 是否支持事件侦测报警
   light: boolean        // 是否支持灯光设置（状态指示灯、灯光模式）
   eventTypes: string[]  // 支持的事件侦测类型，如 motion/move/human/pet/child
+  intrusion?: boolean   // 是否支持区域检测管理（区域闯入/离开检测）
+  intrusionDetectTypes?: string[]  // 区域检测管理支持的检测类型，如 human/pet
 }
 
 /** NVR 通道（下挂 IPC，作为可播放的最小单元） */
@@ -73,6 +76,12 @@ const eventTypeHints: Record<string, string> = {
   human: '检测画面中有人形出现时触发报警',
   pet: '检测画面中有宠物出现时触发报警',
   child: '检测画面中有孩童出现时触发报警',
+}
+
+/** 区域检测管理类型名称映射 */
+const intrusionDetectTypeLabels: Record<string, string> = {
+  human: '人形检测',
+  pet: '宠物检测',
 }
 
 // ==========================================
@@ -187,17 +196,17 @@ const rawOrgTree: OrgTreeNode[] = [
 // ==========================================
 const mockDevices: DeviceItem[] = [
   { id: 'd1', name: 'xx相机-南门入口', license: 'LIC-2024-A001', deviceType: 'WIFI摄像机', deviceModel: '高清网络枪机', firmwareVersion: 'v5.7.11', sdkVersion: 'v2.3.1', orgPath: ['root','huadong','js','nj','xb','xb-wanda'], orgPathLabel: '华东/江苏/南京/新街口商圈/万达苏宁旗舰店', status: 'online', location: '118.7842, 32.0493', platform: '海康威视', capabilities: { screen: true, alarm: true, light: false, eventTypes: ['motion'] } },
-  { id: 'd2', name: 'xx相机-北门入口', license: 'LIC-2024-A002', deviceType: 'AI摄像机', deviceModel: 'AI智能摄像机', firmwareVersion: 'v5.7.11', sdkVersion: 'v2.3.1', orgPath: ['root','huadong','js','nj','xb','xb-wanda'], orgPathLabel: '华东/江苏/南京/新街口商圈/万达苏宁旗舰店', status: 'online', location: '118.7842, 32.0498', platform: '海康威视', capabilities: { screen: true, alarm: true, light: true, eventTypes: ['motion', 'human', 'pet'] } },
+  { id: 'd2', name: 'xx相机-北门入口', license: 'LIC-2024-A002', deviceType: 'AI摄像机', deviceModel: 'AI智能摄像机', firmwareVersion: 'v5.7.11', sdkVersion: 'v2.3.1', orgPath: ['root','huadong','js','nj','xb','xb-wanda'], orgPathLabel: '华东/江苏/南京/新街口商圈/万达苏宁旗舰店', status: 'online', location: '118.7842, 32.0498', platform: '海康威视', capabilities: { screen: true, alarm: true, light: true, eventTypes: ['motion', 'human', 'pet'], intrusion: true, intrusionDetectTypes: ['human', 'pet'] } },
   { id: 'd3', name: 'xx相机-收银台', license: 'LIC-2024-A003', deviceType: 'WIFI摄像机', deviceModel: '高清网络枪机', firmwareVersion: 'v5.6.3', sdkVersion: 'v2.2.8', orgPath: ['root','huadong','js','nj','qb','qb-wanda'], orgPathLabel: '华东/江苏/南京/桥北商圈/桥北万象城', status: 'offline', location: '118.7453, 32.1021', platform: '海康威视', capabilities: { screen: true, alarm: false, light: false, eventTypes: [] } },
   { id: 'd4', name: 'xx相机-仓库后门', license: 'LIC-2024-A004', deviceType: '低功耗摄像机', deviceModel: '低功耗网络摄像机', firmwareVersion: 'v3.2.0', sdkVersion: 'v1.8.5', orgPath: ['root','huadong','js','nj','qb','qb-wanda'], orgPathLabel: '华东/江苏/南京/桥北商圈/桥北万象城', status: 'sleep', location: '118.7456, 32.1025', platform: '萤石', capabilities: { screen: false, alarm: true, light: false, eventTypes: ['move'] } },
-  { id: 'd5', name: 'xx相机-大厅全景', license: 'LIC-2024-A005', deviceType: 'AI摄像机', deviceModel: 'AI智能摄像机', firmwareVersion: 'v5.7.11', sdkVersion: 'v2.3.1', orgPath: ['root','huadong','js','nj','xb','xb-taiyang'], orgPathLabel: '华东/江苏/南京/新街口商圈/21世纪太阳城', status: 'online', location: '118.7831, 32.0487', platform: '海康威视', capabilities: { screen: true, alarm: true, light: true, eventTypes: ['motion', 'move', 'human', 'pet', 'child'] } },
+  { id: 'd5', name: 'xx相机-大厅全景', license: 'LIC-2024-A005', deviceType: 'AI摄像机', deviceModel: 'AI智能摄像机', firmwareVersion: 'v5.7.11', sdkVersion: 'v2.3.1', orgPath: ['root','huadong','js','nj','xb','xb-taiyang'], orgPathLabel: '华东/江苏/南京/新街口商圈/21世纪太阳城', status: 'online', location: '118.7831, 32.0487', platform: '海康威视', capabilities: { screen: true, alarm: true, light: true, eventTypes: ['motion', 'move', 'human', 'pet', 'child'], intrusion: true, intrusionDetectTypes: ['human', 'pet'] } },
   { id: 'd6', name: 'xx相机-停车场入口', license: 'LIC-2024-A006', deviceType: 'WIFI摄像机', deviceModel: '高清网络枪机', firmwareVersion: 'v5.7.11', sdkVersion: 'v2.3.1', orgPath: ['root','huadong','js','sz','sz-gusu','sz-gusu-meiluo'], orgPathLabel: '华东/江苏/苏州/姑苏区/美罗商城', status: 'online', location: '120.6154, 31.2989', platform: '海康威视', capabilities: { screen: false, alarm: true, light: false, eventTypes: ['motion', 'move'] } },
   { id: 'd7', name: 'xx相机-东门监控', license: 'LIC-2024-A007', deviceType: 'WIFI摄像机', deviceModel: '高清网络枪机', firmwareVersion: 'v5.6.3', sdkVersion: 'v2.2.8', orgPath: ['root','huadong','sh','sh-pudong','sh-lujiazui','sh-guoji'], orgPathLabel: '华东/上海/浦东新区/陆家嘴商圈/上海国际中心', status: 'offline', location: '121.5023, 31.2361', platform: '海康威视', capabilities: { screen: true, alarm: true, light: true, eventTypes: ['motion'] } },
-  { id: 'd8', name: 'xx相机-正门大厅', license: 'LIC-2024-A008', deviceType: 'AI摄像机', deviceModel: 'AI智能摄像机', firmwareVersion: 'v5.7.11', sdkVersion: 'v2.3.1', orgPath: ['root','huabei','bj','bj-chaoyang','bj-guomao','bj-guomao-yintai'], orgPathLabel: '华北/北京/朝阳区/国贸商圈/银泰中心', status: 'online', location: '116.4605, 39.9092', platform: '海康威视', capabilities: { screen: true, alarm: true, light: true, eventTypes: ['motion', 'human', 'pet', 'child'] } },
+  { id: 'd8', name: 'xx相机-正门大厅', license: 'LIC-2024-A008', deviceType: 'AI摄像机', deviceModel: 'AI智能摄像机', firmwareVersion: 'v5.7.11', sdkVersion: 'v2.3.1', orgPath: ['root','huabei','bj','bj-chaoyang','bj-guomao','bj-guomao-yintai'], orgPathLabel: '华北/北京/朝阳区/国贸商圈/银泰中心', status: 'online', location: '116.4605, 39.9092', platform: '海康威视', capabilities: { screen: true, alarm: true, light: true, eventTypes: ['motion', 'human', 'pet', 'child'], intrusion: true, intrusionDetectTypes: ['human', 'pet'] } },
   { id: 'd9', name: 'xx相机-侧门通道', license: 'LIC-2024-A009', deviceType: '低功耗摄像机', deviceModel: '低功耗网络摄像机', firmwareVersion: 'v3.2.0', sdkVersion: 'v1.8.5', orgPath: ['root','huabei','bj','bj-chaoyang','bj-guomao','bj-guomao-yintai'], orgPathLabel: '华北/北京/朝阳区/国贸商圈/银泰中心', status: 'sleep', location: '116.4608, 39.9095', platform: '萤石', capabilities: { screen: false, alarm: true, light: false, eventTypes: ['move', 'human'] } },
   { id: 'd10', name: 'xx相机-1楼中庭', license: 'LIC-2024-A010', deviceType: 'WIFI摄像机', deviceModel: '高清网络枪机', firmwareVersion: 'v5.7.11', sdkVersion: 'v2.3.1', orgPath: ['root','huanan','gd','gz','gz-tianhe','gz-taiKoo'], orgPathLabel: '华南/广东/广州/天河商圈/太古汇', status: 'online', location: '113.3233, 23.1291', platform: '海康威视', capabilities: { screen: true, alarm: false, light: false, eventTypes: [] } },
   { id: 'd11', name: 'xx相机-B1车库', license: 'LIC-2024-A011', deviceType: 'WIFI摄像机', deviceModel: '高清网络枪机', firmwareVersion: 'v5.6.3', sdkVersion: 'v2.2.8', orgPath: ['root','huanan','gd','sz_city','sz-nanshan','sz-wanxiang'], orgPathLabel: '华南/广东/深圳/南山区/万象天地', status: 'offline', location: '113.9526, 22.5176', platform: '海康威视', capabilities: { screen: true, alarm: true, light: false, eventTypes: ['motion', 'move'] } },
-  { id: 'd12', name: 'xx相机-二楼走廊', license: 'LIC-2024-A012', deviceType: 'AI摄像机', deviceModel: 'AI智能摄像机', firmwareVersion: 'v5.7.11', sdkVersion: 'v2.3.1', orgPath: ['root','huanan','gd','sz_city','sz-nanshan','sz-wanxiang'], orgPathLabel: '华南/广东/深圳/南山区/万象天地', status: 'online', location: '113.9528, 22.5180', platform: '海康威视', capabilities: { screen: true, alarm: true, light: true, eventTypes: ['motion', 'move', 'human', 'pet', 'child'] } },
+  { id: 'd12', name: 'xx相机-二楼走廊', license: 'LIC-2024-A012', deviceType: 'AI摄像机', deviceModel: 'AI智能摄像机', firmwareVersion: 'v5.7.11', sdkVersion: 'v2.3.1', orgPath: ['root','huanan','gd','sz_city','sz-nanshan','sz-wanxiang'], orgPathLabel: '华南/广东/深圳/南山区/万象天地', status: 'online', location: '113.9528, 22.5180', platform: '海康威视', capabilities: { screen: true, alarm: true, light: true, eventTypes: ['motion', 'move', 'human', 'pet', 'child'], intrusion: true, intrusionDetectTypes: ['human', 'pet'] } },
   { id: 'd13', name: 'xx相机-消防通道A', license: 'LIC-2024-A013', deviceType: 'WIFI摄像机', deviceModel: '高清网络枪机', firmwareVersion: 'v5.7.11', sdkVersion: 'v2.3.1', orgPath: ['root','huadong','js','nj','qb','qb-hongyang'], orgPathLabel: '华东/江苏/南京/桥北商圈/弘扬广场', status: 'online', location: '118.7421, 32.0987', platform: '海康威视', capabilities: { screen: false, alarm: false, light: true, eventTypes: [] } },
   { id: 'd14', name: 'NVR-新街口机房', license: 'LIC-2024-N014', deviceType: 'NVR', deviceModel: '网络硬盘录像机', firmwareVersion: 'v4.60.10', sdkVersion: 'v2.3.1', orgPath: ['root','huadong','js','nj','xb','xb-wanda'], orgPathLabel: '华东/江苏/南京/新街口商圈/万达苏宁旗舰店', status: 'online', location: '118.7842, 32.0493', platform: '海康威视', capabilities: { screen: false, alarm: false, light: false, eventTypes: [] },
     channels: [
@@ -744,6 +753,22 @@ interface DeviceSettings {
   // 灯光设置
   lightMode: 'smart' | 'bw'
   statusLed: boolean
+  // 区域检测管理
+  intrusionEnter: boolean
+  intrusionLeave: boolean
+  intrusionTimeStart: string
+  intrusionTimeEnd: string
+  intrusionAreaMode: 'all' | 'custom'
+  intrusionArea: IntrusionArea | null
+  intrusionSensitivity: number
+  intrusionDetectTypes: string[]
+  intrusionBuzzer: boolean
+  intrusionAlarmLight: boolean
+}
+
+/** 区域检测管理框选区域（基于摄像机画面的归一化六边形） */
+interface IntrusionArea {
+  points: { x: number; y: number }[]   // 归一化坐标 0~1，6个顶点
 }
 
 // 每台设备的设置缓存
@@ -762,6 +787,16 @@ const getDefaultSettings = (device: DeviceItem): DeviceSettings => {
     eventAlarm,
     lightMode: 'smart',
     statusLed: true,
+    intrusionEnter: false,
+    intrusionLeave: false,
+    intrusionTimeStart: '00:00',
+    intrusionTimeEnd: '23:59',
+    intrusionAreaMode: 'all',
+    intrusionArea: null,
+    intrusionSensitivity: 2,
+    intrusionDetectTypes: [...(device.capabilities.intrusionDetectTypes ?? [])],
+    intrusionBuzzer: false,
+    intrusionAlarmLight: false,
   }
 }
 
@@ -784,16 +819,224 @@ const currentCapabilities = computed(() => settingsDevice.value?.capabilities ??
 /** 当前设备是否有任何设置项（如果三个能力都为false则无设置项） */
 const hasAnySettings = computed(() => {
   const cap = currentCapabilities.value
-  return cap.screen || cap.alarm || cap.light
+  return cap.screen || cap.alarm || cap.light || cap.intrusion
 })
+
+const router = useRouter()
+
+const goToCloudBroadcast = () => {
+  settingsVisible.value = false
+  router.push('/cloud-broadcast/event')
+}
 
 const handleSettingsSave = () => {
   if (settingsDevice.value?.status === 'offline') {
     message.warning('离线设备无法进行功能设置，请确认设备在线后再试')
     return
   }
+  if (currentSettings.value.intrusionAreaMode === 'custom' && !currentSettings.value.intrusionArea) {
+    message.warning('已选择自定义区域，请先框选检测区域')
+    return
+  }
   message.success(`${settingsDevice.value?.name || ''} 功能设置保存成功`)
   settingsVisible.value = false
+}
+
+// ==========================================
+// 区域检测管理 - 区域框选（六边形）
+// ==========================================
+const intrusionDrawVisible = ref(false)
+const intrusionCanvasEl = ref<HTMLDivElement | null>(null)
+const intrusionDraftPoints = ref<{ x: number; y: number }[]>([])
+const intrusionDragIndex = ref<number | null>(null)
+const intrusionCursor = ref<{ x: number; y: number } | null>(null)
+
+const intrusionDetectOptions = computed(() =>
+  (currentCapabilities.value.intrusionDetectTypes ?? []).map(ft => ({
+    label: intrusionDetectTypeLabels[ft] || ft,
+    value: ft,
+  })),
+)
+
+const getIntrusionPos = (e: MouseEvent) => {
+  const rect = intrusionCanvasEl.value?.getBoundingClientRect()
+  if (!rect) return { x: 0, y: 0 }
+  return { x: e.clientX - rect.left, y: e.clientY - rect.top }
+}
+
+const INTRUSION_VERTEX_HIT = 12
+
+const hitIntrusionVertex = (pos: { x: number; y: number }) => {
+  const idx = intrusionDraftPoints.value.findIndex(p => Math.hypot(p.x - pos.x, p.y - pos.y) <= INTRUSION_VERTEX_HIT)
+  return idx >= 0 ? idx : -1
+}
+
+const intrusionHoverVertex = computed(() => {
+  const cur = intrusionCursor.value
+  return cur ? hitIntrusionVertex(cur) : -1
+})
+
+const intrusionCursorStyle = computed(() => {
+  if (intrusionDragIndex.value !== null) return 'grabbing'
+  if (intrusionHoverVertex.value >= 0) return 'grab'
+  if (intrusionDraftPoints.value.length < 6) return 'crosshair'
+  return 'default'
+})
+
+type IntrusionPoint = { x: number; y: number }
+
+const orientation = (p: IntrusionPoint, q: IntrusionPoint, r: IntrusionPoint) => {
+  const val = (q.y - p.y) * (r.x - q.x) - (q.x - p.x) * (r.y - q.y)
+  if (val === 0) return 0
+  return val > 0 ? 1 : 2
+}
+
+const onSegment = (p: IntrusionPoint, q: IntrusionPoint, r: IntrusionPoint) =>
+  q.x <= Math.max(p.x, r.x) && q.x >= Math.min(p.x, r.x) &&
+  q.y <= Math.max(p.y, r.y) && q.y >= Math.min(p.y, r.y)
+
+const segmentsIntersect = (a: IntrusionPoint, b: IntrusionPoint, c: IntrusionPoint, d: IntrusionPoint) => {
+  const o1 = orientation(a, b, c)
+  const o2 = orientation(a, b, d)
+  const o3 = orientation(c, d, a)
+  const o4 = orientation(c, d, b)
+  if (o1 !== o2 && o3 !== o4) return true
+  if (o1 === 0 && onSegment(a, c, b)) return true
+  if (o2 === 0 && onSegment(a, d, b)) return true
+  if (o3 === 0 && onSegment(c, a, d)) return true
+  if (o4 === 0 && onSegment(c, b, d)) return true
+  return false
+}
+
+const hasSelfIntersection = (pts: IntrusionPoint[], closed: boolean) => {
+  const n = pts.length
+  const edgeCount = closed ? n : n - 1
+  for (let i = 0; i < edgeCount; i++) {
+    const a = pts[i]
+    const b = pts[(i + 1) % n]
+    for (let j = i + 1; j < edgeCount; j++) {
+      const c = pts[j]
+      const d = pts[(j + 1) % n]
+      // 相邻边（共享顶点）允许相交，跳过
+      const adjacent = j === i + 1 || (closed && i === 0 && j === edgeCount - 1)
+      if (adjacent) continue
+      if (segmentsIntersect(a, b, c, d)) return true
+    }
+  }
+  return false
+}
+
+const intrusionSelfIntersects = computed(() => {
+  const pts = intrusionDraftPoints.value
+  if (pts.length < 4) return false
+  return hasSelfIntersection(pts, pts.length === 6)
+})
+
+const clearIntrusionDraft = () => {
+  intrusionDraftPoints.value = []
+  intrusionCursor.value = null
+  intrusionDragIndex.value = null
+}
+
+// PTZ 云台控制（模拟，便于调整实时画面位置）
+const ptzZoom = ref(1)
+const ptzPan = ref({ x: 0, y: 0 })
+const ptzStep = 24
+const ptzVisible = ref(false)
+
+const ptzSceneStyle = computed(() => ({
+  transform: `translate(${ptzPan.value.x}px, ${ptzPan.value.y}px) scale(${ptzZoom.value})`,
+}))
+
+const ptzMove = (dx: number, dy: number) => {
+  ptzPan.value = {
+    x: Math.max(-64, Math.min(64, ptzPan.value.x + dx)),
+    y: Math.max(-64, Math.min(64, ptzPan.value.y + dy)),
+  }
+}
+
+const ptzZoomIn = () => { ptzZoom.value = Math.min(3, +(ptzZoom.value + 0.25).toFixed(2)) }
+const ptzZoomOut = () => { ptzZoom.value = Math.max(1, +(ptzZoom.value - 0.25).toFixed(2)) }
+const ptzReset = () => {
+  ptzPan.value = { x: 0, y: 0 }
+  ptzZoom.value = 1
+}
+
+const intrusionDraftLinePoints = computed(() =>
+  intrusionDraftPoints.value.map(p => `${p.x},${p.y}`).join(' '),
+)
+
+const intrusionDraftPolygonPoints = computed(() =>
+  intrusionDraftPoints.value.length === 6 ? intrusionDraftLinePoints.value : '',
+)
+
+const intrusionPreviewLine = computed(() => {
+  const pts = intrusionDraftPoints.value
+  const cur = intrusionCursor.value
+  if (!cur || pts.length === 0 || pts.length >= 6) return null
+  const last = pts[pts.length - 1]
+  return { x1: last.x, y1: last.y, x2: cur.x, y2: cur.y }
+})
+
+const intrusionAreaPoints = (area: IntrusionArea) =>
+  area.points.map(p => `${p.x * 100},${p.y * 100}`).join(' ')
+
+const openIntrusionDraw = () => {
+  intrusionDraftPoints.value = []
+  intrusionCursor.value = null
+  intrusionDragIndex.value = null
+  ptzZoom.value = 1
+  ptzPan.value = { x: 0, y: 0 }
+  ptzVisible.value = false
+  intrusionDrawVisible.value = true
+}
+
+const onIntrusionMouseDown = (e: MouseEvent) => {
+  const pos = getIntrusionPos(e)
+  const idx = hitIntrusionVertex(pos)
+  if (idx >= 0) {
+    intrusionDragIndex.value = idx
+    return
+  }
+  if (intrusionDraftPoints.value.length < 6) {
+    intrusionDraftPoints.value.push(pos)
+  }
+}
+
+const onIntrusionMouseMove = (e: MouseEvent) => {
+  const pos = getIntrusionPos(e)
+  intrusionCursor.value = pos
+  if (intrusionDragIndex.value !== null) {
+    const idx = intrusionDragIndex.value
+    const arr = intrusionDraftPoints.value
+    arr[idx] = { ...arr[idx], ...pos }
+  }
+}
+
+const onIntrusionMouseUp = () => {
+  intrusionDragIndex.value = null
+}
+
+const handleIntrusionDrawConfirm = () => {
+  const pts = intrusionDraftPoints.value
+  if (pts.length !== 6) {
+    message.warning('请依次点击放置6个顶点，完成区域框选')
+    return
+  }
+  if (intrusionSelfIntersects.value) {
+    message.warning('框选区域存在交叉线，请调整顶点后再确认')
+    return
+  }
+  const el = intrusionCanvasEl.value
+  const cw = el?.clientWidth || 1
+  const ch = el?.clientHeight || 1
+  currentSettings.value.intrusionArea = {
+    points: pts.map(p => ({ x: p.x / cw, y: p.y / ch })),
+  }
+  intrusionDraftPoints.value = []
+  intrusionCursor.value = null
+  intrusionDrawVisible.value = false
+  message.success('已框选检测区域')
 }
 
 // 画面设置项
@@ -1144,6 +1387,58 @@ const flipModeOptions = [
       </div>
     </a-modal>
 
+    <!-- ==================== 区域框选弹窗（模拟） ==================== -->
+    <a-modal v-model:open="intrusionDrawVisible" title="区域框选" width="1000px" :z-index="2000" @ok="handleIntrusionDrawConfirm" @cancel="intrusionDrawVisible = false" ok-text="确认框选" cancel-text="取消">
+      <div class="dm-intrusion-toolbar">
+        <span class="dm-intrusion-toolbar-count">已放置 {{ intrusionDraftPoints.length }}/6 个顶点</span>
+        <div class="dm-intrusion-toolbar-actions">
+          <a-button size="small" class="dm-toolbar-btn" @click="ptzVisible = !ptzVisible">PTZ</a-button>
+          <a-button size="small" class="dm-toolbar-btn" danger :disabled="intrusionDraftPoints.length === 0" @click="clearIntrusionDraft">一键清除</a-button>
+        </div>
+      </div>
+      <div
+        ref="intrusionCanvasEl"
+        class="dm-intrusion-canvas"
+        :style="{ cursor: intrusionCursorStyle }"
+        @mousedown="onIntrusionMouseDown"
+        @mousemove="onIntrusionMouseMove"
+        @mouseup="onIntrusionMouseUp"
+        @mouseleave="onIntrusionMouseUp"
+      >
+        <div class="dm-intrusion-scene" :style="ptzSceneStyle">
+          <span class="dm-intrusion-scene-tag">实时画面 · 变倍 {{ ptzZoom.toFixed(2) }}x</span>
+        </div>
+        <svg class="dm-intrusion-svg" :class="{ 'is-invalid': intrusionSelfIntersects }">
+          <polygon v-if="intrusionDraftPoints.length === 6" :points="intrusionDraftPolygonPoints" class="dm-intrusion-polygon" />
+          <polyline v-if="intrusionDraftPoints.length >= 2" :points="intrusionDraftLinePoints" class="dm-intrusion-polyline" />
+          <line v-if="intrusionPreviewLine" :x1="intrusionPreviewLine.x1" :y1="intrusionPreviewLine.y1" :x2="intrusionPreviewLine.x2" :y2="intrusionPreviewLine.y2" class="dm-intrusion-preview-line" />
+          <circle v-for="(p, i) in intrusionDraftPoints" :key="'hit-' + i" :cx="p.x" :cy="p.y" r="12" class="dm-intrusion-vertex-hit" />
+          <g v-for="(p, i) in intrusionDraftPoints" :key="'v-' + i">
+            <circle :cx="p.x" :cy="p.y" r="8" :fill="intrusionDragIndex === i ? (intrusionSelfIntersects ? '#ff4d4f' : '#1890ff') : '#fff'" class="dm-intrusion-vertex" />
+            <text :x="p.x" :y="p.y" class="dm-intrusion-vertex-label" :fill="intrusionDragIndex === i ? '#fff' : (intrusionSelfIntersects ? '#ff4d4f' : '#1890ff')">{{ i + 1 }}</text>
+          </g>
+        </svg>
+        <div v-if="ptzVisible" class="dm-intrusion-ptz" @mousedown.stop>
+          <div class="dm-intrusion-ptz-body">
+            <div class="dm-intrusion-ptz-pad">
+              <a-button size="small" class="dm-ptz-btn dm-ptz-up" @click="ptzMove(0, -ptzStep)"><UpOutlined /></a-button>
+              <a-button size="small" class="dm-ptz-btn dm-ptz-left" @click="ptzMove(-ptzStep, 0)"><LeftOutlined /></a-button>
+              <a-button size="small" class="dm-ptz-btn dm-ptz-home" title="复位" @click="ptzReset"><AimOutlined /></a-button>
+              <a-button size="small" class="dm-ptz-btn dm-ptz-right" @click="ptzMove(ptzStep, 0)"><RightOutlined /></a-button>
+              <a-button size="small" class="dm-ptz-btn dm-ptz-down" @click="ptzMove(0, ptzStep)"><DownOutlined /></a-button>
+            </div>
+            <div class="dm-intrusion-ptz-zoom">
+              <a-button size="small" class="dm-ptz-btn" title="放大" @click="ptzZoomIn"><PlusOutlined /></a-button>
+              <a-button size="small" class="dm-ptz-btn" title="缩小" @click="ptzZoomOut"><MinusOutlined /></a-button>
+            </div>
+          </div>
+        </div>
+        <span v-if="intrusionDraftPoints.length === 0" class="dm-intrusion-canvas-tip">点击画面依次放置6个顶点，框选检测区域</span>
+        <span v-else-if="intrusionDraftPoints.length < 6" class="dm-intrusion-canvas-tip">已放置 {{ intrusionDraftPoints.length }}/6 个顶点，继续点击放置（拖动顶点可微调）</span>
+        <span v-else class="dm-intrusion-canvas-tip">已放置 6/6 个顶点，可拖动顶点微调后确认框选</span>
+      </div>
+    </a-modal>
+
     <!-- ==================== 功能设置抽屉 ==================== -->
     <a-drawer
       v-model:open="settingsVisible"
@@ -1334,6 +1629,140 @@ const flipModeOptions = [
             </div>
           </div>
         </a-card>
+
+        <!-- 区域检测管理 -->
+        <a-card v-if="currentCapabilities.intrusion" title="区域检测管理" size="small" class="dm-settings-card" variant="outlined">
+          <template #extra>
+            <span class="dm-settings-card-desc">配置区域闯入/离开检测</span>
+          </template>
+          <!-- 区域闯入检测 -->
+          <div class="dm-settings-row">
+            <div class="dm-settings-row-label">
+              <span class="dm-settings-row-title">区域闯入检测</span>
+              <span class="dm-settings-row-hint">检测到目标进入框选区域时触发报警</span>
+            </div>
+            <div class="dm-settings-row-ctrl">
+              <a-switch v-model:checked="currentSettings.intrusionEnter" checked-children="开启" un-checked-children="关闭" />
+            </div>
+          </div>
+          <!-- 区域离开检测 -->
+          <a-divider style="margin:12px 0" />
+          <div class="dm-settings-row">
+            <div class="dm-settings-row-label">
+              <span class="dm-settings-row-title">区域离开检测</span>
+              <span class="dm-settings-row-hint">检测到目标离开框选区域时触发报警</span>
+            </div>
+            <div class="dm-settings-row-ctrl">
+              <a-switch v-model:checked="currentSettings.intrusionLeave" checked-children="开启" un-checked-children="关闭" />
+            </div>
+          </div>
+          <template v-if="currentSettings.intrusionEnter || currentSettings.intrusionLeave">
+          <!-- 时间段设置 -->
+          <a-divider style="margin:12px 0" />
+          <div class="dm-settings-row">
+            <div class="dm-settings-row-label">
+              <span class="dm-settings-row-title">时间段设置</span>
+              <span class="dm-settings-row-hint">仅在设定时间段内启用检测</span>
+            </div>
+            <div class="dm-settings-row-ctrl">
+              <div class="dm-settings-time-range">
+                <a-time-picker v-model:value="currentSettings.intrusionTimeStart" value-format="HH:mm" format="HH:mm" size="small" :input-read-only="true" style="width:96px" />
+                <span class="dm-settings-time-sep">~</span>
+                <a-time-picker v-model:value="currentSettings.intrusionTimeEnd" value-format="HH:mm" format="HH:mm" size="small" :input-read-only="true" style="width:96px" />
+              </div>
+            </div>
+          </div>
+          <!-- 区域划分 -->
+          <a-divider style="margin:12px 0" />
+          <div class="dm-settings-row">
+            <div class="dm-settings-row-label">
+              <span class="dm-settings-row-title">区域划分</span>
+              <span class="dm-settings-row-hint">选择检测范围：全部画面或自定义框选区域</span>
+            </div>
+            <div class="dm-settings-row-ctrl">
+              <a-radio-group v-model:value="currentSettings.intrusionAreaMode" option-type="button" button-style="solid" size="small">
+                <a-radio-button value="all">全部区域</a-radio-button>
+                <a-radio-button value="custom">自定义区域</a-radio-button>
+              </a-radio-group>
+            </div>
+          </div>
+          <!-- 自定义区域：展示摄像机画面并框选 -->
+          <template v-if="currentSettings.intrusionAreaMode === 'custom'">
+            <div class="dm-intrusion-preview">
+              <div class="dm-intrusion-scene">
+                <svg class="dm-intrusion-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
+                  <polygon v-if="currentSettings.intrusionArea" :points="intrusionAreaPoints(currentSettings.intrusionArea)" class="dm-intrusion-polygon dm-intrusion-polygon-dashed" />
+                </svg>
+                <span class="dm-intrusion-scene-tag">画面抓图</span>
+                <a-button size="small" type="dashed" class="dm-intrusion-reframe" @click="openIntrusionDraw">
+                  {{ currentSettings.intrusionArea ? '重新框选' : '框选区域' }}
+                </a-button>
+              </div>
+            </div>
+          </template>
+          <!-- 灵敏度 -->
+          <a-divider style="margin:12px 0" />
+          <div class="dm-settings-row">
+            <div class="dm-settings-row-label">
+              <span class="dm-settings-row-title">灵敏度</span>
+              <span class="dm-settings-row-hint">灵敏度越高，越容易触发检测报警</span>
+            </div>
+            <div class="dm-settings-row-ctrl">
+              <a-slider
+                v-model:value="currentSettings.intrusionSensitivity"
+                :min="1"
+                :max="3"
+                :step="1"
+                :marks="{ 1: '低', 2: '中', 3: '高' }"
+                :tip-formatter="(v: number) => (v === 1 ? '低' : v === 2 ? '中' : '高')"
+                style="width:180px"
+              />
+            </div>
+          </div>
+          <!-- 检测类型 -->
+          <a-divider style="margin:12px 0" />
+          <div class="dm-settings-row">
+            <div class="dm-settings-row-label">
+              <span class="dm-settings-row-title">检测类型</span>
+              <span class="dm-settings-row-hint">根据设备能力可选，默认全选</span>
+            </div>
+            <div class="dm-settings-row-ctrl">
+              <a-select
+                v-model:value="currentSettings.intrusionDetectTypes"
+                mode="multiple"
+                :options="intrusionDetectOptions"
+                :max-tag-count="2"
+                placeholder="请选择检测类型"
+                size="small"
+                style="width:220px"
+              />
+            </div>
+          </div>
+          <!-- 蜂鸣器设置 -->
+          <a-divider style="margin:12px 0" />
+          <div class="dm-settings-row">
+            <div class="dm-settings-row-label">
+              <span class="dm-settings-row-title">蜂鸣器设置</span>
+              <span class="dm-settings-row-hint">触发报警时设备蜂鸣器鸣响提醒</span>
+              <span class="dm-settings-row-hint">如需自定义语音报警，可前往<a class="dm-settings-guide-link" @click="goToCloudBroadcast">云广播</a>模块配置</span>
+            </div>
+            <div class="dm-settings-row-ctrl">
+              <a-switch v-model:checked="currentSettings.intrusionBuzzer" checked-children="开启" un-checked-children="关闭" />
+            </div>
+          </div>
+          <!-- 报警灯开关 -->
+          <a-divider style="margin:12px 0" />
+          <div class="dm-settings-row">
+            <div class="dm-settings-row-label">
+              <span class="dm-settings-row-title">报警灯开关</span>
+              <span class="dm-settings-row-hint">触发报警时设备报警灯闪烁</span>
+            </div>
+            <div class="dm-settings-row-ctrl">
+              <a-switch v-model:checked="currentSettings.intrusionAlarmLight" checked-children="开启" un-checked-children="关闭" />
+            </div>
+          </div>
+          </template>
+        </a-card>
         </template>
       </template>
 
@@ -1391,7 +1820,44 @@ const flipModeOptions = [
 .dm-settings-row-label { display:flex; flex-direction:column; gap:2px; flex:1; }
 .dm-settings-row-title { font-size:13px; font-weight:500; color:#333; }
 .dm-settings-row-hint { font-size:12px; color:#bbb; }
+.dm-settings-guide-link { font-size:12px; color:#1890ff; cursor:pointer; }
 .dm-settings-row-ctrl { flex-shrink:0; }
+.dm-settings-time-range { display:flex; align-items:center; gap:6px; }
+.dm-settings-time-sep { color:#999; font-size:12px; }
+.dm-intrusion-preview { display:flex; flex-direction:column; gap:8px; padding:8px 0 4px; }
+.dm-intrusion-scene { position:relative; width:100%; height:180px; background:linear-gradient(135deg,#1f3b57 0%,#2b5a7a 45%,#7a9fb8 100%); border-radius:6px; overflow:hidden; }
+.dm-intrusion-scene::before { content:''; position:absolute; inset:0; background:linear-gradient(rgba(255,255,255,0.05) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.05) 1px,transparent 1px); background-size:24px 24px; }
+.dm-intrusion-scene-tag { position:absolute; left:8px; bottom:8px; padding:2px 8px; background:rgba(0,0,0,0.45); color:#fff; font-size:12px; border-radius:4px; }
+.dm-intrusion-reframe { position:absolute; top:8px; right:8px; z-index:2; }
+.dm-intrusion-svg { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
+.dm-intrusion-polygon { fill:rgba(24,144,255,0.15); stroke:#1890ff; stroke-width:1.5; }
+.dm-intrusion-polygon-dashed { stroke-width:1; stroke-dasharray:6 4; }
+.dm-intrusion-polyline { fill:none; stroke:#1890ff; stroke-width:1.5; }
+.dm-intrusion-preview-line { stroke:#1890ff; stroke-width:1.5; stroke-dasharray:6 4; }
+.dm-intrusion-vertex-hit { fill:rgba(24,144,255,0.14); }
+.dm-intrusion-vertex { fill:#fff; stroke:#1890ff; stroke-width:1.5; }
+.dm-intrusion-vertex-label { text-anchor:middle; dominant-baseline:central; font-size:10px; font-weight:600; pointer-events:none; }
+.dm-intrusion-svg.is-invalid .dm-intrusion-polygon { fill:rgba(255,77,79,0.15); stroke:#ff4d4f; }
+.dm-intrusion-svg.is-invalid .dm-intrusion-polyline { stroke:#ff4d4f; }
+.dm-intrusion-svg.is-invalid .dm-intrusion-vertex-hit { fill:rgba(255,77,79,0.14); }
+.dm-intrusion-svg.is-invalid .dm-intrusion-vertex { stroke:#ff4d4f; }
+.dm-intrusion-toolbar { display:flex; align-items:center; justify-content:space-between; margin:4px 0 8px; }
+.dm-intrusion-toolbar-count { font-size:12px; color:#666; }
+.dm-intrusion-canvas { position:relative; height:440px; border-radius:8px; overflow:hidden; cursor:crosshair; user-select:none; background:#16324a; }
+.dm-intrusion-canvas .dm-intrusion-scene { position:absolute; inset:-20%; width:auto; height:auto; }
+.dm-intrusion-canvas-tip { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); color:#fff; font-size:13px; text-shadow:0 1px 3px rgba(0,0,0,0.5); pointer-events:none; }
+.dm-intrusion-ptz { position:absolute; right:10px; bottom:10px; display:flex; flex-direction:column; align-items:flex-end; gap:8px; z-index:2; }
+.dm-intrusion-ptz-body { display:flex; align-items:center; gap:10px; padding:8px; background:rgba(0,0,0,0.38); border-radius:10px; backdrop-filter:blur(2px); }
+.dm-intrusion-ptz-pad { display:grid; grid-template-columns:repeat(3, 30px); grid-template-rows:repeat(3, 30px); gap:5px; }
+.dm-ptz-btn { width:30px; height:30px; min-width:30px; padding:0; display:flex; align-items:center; justify-content:center; border-radius:6px; font-size:14px; }
+.dm-ptz-up { grid-column:2; grid-row:1; }
+.dm-ptz-left { grid-column:1; grid-row:2; }
+.dm-ptz-home { grid-column:2; grid-row:2; }
+.dm-ptz-right { grid-column:3; grid-row:2; }
+.dm-ptz-down { grid-column:2; grid-row:3; }
+.dm-intrusion-ptz-zoom { display:flex; flex-direction:column; gap:5px; }
+.dm-intrusion-toolbar-actions { display:flex; align-items:center; gap:8px; }
+.dm-toolbar-btn { border-radius:6px; }
 
 /* ==================== 查看弹窗内套餐卡片 ==================== */
 .dm-view-package-card { margin-bottom:12px; border-radius:8px; box-shadow:0 1px 4px rgba(0,0,0,0.04); }
