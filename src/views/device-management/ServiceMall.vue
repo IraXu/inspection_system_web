@@ -26,12 +26,11 @@ interface ServicePackage {
   price: number                  // 单价（元/台/路）
   originalPrice?: number         // 原价（用于"省x%"标签）
   tag?: 'hot' | 'useful'         // 热门 / 实用
-  hasDetail?: boolean            // 是否提供"查看详情"
+  detailUrl?: string             // 后台配置的详情页 URL（有此值则显示"查看详情"，点击跳转）
   serviceType: string            // 服务类型
   nvrSupported: boolean          // 是否支持 NVR 录制路数（仅云存储与录制生效）
   nvrRoads?: number              // 后台套餐配置的 NVR录制路数（云存储套餐，取到后仅作展示）
   features: string[]             // 功能卖点
-  detail?: string                // 详情描述
 }
 
 interface CatalogDevice {
@@ -61,30 +60,30 @@ const tabs = [
 // ==========================================
 const packages: ServicePackage[] = [
   // ---- 云存储与录制（支持 NVR）----
-  { id: 'c1', name: '7天云存储-基础版', category: 'cloud_record', unit: '月', price: 99, hasDetail: true, serviceType: '云存储与录制', nvrSupported: true, nvrRoads: 5, detail: '提供7天循环云存储，事件触发录像，手机端随时回放，适合单店/小规模场景。', features: ['7天视频循环存储', '事件录像回放', '手机端随时查看', '异常事件抓拍'] },
+  { id: 'c1', name: '7天云存储-基础版', category: 'cloud_record', unit: '月', price: 99, detailUrl: 'https://example.com/service/detail/cloud-7d-basic', serviceType: '云存储与录制', nvrSupported: true, nvrRoads: 5, features: ['7天视频循环存储', '事件录像回放', '手机端随时查看', '异常事件抓拍'] },
   { id: 'c2', name: '7天云存储-年付', category: 'cloud_record', unit: '年', price: 899, originalPrice: 1099, serviceType: '云存储与录制', nvrSupported: true, nvrRoads: 5, features: ['7天视频循环存储', '事件录像回放', '手机端随时查看', '年付更省心'] },
-  { id: 'c3', name: '30天云存储-标准版', category: 'cloud_record', unit: '月', price: 199, tag: 'hot', hasDetail: true, serviceType: '云存储与录制', nvrSupported: true, nvrRoads: 8, detail: '30天超长存储，全天不间断录像，云端摘要回看，支持高清视频留存。', features: ['30天视频循环存储', '全天不间断录像', '云端摘要回看', '高清视频存储'] },
+  { id: 'c3', name: '30天云存储-标准版', category: 'cloud_record', unit: '月', price: 199, tag: 'hot', detailUrl: 'https://example.com/service/detail/cloud-30d-standard', serviceType: '云存储与录制', nvrSupported: true, nvrRoads: 8, features: ['30天视频循环存储', '全天不间断录像', '云端摘要回看', '高清视频存储'] },
   { id: 'c4', name: '30天云存储-年付', category: 'cloud_record', unit: '年', price: 1699, originalPrice: 1999, serviceType: '云存储与录制', nvrSupported: true, nvrRoads: 8, features: ['30天视频循环存储', '全天不间断录像', '高清视频存储', '年付更省心'] },
-  { id: 'c5', name: '全天录像套餐-旗舰版', category: 'cloud_record', unit: '月', price: 399, tag: 'useful', hasDetail: true, serviceType: '云存储与录制', nvrSupported: true, nvrRoads: 10, detail: '全天不间断录像，多路同时预览，AI事件标记定位，智能检索快速回放。', features: ['全天不间断录像', '6路同时预览', 'AI事件标记定位', '智能检索回放'] },
+  { id: 'c5', name: '全天录像套餐-旗舰版', category: 'cloud_record', unit: '月', price: 399, tag: 'useful', detailUrl: 'https://example.com/service/detail/cloud-fullday-flagship', serviceType: '云存储与录制', nvrSupported: true, nvrRoads: 10, features: ['全天不间断录像', '6路同时预览', 'AI事件标记定位', '智能检索回放'] },
   { id: 'c6', name: '云存储扩容包-年付', category: 'cloud_record', unit: '年', price: 599, originalPrice: 719, serviceType: '云存储与录制', nvrSupported: true, nvrRoads: 8, features: ['存储空间扩容', '历史录像留存', '不限回放次数', '年付更省心'] },
 
   // ---- AI智能算法 ----
-  { id: 'a1', name: '人脸识别-基础版', category: 'ai_algorithm', unit: '月', price: 99, hasDetail: true, serviceType: 'AI智能算法', nvrSupported: false, detail: '面向中小门店的人脸识别方案，支持500人人脸库与陌生人预警。', features: ['500人人脸库', '陌生人预警', '出入记录'] },
+  { id: 'a1', name: '人脸识别-基础版', category: 'ai_algorithm', unit: '月', price: 99, detailUrl: 'https://example.com/service/detail/face-basic', serviceType: 'AI智能算法', nvrSupported: false, features: ['500人人脸库', '陌生人预警', '出入记录'] },
   { id: 'a2', name: '人脸识别-标准版', category: 'ai_algorithm', unit: '月', price: 199, tag: 'hot', serviceType: 'AI智能算法', nvrSupported: false, features: ['5000人人脸库', '陌生人预警', '出入记录'] },
   { id: 'a3', name: '人脸识别-旗舰版', category: 'ai_algorithm', unit: '月', price: 399, serviceType: 'AI智能算法', nvrSupported: false, features: ['万人人脸库', '陌生人预警', '出入记录+报表'] },
   { id: 'a4', name: '人脸识别-年付标准', category: 'ai_algorithm', unit: '年', price: 1999, originalPrice: 2388, serviceType: 'AI智能算法', nvrSupported: false, features: ['5000人人脸库', '陌生人预警', '出入记录'] },
   { id: 'a5', name: '车牌识别-基础版', category: 'ai_algorithm', unit: '月', price: 88, serviceType: 'AI智能算法', nvrSupported: false, features: ['车牌识别', '白名单放行', '出入记录'] },
   { id: 'a6', name: '车牌识别-标准版', category: 'ai_algorithm', unit: '月', price: 168, tag: 'useful', serviceType: 'AI智能算法', nvrSupported: false, features: ['车牌识别', '黑白名单', '违停检测'] },
-  { id: 'a7', name: '车牌识别-年付基础', category: 'ai_algorithm', unit: '年', price: 888, originalPrice: 1056, hasDetail: true, serviceType: 'AI智能算法', nvrSupported: false, detail: '基础车牌识别方案，支持白名单放行与出入记录留存。', features: ['车牌识别', '白名单放行', '出入记录'] },
+  { id: 'a7', name: '车牌识别-年付基础', category: 'ai_algorithm', unit: '年', price: 888, originalPrice: 1056, detailUrl: 'https://example.com/service/detail/plate-basic-yearly', serviceType: 'AI智能算法', nvrSupported: false, features: ['车牌识别', '白名单放行', '出入记录'] },
   { id: 'a8', name: '车牌识别-年付标准', category: 'ai_algorithm', unit: '年', price: 1688, originalPrice: 2016, serviceType: 'AI智能算法', nvrSupported: false, features: ['车牌识别', '黑白名单', '违停检测'] },
   { id: 'a9', name: '行为分析-基础版', category: 'ai_algorithm', unit: '月', price: 128, serviceType: 'AI智能算法', nvrSupported: false, features: ['跌倒检测', '聚集检测', '实时预警'] },
-  { id: 'a10', name: '行为分析-旗舰版', category: 'ai_algorithm', unit: '月', price: 458, hasDetail: true, serviceType: 'AI智能算法', nvrSupported: false, detail: '全行为检测方案，含周界/烟火联动报警，覆盖多类异常行为。', features: ['全行为检测', '周界/烟火', '联动报警'] },
+  { id: 'a10', name: '行为分析-旗舰版', category: 'ai_algorithm', unit: '月', price: 458, detailUrl: 'https://example.com/service/detail/behavior-flagship', serviceType: 'AI智能算法', nvrSupported: false, features: ['全行为检测', '周界/烟火', '联动报警'] },
   { id: 'a11', name: '行为分析-年付标准', category: 'ai_algorithm', unit: '年', price: 2588, originalPrice: 3096, serviceType: 'AI智能算法', nvrSupported: false, features: ['跌倒/打架/聚集', '周界入侵', '烟火检测'] },
   { id: 'a12', name: '人员离岗检测 - 年付', category: 'ai_algorithm', unit: '年', price: 350, serviceType: 'AI智能算法', nvrSupported: false, features: ['离岗检测', '实时告警', '多区域布防'] },
 
   // ---- 安全预警 ----
   { id: 's1', name: '消防占道预警-月付', category: 'security', unit: '月', price: 128, serviceType: '安全预警', nvrSupported: false, features: ['消防通道占用识别', '实时告警推送', '事件留证'] },
-  { id: 's2', name: '区域入侵预警-年付', category: 'security', unit: '年', price: 999, originalPrice: 1199, hasDetail: true, serviceType: '安全预警', nvrSupported: false, detail: '周界/重点区域入侵识别，支持声光联动与完整告警记录。', features: ['周界入侵识别', '声光联动', '告警记录'] },
+  { id: 's2', name: '区域入侵预警-年付', category: 'security', unit: '年', price: 999, originalPrice: 1199, detailUrl: 'https://example.com/service/detail/intrusion-yearly', serviceType: '安全预警', nvrSupported: false, features: ['周界入侵识别', '声光联动', '告警记录'] },
   { id: 's3', name: '离岗/睡岗预警-月付', category: 'security', unit: '月', price: 88, serviceType: '安全预警', nvrSupported: false, features: ['离岗检测', '睡岗检测', '多次告警'] },
   { id: 's4', name: '烟火检测预警-年付', category: 'security', unit: '年', price: 1299, originalPrice: 1549, tag: 'hot', serviceType: '安全预警', nvrSupported: false, features: ['烟火识别', '实时告警', '定位上报'] },
   { id: 's5', name: '跌倒检测预警-月付', category: 'security', unit: '月', price: 108, tag: 'useful', serviceType: '安全预警', nvrSupported: false, features: ['跌倒识别', '即时通知', '录像关联'] },
@@ -100,11 +99,11 @@ const discountPct = (p: ServicePackage) => p.originalPrice ? Math.round((1 - p.p
 const unitLabel = (p: ServicePackage) => p.unit === '年' ? '/年/台' : '/月/台'
 
 // ==========================================
-// 套餐详情弹窗
+// 套餐详情跳转（后台配置 detailUrl，存在则显示"查看详情"并跳转）
 // ==========================================
-const detailVisible = ref(false)
-const detailPkg = ref<ServicePackage | null>(null)
-const openDetail = (p: ServicePackage) => { detailPkg.value = p; detailVisible.value = true }
+const goDetail = (p: ServicePackage) => {
+  if (p.detailUrl) window.open(p.detailUrl, '_blank')
+}
 
 // ==========================================
 // 服务开通抽屉
@@ -292,9 +291,9 @@ const deviceColumns: TableColumnsType = [
             <span v-else-if="p.tag === 'useful'" class="sm-tag sm-tag-useful">实用</span>
           </span>
           <a
-            v-if="p.hasDetail"
+            v-if="p.detailUrl"
             class="sm-detail-link"
-            @click.stop="openDetail(p)"
+            @click.stop="goDetail(p)"
           >查看详情 <span class="sm-detail-arrow">›</span></a>
         </div>
 
@@ -317,25 +316,6 @@ const deviceColumns: TableColumnsType = [
         </div>
       </div>
     </div>
-
-    <!-- ==================== 套餐详情弹窗 ==================== -->
-    <a-modal v-model:open="detailVisible" :title="detailPkg?.name" :footer="null" width="520px">
-      <template v-if="detailPkg">
-        <div class="sm-detail">
-          <div class="sm-detail-price">
-            <span class="sm-price-currency">¥</span>
-            <span class="sm-price-num">{{ fmtMoney(detailPkg.price) }}</span>
-            <span class="sm-price-unit">{{ unitLabel(detailPkg) }}</span>
-            <template v-if="detailPkg.originalPrice"><span class="sm-original-price">¥{{ fmtMoney(detailPkg.originalPrice) }}</span></template>
-          </div>
-          <p class="sm-detail-desc">{{ detailPkg.detail || '该套餐提供多种能力，可按需开通后生效。' }}</p>
-          <div class="sm-detail-feat-title">包含功能</div>
-          <ul class="sm-detail-feats">
-            <li v-for="f in detailPkg.features" :key="f"><span class="sm-check">✓</span>{{ f }}</li>
-          </ul>
-        </div>
-      </template>
-    </a-modal>
 
     <!-- ==================== 服务开通抽屉（不是弹窗） ==================== -->
     <a-drawer
@@ -721,20 +701,6 @@ const deviceColumns: TableColumnsType = [
 }
 .od-footer-total { font-size: 14px; color: #333; }
 .od-footer-total b { color: #fa541c; font-size: 20px; font-weight: 700; }
-
-/* 详情弹窗 */
-.sm-detail-price {
-  display: flex;
-  align-items: baseline;
-  gap: 2px;
-  background: #fafbfc;
-  border-radius: 8px;
-  padding: 14px 16px;
-}
-.sm-detail-desc { color: #666; font-size: 14px; line-height: 24px; margin: 14px 0; }
-.sm-detail-feat-title { font-size: 13px; font-weight: 600; color: #333; margin-bottom: 8px; }
-.sm-detail-feats { list-style: none; margin: 0; padding: 0; }
-.sm-detail-feats li { font-size: 13px; color: #555; line-height: 26px; }
 
 /* ===== 扫码支付弹窗 ===== */
 .pay-m { text-align: center; padding-bottom: 8px; }
