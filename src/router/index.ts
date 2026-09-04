@@ -50,6 +50,11 @@ const router = createRouter({
         { path: 'energy/control', name: 'EnergyControl', component: () => import('@/views/energy-management/EnergyControl.vue'), meta: { title: '远程管控' } },
         { path: 'energy/plan', name: 'PowerPlan', component: () => import('@/views/energy-management/PowerPlan.vue'), meta: { title: '用电计划' } },
         { path: 'energy/logs', name: 'OperationLogs', component: () => import('@/views/energy-management/OperationLogs.vue'), meta: { title: '操作日志' } },
+        // 人流统计
+        { path: 'traffic/overview', name: 'TrafficOverview', component: () => import('@/views/traffic-statistics/TrafficOverview.vue'), meta: { title: '统计概览' } },
+        { path: 'traffic/realtime', name: 'RealtimeTraffic', component: () => import('@/views/traffic-statistics/RealtimeTraffic.vue'), meta: { title: '实时统计' } },
+        { path: 'traffic/records', name: 'TrafficRecords', component: () => import('@/views/traffic-statistics/TrafficRecords.vue'), meta: { title: '统计明细' } },
+        { path: 'traffic/config', name: 'TrafficConfig', component: () => import('@/views/traffic-statistics/TrafficConfig.vue'), meta: { title: '计数配置' } },
         // 系统管理
         { path: 'system/organization', name: 'OrganizationStructure', component: () => import('@/views/system-management/UnderConstruction.vue'), meta: { title: '组织架构' } },
         { path: 'system/members', name: 'EnterpriseMembers', component: () => import('@/views/system-management/UnderConstruction.vue'), meta: { title: '企业成员' } },

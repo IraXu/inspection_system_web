@@ -2,7 +2,7 @@
 import { ref, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import type { MenuProps } from 'antdv-next'
-import { DownOutlined, BankOutlined, LogoutOutlined, CheckOutlined, SlackOutlined, XFilled, FundFilled, VideoCameraFilled, CloudServerOutlined, DeploymentUnitOutlined, AlertFilled, NotificationOutlined, GlobalOutlined, RightOutlined, CheckCircleFilled, ThunderboltOutlined } from '@antdv-next/icons'
+import { DownOutlined, BankOutlined, LogoutOutlined, CheckOutlined, SlackOutlined, XFilled, FundFilled, VideoCameraFilled, CloudServerOutlined, DeploymentUnitOutlined, AlertFilled, NotificationOutlined, GlobalOutlined, RightOutlined, CheckCircleFilled, ThunderboltOutlined, TeamOutlined } from '@antdv-next/icons'
 import touxiangImg from '@/assets/touxiang.jpg'
 import { useBrandStore } from '@/stores/brand'
 import { useEnterpriseStore } from '@/stores/enterprise'
@@ -166,6 +166,16 @@ const primaryItems: PrimaryItem[] = [
     ],
   },
   {
+    key: 'traffic-statistics', icon: TeamOutlined, label: '人流统计', routePrefix: '/traffic',
+    groups: [],
+    directItems: [
+      { key: '/traffic/overview', label: '统计概览', icon: XFilled },
+      { key: '/traffic/realtime', label: '实时统计', icon: XFilled },
+      { key: '/traffic/records', label: '统计明细', icon: XFilled },
+      { key: '/traffic/config', label: '计数配置', icon: XFilled },
+    ],
+  },
+  {
     key: 'system-management', icon: DeploymentUnitOutlined, label: '系统管理', routePrefix: '/system',
     groups: [],
     directItems: [
@@ -312,8 +322,8 @@ const handlePrimaryClick = (item: PrimaryItem) => {
 
     <!-- 下方：侧边栏 + 内容区 -->
     <a-layout>
-    <!-- 一级菜单（窄列，72px） -->
-    <a-layout-sider width="72" theme="light" class="nav-primary" :trigger="null">
+    <!-- 一级菜单（窄列，80px） -->
+    <a-layout-sider width="80" theme="light" class="nav-primary" :trigger="null">
       <div class="np-items">
         <div v-for="item in primaryItems" :key="item.key"
           class="np-item" :class="{ active: activePrimary === item.key }"
@@ -353,7 +363,7 @@ const handlePrimaryClick = (item: PrimaryItem) => {
 </template>
 
 <style scoped>
-/* ====== 一级菜单：72px ====== */
+/* ====== 一级菜单：80px ====== */
 .nav-primary { display:flex; flex-direction:column; border-right:1px solid #f0f0f0; }
 .nav-primary :deep(.ant-layout-sider-children) { display:flex; flex-direction:column; }
 .np-logo { display:flex; align-items:center; justify-content:center; height:48px; border-bottom:1px solid #f0f0f0; }
@@ -363,7 +373,7 @@ const handlePrimaryClick = (item: PrimaryItem) => {
 .np-item:hover { color:#1677ff; background:#f0f5ff; }
 .np-item.active { color:#1677ff; background:#e6f4ff; font-weight:500; }
 .np-icon { font-size:20px; }
-.np-label { font-size:10px; line-height:1; white-space:nowrap; }
+.np-label { font-size:11px; line-height:1; white-space:nowrap; }
 
 /* ====== 二级菜单：200px ====== */
 .nav-secondary { display:flex; flex-direction:column; border-right:1px solid #f0f0f0; background:#fafbfc; }
