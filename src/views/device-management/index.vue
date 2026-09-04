@@ -760,7 +760,7 @@ interface DeviceSettings {
   intrusionTimeEnd: string
   intrusionAreaMode: 'all' | 'custom'
   intrusionArea: IntrusionArea | null
-  intrusionSensitivity: number
+  intrusionSensitivity: '低' | '中' | '高'
   intrusionDetectTypes: string[]
   intrusionBuzzer: boolean
   intrusionAlarmLight: boolean
@@ -793,7 +793,7 @@ const getDefaultSettings = (device: DeviceItem): DeviceSettings => {
     intrusionTimeEnd: '23:59',
     intrusionAreaMode: 'all',
     intrusionArea: null,
-    intrusionSensitivity: 2,
+    intrusionSensitivity: '中',
     intrusionDetectTypes: [...(device.capabilities.intrusionDetectTypes ?? [])],
     intrusionBuzzer: false,
     intrusionAlarmLight: false,
@@ -857,6 +857,15 @@ const intrusionDetectOptions = computed(() =>
     value: ft,
   })),
 )
+
+const intrusionSensitivityLevels: ('低' | '中' | '高')[] = ['低', '中', '高']
+
+const intrusionSensitivityIndex = computed({
+  get: () => intrusionSensitivityLevels.indexOf(currentSettings.value.intrusionSensitivity),
+  set: (v: number) => {
+    currentSettings.value.intrusionSensitivity = intrusionSensitivityLevels[v]
+  },
+})
 
 const getIntrusionPos = (e: MouseEvent) => {
   const rect = intrusionCanvasEl.value?.getBoundingClientRect()
@@ -930,6 +939,13 @@ const intrusionSelfIntersects = computed(() => {
   const pts = intrusionDraftPoints.value
   if (pts.length < 4) return false
   return hasSelfIntersection(pts, pts.length === 6)
+})
+
+const intrusionHintText = computed(() => {
+  const n = intrusionDraftPoints.value.length
+  if (n === 0) return '点击画面依次放置 6 个顶点，框选检测区域'
+  if (n < 6) return `已放置 ${n}/6 个顶点，继续点击放置（拖动顶点可微调）`
+  return '已放置 6/6 个顶点，可拖动顶点微调后确认框选'
 })
 
 const clearIntrusionDraft = () => {
@@ -1388,9 +1404,9 @@ const flipModeOptions = [
     </a-modal>
 
     <!-- ==================== 区域框选弹窗（模拟） ==================== -->
-    <a-modal v-model:open="intrusionDrawVisible" title="区域框选" width="1000px" :z-index="2000" @ok="handleIntrusionDrawConfirm" @cancel="intrusionDrawVisible = false" ok-text="确认框选" cancel-text="取消">
+    <a-modal v-model:open="intrusionDrawVisible" title="区域框选" width="1200px" :z-index="2000" :ok-button-props="{ disabled: intrusionSelfIntersects }" @ok="handleIntrusionDrawConfirm" @cancel="intrusionDrawVisible = false" ok-text="确认框选" cancel-text="取消">
       <div class="dm-intrusion-toolbar">
-        <span class="dm-intrusion-toolbar-count">已放置 {{ intrusionDraftPoints.length }}/6 个顶点</span>
+        <span class="dm-intrusion-toolbar-count">{{ intrusionHintText }}</span>
         <div class="dm-intrusion-toolbar-actions">
           <a-button size="small" class="dm-toolbar-btn" @click="ptzVisible = !ptzVisible">PTZ</a-button>
           <a-button size="small" class="dm-toolbar-btn" danger :disabled="intrusionDraftPoints.length === 0" @click="clearIntrusionDraft">一键清除</a-button>
@@ -1433,9 +1449,10 @@ const flipModeOptions = [
             </div>
           </div>
         </div>
-        <span v-if="intrusionDraftPoints.length === 0" class="dm-intrusion-canvas-tip">点击画面依次放置6个顶点，框选检测区域</span>
-        <span v-else-if="intrusionDraftPoints.length < 6" class="dm-intrusion-canvas-tip">已放置 {{ intrusionDraftPoints.length }}/6 个顶点，继续点击放置（拖动顶点可微调）</span>
-        <span v-else class="dm-intrusion-canvas-tip">已放置 6/6 个顶点，可拖动顶点微调后确认框选</span>
+        <div v-if="intrusionSelfIntersects" class="dm-intrusion-invalid-banner">
+          <ExclamationCircleOutlined />
+          <span>框选区域存在交叉线，请调整顶点</span>
+        </div>
       </div>
     </a-modal>
 
@@ -1709,12 +1726,12 @@ const flipModeOptions = [
             </div>
             <div class="dm-settings-row-ctrl">
               <a-slider
-                v-model:value="currentSettings.intrusionSensitivity"
-                :min="1"
-                :max="3"
+                v-model:value="intrusionSensitivityIndex"
+                :min="0"
+                :max="2"
                 :step="1"
-                :marks="{ 1: '低', 2: '中', 3: '高' }"
-                :tip-formatter="(v: number) => (v === 1 ? '低' : v === 2 ? '中' : '高')"
+                :marks="{ 0: '低', 1: '中', 2: '高' }"
+                :tooltip="{ formatter: (v: number) => intrusionSensitivityLevels[v] }"
                 style="width:180px"
               />
             </div>
@@ -1843,9 +1860,9 @@ const flipModeOptions = [
 .dm-intrusion-svg.is-invalid .dm-intrusion-vertex { stroke:#ff4d4f; }
 .dm-intrusion-toolbar { display:flex; align-items:center; justify-content:space-between; margin:4px 0 8px; }
 .dm-intrusion-toolbar-count { font-size:12px; color:#666; }
-.dm-intrusion-canvas { position:relative; height:440px; border-radius:8px; overflow:hidden; cursor:crosshair; user-select:none; background:#16324a; }
+.dm-intrusion-canvas { position:relative; height:520px; border-radius:8px; overflow:hidden; cursor:crosshair; user-select:none; background:#16324a; }
 .dm-intrusion-canvas .dm-intrusion-scene { position:absolute; inset:-20%; width:auto; height:auto; }
-.dm-intrusion-canvas-tip { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); color:#fff; font-size:13px; text-shadow:0 1px 3px rgba(0,0,0,0.5); pointer-events:none; }
+.dm-intrusion-invalid-banner { position:absolute; top:12px; left:50%; transform:translateX(-50%); display:flex; align-items:center; gap:6px; padding:6px 14px; background:rgba(255,77,79,0.85); color:#fff; font-size:13px; border-radius:20px; z-index:3; pointer-events:none; box-shadow:0 2px 8px rgba(0,0,0,0.3); }
 .dm-intrusion-ptz { position:absolute; right:10px; bottom:10px; display:flex; flex-direction:column; align-items:flex-end; gap:8px; z-index:2; }
 .dm-intrusion-ptz-body { display:flex; align-items:center; gap:10px; padding:8px; background:rgba(0,0,0,0.38); border-radius:10px; backdrop-filter:blur(2px); }
 .dm-intrusion-ptz-pad { display:grid; grid-template-columns:repeat(3, 30px); grid-template-rows:repeat(3, 30px); gap:5px; }
