@@ -1,83 +1,72 @@
 import { defineStore } from 'pinia'
+import { useEnterpriseStore } from '@/stores/enterprise'
+import type { ScenarioKey } from '@/stores/enterprise'
 
-// ========== 人流统计 — 场景模板 / 计数点位（跨页面共享） ==========
+// ========== 人流统计 — 计数点位（跨页面共享） ==========
 
-/** 场景模板：切换后联动统计对象名称、单位、目标分类与预警阈值 */
-export interface ScenarioTemplate {
-  key: string
-  name: string
-  /** 统计对象名称，如 游客 / 人员 / 顾客 / 目标 */
-  objectName: string
-  /** 计量单位：人次 / 人 / 辆 / 个 */
-  unit: string
-  /** 目标分类 */
-  targetTypes: string[]
-  /** 预警阈值 */
-  thresholds: { inside: number; enterPerHour: number }
-}
-
-/** 计数点位 */
+/**
+ * 计数点位：来自「支持人流统计能力」的设备。
+ * 设备在 设备管理 → 功能设置 中开启人流统计后，方可作为计数点位。
+ */
 export interface CountingPoint {
   id: string
+  /** 点位名称（设备名称） */
   name: string
+  /** 设备 ID，与设备管理中的设备一一对应 */
+  deviceId: string
+  /** 设备序列号 */
+  deviceSn: string
+  /** 所属组织路径 */
   orgPath: string
   /** 计数模式：area=区域计数，line=跨线计数 */
   mode: 'area' | 'line'
   online: boolean
-  targetTypes: string[]
-  thresholds: { inside: number; enterPerHour: number }
+  /** 在数预警阈值 */
+  insideThreshold: number
+  /** 进入/小时预警阈值 */
+  enterThreshold: number
 }
 
-export const scenarioTemplates: ScenarioTemplate[] = [
-  { key: 'general', name: '通用', objectName: '目标', unit: '个', targetTypes: ['人', '车', '宠物', '其他'], thresholds: { inside: 500, enterPerHour: 800 } },
-  { key: 'park', name: '公园', objectName: '游客', unit: '人次', targetTypes: ['人', '宠物', '其他'], thresholds: { inside: 2000, enterPerHour: 1500 } },
-  { key: 'school', name: '学校', objectName: '人员', unit: '人', targetTypes: ['人', '其他'], thresholds: { inside: 1200, enterPerHour: 900 } },
-  { key: 'warehouse', name: '仓储', objectName: '人员', unit: '人', targetTypes: ['人', '车辆', '其他'], thresholds: { inside: 200, enterPerHour: 300 } },
-  { key: 'supermarket', name: '超市', objectName: '顾客', unit: '人次', targetTypes: ['人', '其他'], thresholds: { inside: 300, enterPerHour: 600 } },
-]
+/** 场景 → 统计对象称呼（人流统计统一统计「人」） */
+const SCENARIO_OBJECT: Record<ScenarioKey, string> = {
+  store: '顾客',
+  factory: '员工',
+  district: '人员',
+  warehouse: '人员',
+  construction: '工人',
+}
 
 const initPoints: CountingPoint[] = [
-  { id: 'cp-1', name: '主入口', orgPath: '新加坡 / 中央区 / 乌节路 / 乌节路旗舰店', mode: 'line', online: true, targetTypes: ['人'], thresholds: { inside: 120, enterPerHour: 200 } },
-  { id: 'cp-2', name: '东门', orgPath: '新加坡 / 滨海湾 / 滨海湾金沙店', mode: 'line', online: true, targetTypes: ['人'], thresholds: { inside: 80, enterPerHour: 150 } },
-  { id: 'cp-3', name: '中庭', orgPath: '新加坡 / 中央区 / 乌节路 / 乌节路旗舰店', mode: 'area', online: true, targetTypes: ['人', '宠物'], thresholds: { inside: 300, enterPerHour: 500 } },
-  { id: 'cp-4', name: '收银区', orgPath: '新加坡 / 牛车水 / 牛车水店', mode: 'area', online: true, targetTypes: ['人'], thresholds: { inside: 60, enterPerHour: 120 } },
-  { id: 'cp-5', name: '停车场入口', orgPath: '新加坡 / 樟宜 / 樟宜机场店', mode: 'line', online: true, targetTypes: ['车', '人'], thresholds: { inside: 200, enterPerHour: 300 } },
-  { id: 'cp-6', name: '卸货区', orgPath: '新加坡 / 裕廊东 / 裕廊东店', mode: 'line', online: false, targetTypes: ['车辆', '人'], thresholds: { inside: 40, enterPerHour: 80 } },
-  { id: 'cp-7', name: '二层走廊', orgPath: '新加坡 / 武吉士 / 武吉士店', mode: 'area', online: true, targetTypes: ['人'], thresholds: { inside: 90, enterPerHour: 160 } },
-  { id: 'cp-8', name: '活动广场', orgPath: '新加坡 / 淡滨尼 / 淡滨尼店', mode: 'area', online: true, targetTypes: ['人', '宠物', '其他'], thresholds: { inside: 500, enterPerHour: 800 } },
-  { id: 'cp-9', name: '办公区入口', orgPath: '新加坡 / 大巴窑 / 大巴窑店', mode: 'line', online: true, targetTypes: ['人'], thresholds: { inside: 50, enterPerHour: 90 } },
-  { id: 'cp-10', name: '西门', orgPath: '新加坡 / 实龙岗 / 实龙岗店', mode: 'line', online: true, targetTypes: ['人'], thresholds: { inside: 70, enterPerHour: 130 } },
+  { id: 'cp-1', name: 'xx相机-北门入口', deviceId: 'd2', deviceSn: 'LIC-2024-A002', orgPath: '华东/江苏/南京/新街口商圈/万达苏宁旗舰店', mode: 'line', online: true, insideThreshold: 120, enterThreshold: 200 },
+  { id: 'cp-2', name: 'xx相机-大厅全景', deviceId: 'd5', deviceSn: 'LIC-2024-A005', orgPath: '华东/江苏/南京/新街口商圈/21世纪太阳城', mode: 'area', online: true, insideThreshold: 300, enterThreshold: 500 },
+  { id: 'cp-3', name: 'xx相机-正门大厅', deviceId: 'd8', deviceSn: 'LIC-2024-A008', orgPath: '华北/北京/朝阳区/国贸商圈/银泰中心', mode: 'line', online: true, insideThreshold: 200, enterThreshold: 320 },
+  { id: 'cp-4', name: 'xx相机-二楼走廊', deviceId: 'd12', deviceSn: 'LIC-2024-A012', orgPath: '华南/广东/深圳/南山区/万象天地', mode: 'area', online: true, insideThreshold: 90, enterThreshold: 160 },
 ]
 
 export const useTrafficStore = defineStore('traffic', {
   state: () => ({
-    currentScenarioKey: 'general' as string,
+    /** 计数点位（源自支持人流统计能力的设备） */
     points: [...initPoints] as CountingPoint[],
   }),
 
   getters: {
-    currentScenario: (state) => scenarioTemplates.find(s => s.key === state.currentScenarioKey) ?? scenarioTemplates[0],
-    /** 全部目标分类（跨场景去重合并） */
-    allTargetTypes(): string[] {
-      const set = new Set<string>()
-      scenarioTemplates.forEach(s => s.targetTypes.forEach(t => set.add(t)))
-      return Array.from(set)
+    /** 统计对象称呼：随企业中心「应用场景」联动 */
+    objectName(): string {
+      const enterprise = useEnterpriseStore()
+      return SCENARIO_OBJECT[enterprise.scenarioKey] ?? '人员'
     },
+    /** 计量单位：人流统计统一为「人次」 */
+    unit: () => '人次',
+    /** 在数取整单位 */
+    insideUnit: () => '人',
+    /** 计数点位下拉选项 */
+    pointOptions: (state) => state.points.map(p => ({ value: p.id, label: `${p.name}（${p.orgPath.split('/').pop()}）` })),
   },
 
   actions: {
-    setScenario(key: string) {
-      this.currentScenarioKey = key
-    },
     updatePoint(id: string, patch: Partial<CountingPoint>) {
       const p = this.points.find(x => x.id === id)
       if (p) Object.assign(p, patch)
-    },
-    addPoint(point: CountingPoint) {
-      this.points.unshift(point)
-    },
-    removePoint(id: string) {
-      this.points = this.points.filter(x => x.id !== id)
     },
   },
 })

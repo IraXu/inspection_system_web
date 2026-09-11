@@ -2,75 +2,96 @@
 import { ref, computed } from 'vue'
 import { message } from 'antdv-next'
 import { DownloadOutlined, QuestionCircleOutlined } from '@antdv-next/icons'
-import { useTrafficStore, scenarioTemplates } from '@/stores/traffic'
+import { useTrafficStore } from '@/stores/traffic'
+import { useEnterpriseStore } from '@/stores/enterprise'
 
 const trafficStore = useTrafficStore()
-const scenario = computed(() => trafficStore.currentScenario)
+const enterpriseStore = useEnterpriseStore()
+const scenarioLabel = computed(() => enterpriseStore.scenarioLabel)
+
+/**
+ * 统计规则：每行 = 一个计数点位在一个时间粒度周期内的汇总。
+ * - 总人次：该周期内的到访累计（进入的人次）
+ * - 进入 / 离开：该周期内进入、离开区域的目标数
+ * 在数属于实时指标，不作为时段明细展示。
+ */
 
 // ========== 筛选 ==========
 const pointFilter = ref<string[]>([])
-const typeFilter = ref<string[]>([])
+const granularity = ref<'hour' | 'day' | 'week' | 'month'>('day')
 const dateRange = ref<any[]>([])
 
-const pointOptions = computed(() => trafficStore.points.map(p => ({ value: p.id, label: `${p.name}（${p.orgPath.split('/').pop()}）` })))
-const typeOptions = computed(() => scenario.value.targetTypes.map(t => ({ value: t, label: t })))
+const granularityOptions = [
+  { value: 'hour', label: '按小时' },
+  { value: 'day', label: '按天' },
+  { value: 'week', label: '按周' },
+  { value: 'month', label: '按月' },
+]
 
 // ========== 明细数据 ==========
 interface TrafficRecord {
   key: string
-  time: string
+  period: string
   pointName: string
   orgPath: string
   total: number
   enter: number
   exit: number
-  inside: number
-  targetType: string
 }
 
-const mockRecords: TrafficRecord[] = Array.from({ length: 48 }, (_, i) => {
-  const p = trafficStore.points[i % trafficStore.points.length]
-  const types = p.targetTypes.length ? p.targetTypes : scenario.value.targetTypes
-  const targetType = types[i % types.length]
-  const base = p.thresholds.inside
-  const day = String(27 - Math.floor(i / 4)).padStart(2, '0')
-  const hour = String(20 - (i % 12)).padStart(2, '0')
-  return {
-    key: String(i + 1),
-    time: `2026-08-${day} ${hour}:00`,
-    pointName: p.name,
-    orgPath: p.orgPath,
-    total: base * 6 + i,
-    enter: base * 3 + i,
-    exit: Math.round(base * 2.8 + i),
-    inside: Math.round(base * 0.4),
-    targetType,
+const formatPeriod = (index: number): string => {
+  if (granularity.value === 'hour') {
+    const day = String(27 - Math.floor(index / 24)).padStart(2, '0')
+    const hour = String(23 - (index % 24)).padStart(2, '0')
+    return `2026-08-${day} ${hour}:00`
   }
+  if (granularity.value === 'week') return `2026 第 ${30 - index} 周`
+  if (granularity.value === 'month') return `2026-${String(8 - index).padStart(2, '0')}`
+  return `2026-08-${String(27 - index).padStart(2, '0')}`
+}
+
+const periodCount = computed(() => {
+  if (granularity.value === 'hour') return 24
+  if (granularity.value === 'week') return 4
+  if (granularity.value === 'month') return 6
+  return 14
 })
 
-const filteredRecords = computed(() => {
-  return mockRecords.filter(r => {
-    if (pointFilter.value.length && !pointFilter.value.includes(trafficStore.points.find(p => p.name === r.pointName)?.id ?? '')) return false
-    if (typeFilter.value.length && !typeFilter.value.includes(r.targetType)) return false
-    return true
+const mockRecords = computed<TrafficRecord[]>(() => {
+  const rows: TrafficRecord[] = []
+  const points = trafficStore.points.filter(p => pointFilter.value.length === 0 || pointFilter.value.includes(p.id))
+  points.forEach((p, pi) => {
+    for (let i = 0; i < periodCount.value; i++) {
+      const factor = 1 + ((pi * 7 + i * 3) % 10) / 10
+      const base = p.insideThreshold
+      const enter = Math.round(base * 6 * factor)
+      rows.push({
+        key: `${p.id}-${i}`,
+        period: formatPeriod(i),
+        pointName: p.name,
+        orgPath: p.orgPath,
+        total: enter,
+        enter,
+        exit: Math.round(enter * 0.93),
+      })
+    }
   })
+  return rows
 })
 
 const columns = [
-  { title: '时间', dataIndex: 'time', key: 'time' },
+  { title: '统计周期', dataIndex: 'period', key: 'period' },
   { title: '计数点位', dataIndex: 'pointName', key: 'pointName' },
   { title: '所属组织路径', dataIndex: 'orgPath', key: 'orgPath', ellipsis: true },
   { title: '总人次', dataIndex: 'total', key: 'total', align: 'right' as const },
   { title: '进入', dataIndex: 'enter', key: 'enter', align: 'right' as const },
   { title: '离开', dataIndex: 'exit', key: 'exit', align: 'right' as const },
-  { title: '在数', dataIndex: 'inside', key: 'inside', align: 'right' as const },
-  { title: '目标分类', dataIndex: 'targetType', key: 'targetType', align: 'center' as const },
 ]
 
 const pagination = ref({ current: 1, pageSize: 10 })
 const pagedRecords = computed(() => {
   const start = (pagination.value.current - 1) * pagination.value.pageSize
-  return filteredRecords.value.slice(start, start + pagination.value.pageSize)
+  return mockRecords.value.slice(start, start + pagination.value.pageSize)
 })
 
 const handleExport = () => {
@@ -84,37 +105,23 @@ const handleExport = () => {
     <a-card>
       <template #title>
         <span>统计明细</span>
-        <a-tooltip title="按点位/时间/目标分类查询总人次、进入、离开、在数">
+        <a-tooltip title="按计数点位与统计周期汇总：总人次为该周期到访累计，进入/离开为该周期进出数">
           <QuestionCircleOutlined style="margin-left:6px;color:#999" />
         </a-tooltip>
       </template>
       <div class="filter-toolbar">
         <a-space wrap :size="8">
-          <span class="filter-label">场景模板</span>
-          <a-select
-            :value="trafficStore.currentScenarioKey"
-            :options="scenarioTemplates.map(s => ({ value: s.key, label: s.name }))"
-            size="small"
-            style="width: 120px"
-            @change="(v: string) => trafficStore.setScenario(v)"
-          />
+          <span class="filter-label">应用场景</span>
+          <a-tag color="blue">{{ scenarioLabel }}</a-tag>
+          <span class="filter-label">统计周期</span>
+          <a-select v-model:value="granularity" :options="granularityOptions" size="small" style="width: 100px" />
           <a-select
             v-model:value="pointFilter"
             mode="multiple"
             placeholder="选择计数点位"
             size="small"
-            :options="pointOptions"
+            :options="trafficStore.pointOptions"
             style="width: 220px"
-            allow-clear
-            :max-tag-count="1"
-          />
-          <a-select
-            v-model:value="typeFilter"
-            mode="multiple"
-            placeholder="目标分类"
-            size="small"
-            :options="typeOptions"
-            style="width: 160px"
             allow-clear
             :max-tag-count="1"
           />
@@ -126,11 +133,6 @@ const handleExport = () => {
       </div>
 
       <a-table :columns="columns" :data-source="pagedRecords" :pagination="false" size="middle">
-        <template #bodyCell="{ column, record }">
-          <template v-if="column.key === 'targetType'">
-            <a-tag>{{ record.targetType }}</a-tag>
-          </template>
-        </template>
         <template #emptyText>
           <a-empty description="暂无数据，请调整筛选条件" />
         </template>
@@ -139,7 +141,7 @@ const handleExport = () => {
         <a-pagination
           v-model:current="pagination.current"
           v-model:pageSize="pagination.pageSize"
-          :total="filteredRecords.length"
+          :total="mockRecords.length"
           show-size-changer
           :page-size-options="['10','20','50','100']"
           :show-total="(total: number) => `共 ${total} 条`"

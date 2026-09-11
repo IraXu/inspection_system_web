@@ -172,7 +172,6 @@ const primaryItems: PrimaryItem[] = [
       { key: '/traffic/overview', label: '统计概览', icon: XFilled },
       { key: '/traffic/realtime', label: '实时统计', icon: XFilled },
       { key: '/traffic/records', label: '统计明细', icon: XFilled },
-      { key: '/traffic/config', label: '计数配置', icon: XFilled },
     ],
   },
   {

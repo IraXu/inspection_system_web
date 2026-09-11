@@ -87,7 +87,7 @@ const beamTheme = {
               </div>
               <div class="announce-item">
                 <span class="announce-dot">●</span>
-                <span>SPA的history更改为hash模式，现在原型页面刷新不会404了🎉</span>
+                <span>⚠️原型中能耗管理&人流统计功能暂不用实现，等后续规划</span>
               </div>
               <div class="announce-item">
                 <span class="announce-dot">●</span>

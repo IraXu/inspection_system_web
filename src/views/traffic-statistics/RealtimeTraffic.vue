@@ -2,18 +2,17 @@
 import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import * as echarts from 'echarts'
 import { TeamOutlined, LoginOutlined, LogoutOutlined, DashboardOutlined, ReloadOutlined } from '@antdv-next/icons'
-import { useTrafficStore, scenarioTemplates } from '@/stores/traffic'
+import { useTrafficStore } from '@/stores/traffic'
+import { useEnterpriseStore } from '@/stores/enterprise'
 
 const trafficStore = useTrafficStore()
-const scenario = computed(() => trafficStore.currentScenario)
-const insideUnit = computed(() => (scenario.value.objectName === '目标' ? '个' : '人'))
+const enterpriseStore = useEnterpriseStore()
+const scenarioLabel = computed(() => enterpriseStore.scenarioLabel)
+const objectName = computed(() => trafficStore.objectName)
 
 const selectedPoint = ref<string | undefined>(undefined)
 const lastUpdate = ref('2026-09-04 14:30:00')
 const refreshTick = ref(0)
-
-const pointOptions = computed(() =>
-  trafficStore.points.map(p => ({ value: p.id, label: `${p.name}（${p.orgPath.split('/').pop()}）` })))
 
 const refresh = () => {
   refreshTick.value++
@@ -21,12 +20,17 @@ const refresh = () => {
 }
 
 // ========== 实时指标卡 ==========
-const baseInside = computed(() => scenario.value.thresholds.inside)
+const baseInside = computed(() => {
+  const points = trafficStore.points.filter(p => !selectedPoint.value || p.id === selectedPoint.value)
+  const total = points.reduce((sum, p) => sum + p.insideThreshold, 0)
+  return total || 500
+})
+
 const stats = computed(() => [
-  { key: 'inside', title: '当前在数', value: Math.round(baseInside.value * 0.4) + (refreshTick.value % 5), suffix: insideUnit.value, icon: DashboardOutlined, color: '#722ed1' },
-  { key: 'enter', title: '今日进入', value: baseInside.value * 3 + refreshTick.value, suffix: scenario.value.unit, icon: LoginOutlined, color: '#52c41a' },
-  { key: 'exit', title: '今日离开', value: Math.round(baseInside.value * 2.8) + refreshTick.value, suffix: scenario.value.unit, icon: LogoutOutlined, color: '#faad14' },
-  { key: 'total', title: '今日总人次', value: baseInside.value * 6 + refreshTick.value * 2, suffix: scenario.value.unit, icon: TeamOutlined, color: '#1677ff' },
+  { key: 'inside', title: '当前在数', value: Math.round(baseInside.value * 0.4) + (refreshTick.value % 5), suffix: trafficStore.insideUnit, icon: DashboardOutlined, color: '#722ed1' },
+  { key: 'enter', title: '今日进入', value: baseInside.value * 6 + refreshTick.value, suffix: trafficStore.unit, icon: LoginOutlined, color: '#52c41a' },
+  { key: 'exit', title: '今日离开', value: Math.round(baseInside.value * 5.6) + refreshTick.value, suffix: trafficStore.unit, icon: LogoutOutlined, color: '#faad14' },
+  { key: 'total', title: '今日总人次', value: baseInside.value * 6 + refreshTick.value * 2, suffix: trafficStore.unit, icon: TeamOutlined, color: '#1677ff' },
 ])
 
 // ========== 24 小时进出曲线 ==========
@@ -52,21 +56,21 @@ interface PointRow {
 }
 
 const pointRows = computed<PointRow[]>(() => {
-  const base = baseInside.value
   return trafficStore.points
     .filter(p => !selectedPoint.value || p.id === selectedPoint.value)
     .map((p, i) => {
       const factor = 1 + ((i * 7) % 10) / 10
+      const base = p.insideThreshold
       const inside = Math.round(base * 0.4 * factor)
       return {
         id: p.id,
         name: p.name,
         orgPath: p.orgPath,
         inside,
-        enter: Math.round(base * 3 * factor),
-        exit: Math.round(base * 2.8 * factor),
+        enter: Math.round(base * 6 * factor),
+        exit: Math.round(base * 5.6 * factor),
         total: Math.round(base * 6 * factor),
-        warn: inside >= p.thresholds.inside,
+        warn: inside >= p.insideThreshold,
       }
     })
 })
@@ -90,9 +94,9 @@ const renderCurve = () => {
   curveChart.setOption({
     tooltip: { trigger: 'axis' },
     legend: { data: ['进入', '离开'], top: 0 },
-    grid: { left: 50, right: 20, top: 40, bottom: 30 },
+    grid: { left: 60, right: 20, top: 40, bottom: 30 },
     xAxis: { type: 'category', data: curveHours, boundaryGap: false },
-    yAxis: { type: 'value', name: scenario.value.unit },
+    yAxis: { type: 'value', name: trafficStore.unit },
     series: [
       { name: '进入', type: 'line', smooth: true, data: curveValues.value.enter, itemStyle: { color: '#52c41a' }, areaStyle: { color: 'rgba(82,196,26,0.10)' } },
       { name: '离开', type: 'line', smooth: true, data: curveValues.value.exit, itemStyle: { color: '#faad14' }, areaStyle: { color: 'rgba(250,173,20,0.10)' } },
@@ -125,16 +129,11 @@ onBeforeUnmount(() => {
     <!-- 顶部工具栏 -->
     <a-card class="toolbar-card" :loading="loading">
       <a-space wrap :size="12">
-        <span class="toolbar-label">场景模板</span>
-        <a-select
-          :value="trafficStore.currentScenarioKey"
-          :options="scenarioTemplates.map(s => ({ value: s.key, label: s.name }))"
-          style="width: 140px"
-          @change="(v: string) => trafficStore.setScenario(v)"
-        />
-        <a-tag color="blue">{{ scenario.objectName }}</a-tag>
+        <span class="toolbar-label">应用场景</span>
+        <a-tag color="blue">{{ scenarioLabel }}</a-tag>
+        <span class="toolbar-hint">统计对象：{{ objectName }}</span>
         <span class="toolbar-label">计数点位</span>
-        <a-select v-model:value="selectedPoint" :options="pointOptions" allow-clear placeholder="全部点位" style="width: 220px" />
+        <a-select v-model:value="selectedPoint" :options="trafficStore.pointOptions" allow-clear placeholder="全部点位" style="width: 220px" />
         <a-button size="small" type="primary" ghost @click="refresh">
           <template #icon><ReloadOutlined /></template>刷新
         </a-button>
@@ -190,6 +189,7 @@ onBeforeUnmount(() => {
 .toolbar-card { margin-bottom: 16px; }
 .toolbar-card :deep(.ant-card-body) { padding: 14px 20px; }
 .toolbar-label { font-size: 13px; color: #666; }
+.toolbar-hint { font-size: 12px; color: #999; }
 .update-time { font-size: 12px; color: #999; margin-left: 8px; }
 .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 16px; }
 @media (max-width: 1400px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }

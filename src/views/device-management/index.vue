@@ -22,6 +22,8 @@ interface DeviceCapabilities {
   eventTypes: string[]  // 支持的事件侦测类型，如 motion/move/human/pet/child
   intrusion?: boolean   // 是否支持区域检测管理（区域闯入/离开检测）
   intrusionDetectTypes?: string[]  // 区域检测管理支持的检测类型，如 human/pet
+  peopleCounting?: boolean         // 是否支持人流统计（统计进出人数）
+  countingModes?: ('area' | 'line')[]  // 支持的计数模式：area=区域计数，line=跨线计数
 }
 
 /** NVR 通道（下挂 IPC，作为可播放的最小单元） */
@@ -68,6 +70,9 @@ const eventTypeLabels: Record<string, string> = {
   pet: '宠物侦测',
   child: '孩童侦测',
 }
+
+/** 人流统计功能设置是否展示（暂隐藏，置为 true 可恢复） */
+const SHOW_PEOPLE_COUNTING_SETTINGS = false
 
 /** 事件类型对应的提示语 */
 const eventTypeHints: Record<string, string> = {
@@ -196,17 +201,17 @@ const rawOrgTree: OrgTreeNode[] = [
 // ==========================================
 const mockDevices: DeviceItem[] = [
   { id: 'd1', name: 'xx相机-南门入口', license: 'LIC-2024-A001', deviceType: 'WIFI摄像机', deviceModel: '高清网络枪机', firmwareVersion: 'v5.7.11', sdkVersion: 'v2.3.1', orgPath: ['root','huadong','js','nj','xb','xb-wanda'], orgPathLabel: '华东/江苏/南京/新街口商圈/万达苏宁旗舰店', status: 'online', location: '118.7842, 32.0493', platform: '海康威视', capabilities: { screen: true, alarm: true, light: false, eventTypes: ['motion'] } },
-  { id: 'd2', name: 'xx相机-北门入口', license: 'LIC-2024-A002', deviceType: 'AI摄像机', deviceModel: 'AI智能摄像机', firmwareVersion: 'v5.7.11', sdkVersion: 'v2.3.1', orgPath: ['root','huadong','js','nj','xb','xb-wanda'], orgPathLabel: '华东/江苏/南京/新街口商圈/万达苏宁旗舰店', status: 'online', location: '118.7842, 32.0498', platform: '海康威视', capabilities: { screen: true, alarm: true, light: true, eventTypes: ['motion', 'human', 'pet'], intrusion: true, intrusionDetectTypes: ['human', 'pet'] } },
+  { id: 'd2', name: 'xx相机-北门入口', license: 'LIC-2024-A002', deviceType: 'AI摄像机', deviceModel: 'AI智能摄像机', firmwareVersion: 'v5.7.11', sdkVersion: 'v2.3.1', orgPath: ['root','huadong','js','nj','xb','xb-wanda'], orgPathLabel: '华东/江苏/南京/新街口商圈/万达苏宁旗舰店', status: 'online', location: '118.7842, 32.0498', platform: '海康威视', capabilities: { screen: true, alarm: true, light: true, eventTypes: ['motion', 'human', 'pet'], intrusion: true, intrusionDetectTypes: ['human', 'pet'], peopleCounting: true, countingModes: ['line', 'area'] } },
   { id: 'd3', name: 'xx相机-收银台', license: 'LIC-2024-A003', deviceType: 'WIFI摄像机', deviceModel: '高清网络枪机', firmwareVersion: 'v5.6.3', sdkVersion: 'v2.2.8', orgPath: ['root','huadong','js','nj','qb','qb-wanda'], orgPathLabel: '华东/江苏/南京/桥北商圈/桥北万象城', status: 'offline', location: '118.7453, 32.1021', platform: '海康威视', capabilities: { screen: true, alarm: false, light: false, eventTypes: [] } },
   { id: 'd4', name: 'xx相机-仓库后门', license: 'LIC-2024-A004', deviceType: '低功耗摄像机', deviceModel: '低功耗网络摄像机', firmwareVersion: 'v3.2.0', sdkVersion: 'v1.8.5', orgPath: ['root','huadong','js','nj','qb','qb-wanda'], orgPathLabel: '华东/江苏/南京/桥北商圈/桥北万象城', status: 'sleep', location: '118.7456, 32.1025', platform: '萤石', capabilities: { screen: false, alarm: true, light: false, eventTypes: ['move'] } },
-  { id: 'd5', name: 'xx相机-大厅全景', license: 'LIC-2024-A005', deviceType: 'AI摄像机', deviceModel: 'AI智能摄像机', firmwareVersion: 'v5.7.11', sdkVersion: 'v2.3.1', orgPath: ['root','huadong','js','nj','xb','xb-taiyang'], orgPathLabel: '华东/江苏/南京/新街口商圈/21世纪太阳城', status: 'online', location: '118.7831, 32.0487', platform: '海康威视', capabilities: { screen: true, alarm: true, light: true, eventTypes: ['motion', 'move', 'human', 'pet', 'child'], intrusion: true, intrusionDetectTypes: ['human', 'pet'] } },
+  { id: 'd5', name: 'xx相机-大厅全景', license: 'LIC-2024-A005', deviceType: 'AI摄像机', deviceModel: 'AI智能摄像机', firmwareVersion: 'v5.7.11', sdkVersion: 'v2.3.1', orgPath: ['root','huadong','js','nj','xb','xb-taiyang'], orgPathLabel: '华东/江苏/南京/新街口商圈/21世纪太阳城', status: 'online', location: '118.7831, 32.0487', platform: '海康威视', capabilities: { screen: true, alarm: true, light: true, eventTypes: ['motion', 'move', 'human', 'pet', 'child'], intrusion: true, intrusionDetectTypes: ['human', 'pet'], peopleCounting: true, countingModes: ['area', 'line'] } },
   { id: 'd6', name: 'xx相机-停车场入口', license: 'LIC-2024-A006', deviceType: 'WIFI摄像机', deviceModel: '高清网络枪机', firmwareVersion: 'v5.7.11', sdkVersion: 'v2.3.1', orgPath: ['root','huadong','js','sz','sz-gusu','sz-gusu-meiluo'], orgPathLabel: '华东/江苏/苏州/姑苏区/美罗商城', status: 'online', location: '120.6154, 31.2989', platform: '海康威视', capabilities: { screen: false, alarm: true, light: false, eventTypes: ['motion', 'move'] } },
   { id: 'd7', name: 'xx相机-东门监控', license: 'LIC-2024-A007', deviceType: 'WIFI摄像机', deviceModel: '高清网络枪机', firmwareVersion: 'v5.6.3', sdkVersion: 'v2.2.8', orgPath: ['root','huadong','sh','sh-pudong','sh-lujiazui','sh-guoji'], orgPathLabel: '华东/上海/浦东新区/陆家嘴商圈/上海国际中心', status: 'offline', location: '121.5023, 31.2361', platform: '海康威视', capabilities: { screen: true, alarm: true, light: true, eventTypes: ['motion'] } },
-  { id: 'd8', name: 'xx相机-正门大厅', license: 'LIC-2024-A008', deviceType: 'AI摄像机', deviceModel: 'AI智能摄像机', firmwareVersion: 'v5.7.11', sdkVersion: 'v2.3.1', orgPath: ['root','huabei','bj','bj-chaoyang','bj-guomao','bj-guomao-yintai'], orgPathLabel: '华北/北京/朝阳区/国贸商圈/银泰中心', status: 'online', location: '116.4605, 39.9092', platform: '海康威视', capabilities: { screen: true, alarm: true, light: true, eventTypes: ['motion', 'human', 'pet', 'child'], intrusion: true, intrusionDetectTypes: ['human', 'pet'] } },
+  { id: 'd8', name: 'xx相机-正门大厅', license: 'LIC-2024-A008', deviceType: 'AI摄像机', deviceModel: 'AI智能摄像机', firmwareVersion: 'v5.7.11', sdkVersion: 'v2.3.1', orgPath: ['root','huabei','bj','bj-chaoyang','bj-guomao','bj-guomao-yintai'], orgPathLabel: '华北/北京/朝阳区/国贸商圈/银泰中心', status: 'online', location: '116.4605, 39.9092', platform: '海康威视', capabilities: { screen: true, alarm: true, light: true, eventTypes: ['motion', 'human', 'pet', 'child'], intrusion: true, intrusionDetectTypes: ['human', 'pet'], peopleCounting: true, countingModes: ['line', 'area'] } },
   { id: 'd9', name: 'xx相机-侧门通道', license: 'LIC-2024-A009', deviceType: '低功耗摄像机', deviceModel: '低功耗网络摄像机', firmwareVersion: 'v3.2.0', sdkVersion: 'v1.8.5', orgPath: ['root','huabei','bj','bj-chaoyang','bj-guomao','bj-guomao-yintai'], orgPathLabel: '华北/北京/朝阳区/国贸商圈/银泰中心', status: 'sleep', location: '116.4608, 39.9095', platform: '萤石', capabilities: { screen: false, alarm: true, light: false, eventTypes: ['move', 'human'] } },
   { id: 'd10', name: 'xx相机-1楼中庭', license: 'LIC-2024-A010', deviceType: 'WIFI摄像机', deviceModel: '高清网络枪机', firmwareVersion: 'v5.7.11', sdkVersion: 'v2.3.1', orgPath: ['root','huanan','gd','gz','gz-tianhe','gz-taiKoo'], orgPathLabel: '华南/广东/广州/天河商圈/太古汇', status: 'online', location: '113.3233, 23.1291', platform: '海康威视', capabilities: { screen: true, alarm: false, light: false, eventTypes: [] } },
   { id: 'd11', name: 'xx相机-B1车库', license: 'LIC-2024-A011', deviceType: 'WIFI摄像机', deviceModel: '高清网络枪机', firmwareVersion: 'v5.6.3', sdkVersion: 'v2.2.8', orgPath: ['root','huanan','gd','sz_city','sz-nanshan','sz-wanxiang'], orgPathLabel: '华南/广东/深圳/南山区/万象天地', status: 'offline', location: '113.9526, 22.5176', platform: '海康威视', capabilities: { screen: true, alarm: true, light: false, eventTypes: ['motion', 'move'] } },
-  { id: 'd12', name: 'xx相机-二楼走廊', license: 'LIC-2024-A012', deviceType: 'AI摄像机', deviceModel: 'AI智能摄像机', firmwareVersion: 'v5.7.11', sdkVersion: 'v2.3.1', orgPath: ['root','huanan','gd','sz_city','sz-nanshan','sz-wanxiang'], orgPathLabel: '华南/广东/深圳/南山区/万象天地', status: 'online', location: '113.9528, 22.5180', platform: '海康威视', capabilities: { screen: true, alarm: true, light: true, eventTypes: ['motion', 'move', 'human', 'pet', 'child'], intrusion: true, intrusionDetectTypes: ['human', 'pet'] } },
+  { id: 'd12', name: 'xx相机-二楼走廊', license: 'LIC-2024-A012', deviceType: 'AI摄像机', deviceModel: 'AI智能摄像机', firmwareVersion: 'v5.7.11', sdkVersion: 'v2.3.1', orgPath: ['root','huanan','gd','sz_city','sz-nanshan','sz-wanxiang'], orgPathLabel: '华南/广东/深圳/南山区/万象天地', status: 'online', location: '113.9528, 22.5180', platform: '海康威视', capabilities: { screen: true, alarm: true, light: true, eventTypes: ['motion', 'move', 'human', 'pet', 'child'], intrusion: true, intrusionDetectTypes: ['human', 'pet'], peopleCounting: true, countingModes: ['area', 'line'] } },
   { id: 'd13', name: 'xx相机-消防通道A', license: 'LIC-2024-A013', deviceType: 'WIFI摄像机', deviceModel: '高清网络枪机', firmwareVersion: 'v5.7.11', sdkVersion: 'v2.3.1', orgPath: ['root','huadong','js','nj','qb','qb-hongyang'], orgPathLabel: '华东/江苏/南京/桥北商圈/弘扬广场', status: 'online', location: '118.7421, 32.0987', platform: '海康威视', capabilities: { screen: false, alarm: false, light: true, eventTypes: [] } },
   { id: 'd14', name: 'NVR-新街口机房', license: 'LIC-2024-N014', deviceType: 'NVR', deviceModel: '网络硬盘录像机', firmwareVersion: 'v4.60.10', sdkVersion: 'v2.3.1', orgPath: ['root','huadong','js','nj','xb','xb-wanda'], orgPathLabel: '华东/江苏/南京/新街口商圈/万达苏宁旗舰店', status: 'online', location: '118.7842, 32.0493', platform: '海康威视', capabilities: { screen: false, alarm: false, light: false, eventTypes: [] },
     channels: [
@@ -764,6 +769,22 @@ interface DeviceSettings {
   intrusionDetectTypes: string[]
   intrusionBuzzer: boolean
   intrusionAlarmLight: boolean
+  // 人流统计
+  countingEnabled: boolean
+  countingMode: 'area' | 'line'
+  countingTimeStart: string
+  countingTimeEnd: string
+  countingArea: IntrusionArea | null
+  countingLine: CountingLine | null
+  countingInsideThreshold: number
+  countingEnterThreshold: number
+  countingAlarmLight: boolean
+}
+
+/** 人流统计跨线计数线（基于摄像机画面的归一化坐标，两点确定一条线） */
+interface CountingLine {
+  from: { x: number; y: number }
+  to: { x: number; y: number }
 }
 
 /** 区域检测管理框选区域（基于摄像机画面的归一化六边形） */
@@ -797,6 +818,15 @@ const getDefaultSettings = (device: DeviceItem): DeviceSettings => {
     intrusionDetectTypes: [...(device.capabilities.intrusionDetectTypes ?? [])],
     intrusionBuzzer: false,
     intrusionAlarmLight: false,
+    countingEnabled: false,
+    countingMode: 'area',
+    countingTimeStart: '00:00',
+    countingTimeEnd: '23:59',
+    countingArea: null,
+    countingLine: null,
+    countingInsideThreshold: 100,
+    countingEnterThreshold: 200,
+    countingAlarmLight: false,
   }
 }
 
@@ -820,6 +850,7 @@ const currentCapabilities = computed(() => settingsDevice.value?.capabilities ??
 const hasAnySettings = computed(() => {
   const cap = currentCapabilities.value
   return cap.screen || cap.alarm || cap.light || cap.intrusion
+    || (SHOW_PEOPLE_COUNTING_SETTINGS && cap.peopleCounting)
 })
 
 const router = useRouter()
@@ -837,6 +868,17 @@ const handleSettingsSave = () => {
   if (currentSettings.value.intrusionAreaMode === 'custom' && !currentSettings.value.intrusionArea) {
     message.warning('已选择自定义区域，请先框选检测区域')
     return
+  }
+  const counting = currentSettings.value
+  if (currentCapabilities.value.peopleCounting && counting.countingEnabled) {
+    if (counting.countingMode === 'area' && !counting.countingArea) {
+      message.warning('请先框选计数区域')
+      return
+    }
+    if (counting.countingMode === 'line' && !counting.countingLine) {
+      message.warning('请先绘制计数线')
+      return
+    }
   }
   message.success(`${settingsDevice.value?.name || ''} 功能设置保存成功`)
   settingsVisible.value = false
@@ -1054,6 +1096,153 @@ const handleIntrusionDrawConfirm = () => {
   intrusionDrawVisible.value = false
   message.success('已框选检测区域')
 }
+
+// ==========================================
+// 人流统计 - 区域框选 / 跨线绘制
+// ==========================================
+const countingDrawVisible = ref(false)
+const countingCanvasEl = ref<HTMLDivElement | null>(null)
+const countingDraftPoints = ref<{ x: number; y: number }[]>([])
+const countingDragIndex = ref<number | null>(null)
+const countingCursor = ref<{ x: number; y: number } | null>(null)
+
+/** 当前绘制模式：区域计数需 6 个顶点，跨线计数需 2 个端点 */
+const countingNeedPoints = computed(() => (currentSettings.value.countingMode === 'line' ? 2 : 6))
+
+/** 设备支持的计数模式选项 */
+const countingModeOptions = computed(() => {
+  const modes = currentCapabilities.value.countingModes ?? ['area', 'line']
+  const labels: Record<'area' | 'line', string> = { area: '区域计数', line: '跨线计数' }
+  return modes.map(m => ({ value: m, label: labels[m] }))
+})
+
+const getCountingPos = (e: MouseEvent) => {
+  const rect = countingCanvasEl.value?.getBoundingClientRect()
+  if (!rect) return { x: 0, y: 0 }
+  return { x: e.clientX - rect.left, y: e.clientY - rect.top }
+}
+
+const hitCountingVertex = (pos: { x: number; y: number }) => {
+  const idx = countingDraftPoints.value.findIndex(p => Math.hypot(p.x - pos.x, p.y - pos.y) <= INTRUSION_VERTEX_HIT)
+  return idx >= 0 ? idx : -1
+}
+
+const countingCursorStyle = computed(() => {
+  if (countingDragIndex.value !== null) return 'grabbing'
+  if (countingCursor.value && hitCountingVertex(countingCursor.value) >= 0) return 'grab'
+  if (countingDraftPoints.value.length < countingNeedPoints.value) return 'crosshair'
+  return 'default'
+})
+
+const countingDraftLinePoints = computed(() =>
+  countingDraftPoints.value.map(p => `${p.x},${p.y}`).join(' '))
+
+const countingDraftPolygonPoints = computed(() =>
+  currentSettings.value.countingMode === 'area' && countingDraftPoints.value.length === 6
+    ? countingDraftLinePoints.value
+    : '')
+
+const countingPreviewLine = computed(() => {
+  const pts = countingDraftPoints.value
+  const cur = countingCursor.value
+  if (!cur || pts.length === 0 || pts.length >= countingNeedPoints.value) return null
+  const last = pts[pts.length - 1]
+  return { x1: last.x, y1: last.y, x2: cur.x, y2: cur.y }
+})
+
+const countingSelfIntersects = computed(() => {
+  if (currentSettings.value.countingMode !== 'area') return false
+  const pts = countingDraftPoints.value
+  if (pts.length < 4) return false
+  return hasSelfIntersection(pts, pts.length === 6)
+})
+
+const countingHintText = computed(() => {
+  const n = countingDraftPoints.value.length
+  const need = countingNeedPoints.value
+  if (currentSettings.value.countingMode === 'line') {
+    if (n === 0) return '点击画面放置计数线起点'
+    if (n === 1) return '继续点击放置计数线终点（拖动端点可微调）'
+    return '计数线已就绪，可拖动端点微调后确认'
+  }
+  if (n === 0) return '点击画面依次放置 6 个顶点，框选计数区域'
+  if (n < need) return `已放置 ${n}/${need} 个顶点，继续点击放置（拖动顶点可微调）`
+  return '已放置 6/6 个顶点，可拖动顶点微调后确认'
+})
+
+const openCountingDraw = () => {
+  countingDraftPoints.value = []
+  countingCursor.value = null
+  countingDragIndex.value = null
+  ptzZoom.value = 1
+  ptzPan.value = { x: 0, y: 0 }
+  ptzVisible.value = false
+  countingDrawVisible.value = true
+}
+
+const onCountingMouseDown = (e: MouseEvent) => {
+  const pos = getCountingPos(e)
+  const idx = hitCountingVertex(pos)
+  if (idx >= 0) {
+    countingDragIndex.value = idx
+    return
+  }
+  if (countingDraftPoints.value.length < countingNeedPoints.value) {
+    countingDraftPoints.value.push(pos)
+  }
+}
+
+const onCountingMouseMove = (e: MouseEvent) => {
+  const pos = getCountingPos(e)
+  countingCursor.value = pos
+  if (countingDragIndex.value !== null) {
+    const idx = countingDragIndex.value
+    const arr = countingDraftPoints.value
+    arr[idx] = { ...arr[idx], ...pos }
+  }
+}
+
+const onCountingMouseUp = () => {
+  countingDragIndex.value = null
+}
+
+const clearCountingDraft = () => {
+  countingDraftPoints.value = []
+  countingCursor.value = null
+  countingDragIndex.value = null
+}
+
+const handleCountingDrawConfirm = () => {
+  const pts = countingDraftPoints.value
+  const need = countingNeedPoints.value
+  if (pts.length !== need) {
+    message.warning(currentSettings.value.countingMode === 'line'
+      ? '请点击画面放置计数线的起点与终点'
+      : '请依次点击放置6个顶点，完成区域框选')
+    return
+  }
+  if (countingSelfIntersects.value) {
+    message.warning('框选区域存在交叉线，请调整顶点后再确认')
+    return
+  }
+  const el = countingCanvasEl.value
+  const cw = el?.clientWidth || 1
+  const ch = el?.clientHeight || 1
+  const normalized = pts.map(p => ({ x: p.x / cw, y: p.y / ch }))
+  if (currentSettings.value.countingMode === 'line') {
+    currentSettings.value.countingLine = { from: normalized[0], to: normalized[1] }
+  } else {
+    currentSettings.value.countingArea = { points: normalized }
+  }
+  countingDraftPoints.value = []
+  countingCursor.value = null
+  countingDrawVisible.value = false
+  message.success(currentSettings.value.countingMode === 'line' ? '已绘制计数线' : '已框选计数区域')
+}
+
+/** 计数区域回显（预览叠加） */
+const countingAreaPoints = (area: IntrusionArea) =>
+  area.points.map(p => `${p.x * 100},${p.y * 100}`).join(' ')
 
 // 画面设置项
 const screenModeOptions = [
@@ -1456,6 +1645,60 @@ const flipModeOptions = [
       </div>
     </a-modal>
 
+    <!-- ==================== 人流统计 - 计数区域框选 / 计数线绘制弹窗 ==================== -->
+    <a-modal v-if="SHOW_PEOPLE_COUNTING_SETTINGS" v-model:open="countingDrawVisible" :title="currentSettings.countingMode === 'line' ? '绘制计数线' : '框选计数区域'" width="1200px" :z-index="2000" :ok-button-props="{ disabled: countingSelfIntersects }" @ok="handleCountingDrawConfirm" @cancel="countingDrawVisible = false" :ok-text="currentSettings.countingMode === 'line' ? '确认计数线' : '确认框选'" cancel-text="取消">
+      <div class="dm-intrusion-toolbar">
+        <span class="dm-intrusion-toolbar-count">{{ countingHintText }}</span>
+        <div class="dm-intrusion-toolbar-actions">
+          <a-button size="small" class="dm-toolbar-btn" @click="ptzVisible = !ptzVisible">PTZ</a-button>
+          <a-button size="small" class="dm-toolbar-btn" danger :disabled="countingDraftPoints.length === 0" @click="clearCountingDraft">一键清除</a-button>
+        </div>
+      </div>
+      <div
+        ref="countingCanvasEl"
+        class="dm-intrusion-canvas"
+        :style="{ cursor: countingCursorStyle }"
+        @mousedown="onCountingMouseDown"
+        @mousemove="onCountingMouseMove"
+        @mouseup="onCountingMouseUp"
+        @mouseleave="onCountingMouseUp"
+      >
+        <div class="dm-intrusion-scene" :style="ptzSceneStyle">
+          <span class="dm-intrusion-scene-tag">实时画面 · 变倍 {{ ptzZoom.toFixed(2) }}x</span>
+        </div>
+        <svg class="dm-intrusion-svg" :class="{ 'is-invalid': countingSelfIntersects }">
+          <polygon v-if="countingDraftPolygonPoints" :points="countingDraftPolygonPoints" class="dm-intrusion-polygon" />
+          <polyline v-if="currentSettings.countingMode === 'area' && countingDraftPoints.length >= 2" :points="countingDraftLinePoints" class="dm-intrusion-polyline" />
+          <line v-if="currentSettings.countingMode === 'line' && countingDraftPoints.length === 2" :x1="countingDraftPoints[0].x" :y1="countingDraftPoints[0].y" :x2="countingDraftPoints[1].x" :y2="countingDraftPoints[1].y" class="dm-counting-line" />
+          <line v-if="countingPreviewLine" :x1="countingPreviewLine.x1" :y1="countingPreviewLine.y1" :x2="countingPreviewLine.x2" :y2="countingPreviewLine.y2" class="dm-intrusion-preview-line" />
+          <circle v-for="(p, i) in countingDraftPoints" :key="'hit-' + i" :cx="p.x" :cy="p.y" r="12" class="dm-intrusion-vertex-hit" />
+          <g v-for="(p, i) in countingDraftPoints" :key="'cv-' + i">
+            <circle :cx="p.x" :cy="p.y" r="8" :fill="countingDragIndex === i ? (countingSelfIntersects ? '#ff4d4f' : '#1890ff') : '#fff'" class="dm-intrusion-vertex" />
+            <text :x="p.x" :y="p.y" class="dm-intrusion-vertex-label" :fill="countingDragIndex === i ? '#fff' : (countingSelfIntersects ? '#ff4d4f' : '#1890ff')">{{ i + 1 }}</text>
+          </g>
+        </svg>
+        <div v-if="ptzVisible" class="dm-intrusion-ptz" @mousedown.stop>
+          <div class="dm-intrusion-ptz-body">
+            <div class="dm-intrusion-ptz-pad">
+              <a-button size="small" class="dm-ptz-btn dm-ptz-up" @click="ptzMove(0, -ptzStep)"><UpOutlined /></a-button>
+              <a-button size="small" class="dm-ptz-btn dm-ptz-left" @click="ptzMove(-ptzStep, 0)"><LeftOutlined /></a-button>
+              <a-button size="small" class="dm-ptz-btn dm-ptz-home" title="复位" @click="ptzReset"><AimOutlined /></a-button>
+              <a-button size="small" class="dm-ptz-btn dm-ptz-right" @click="ptzMove(ptzStep, 0)"><RightOutlined /></a-button>
+              <a-button size="small" class="dm-ptz-btn dm-ptz-down" @click="ptzMove(0, ptzStep)"><DownOutlined /></a-button>
+            </div>
+            <div class="dm-intrusion-ptz-zoom">
+              <a-button size="small" class="dm-ptz-btn" title="放大" @click="ptzZoomIn"><PlusOutlined /></a-button>
+              <a-button size="small" class="dm-ptz-btn" title="缩小" @click="ptzZoomOut"><MinusOutlined /></a-button>
+            </div>
+          </div>
+        </div>
+        <div v-if="countingSelfIntersects" class="dm-intrusion-invalid-banner">
+          <ExclamationCircleOutlined />
+          <span>框选区域存在交叉线，请调整顶点</span>
+        </div>
+      </div>
+    </a-modal>
+
     <!-- ==================== 功能设置抽屉 ==================== -->
     <a-drawer
       v-model:open="settingsVisible"
@@ -1780,6 +2023,105 @@ const flipModeOptions = [
           </div>
           </template>
         </a-card>
+
+        <!-- 人流统计 -->
+        <a-card v-if="SHOW_PEOPLE_COUNTING_SETTINGS && currentCapabilities.peopleCounting" title="人流统计" size="small" class="dm-settings-card" variant="outlined">
+          <template #extra>
+            <span class="dm-settings-card-desc">统计进出区域的人数</span>
+          </template>
+          <!-- 人流统计总开关 -->
+          <div class="dm-settings-row">
+            <div class="dm-settings-row-label">
+              <span class="dm-settings-row-title">客流统计</span>
+              <span class="dm-settings-row-hint">开启后该设备将统计人数并上报至人流统计模块</span>
+            </div>
+            <div class="dm-settings-row-ctrl">
+              <a-switch v-model:checked="currentSettings.countingEnabled" checked-children="开启" un-checked-children="关闭" />
+            </div>
+          </div>
+          <template v-if="currentSettings.countingEnabled">
+          <!-- 计数模式 -->
+          <a-divider style="margin:12px 0" />
+          <div class="dm-settings-row">
+            <div class="dm-settings-row-label">
+              <span class="dm-settings-row-title">计数模式</span>
+              <span class="dm-settings-row-hint">区域计数统计区域内人数，跨线计数统计穿越计数线的人数</span>
+            </div>
+            <div class="dm-settings-row-ctrl">
+              <a-radio-group v-model:value="currentSettings.countingMode" option-type="button" button-style="solid" size="small">
+                <a-radio-button v-for="opt in countingModeOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</a-radio-button>
+              </a-radio-group>
+            </div>
+          </div>
+          <!-- 时间段设置 -->
+          <a-divider style="margin:12px 0" />
+          <div class="dm-settings-row">
+            <div class="dm-settings-row-label">
+              <span class="dm-settings-row-title">时间段设置</span>
+              <span class="dm-settings-row-hint">仅在设定时间段内进行统计</span>
+            </div>
+            <div class="dm-settings-row-ctrl">
+              <div class="dm-settings-time-range">
+                <a-time-picker v-model:value="currentSettings.countingTimeStart" value-format="HH:mm" format="HH:mm" size="small" :input-read-only="true" style="width:96px" />
+                <span class="dm-settings-time-sep">~</span>
+                <a-time-picker v-model:value="currentSettings.countingTimeEnd" value-format="HH:mm" format="HH:mm" size="small" :input-read-only="true" style="width:96px" />
+              </div>
+            </div>
+          </div>
+          <!-- 计数范围：区域计数框选 / 跨线计数画线 -->
+          <a-divider style="margin:12px 0" />
+          <div class="dm-settings-row">
+            <div class="dm-settings-row-label">
+              <span class="dm-settings-row-title">{{ currentSettings.countingMode === 'line' ? '计数线' : '计数区域' }}</span>
+              <span class="dm-settings-row-hint">{{ currentSettings.countingMode === 'line' ? '在画面上绘制一条虚拟计数线' : '在画面上框选计数区域' }}</span>
+            </div>
+          </div>
+          <div class="dm-intrusion-preview">
+            <div class="dm-intrusion-scene">
+              <svg class="dm-intrusion-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
+                <polygon v-if="currentSettings.countingMode === 'area' && currentSettings.countingArea" :points="countingAreaPoints(currentSettings.countingArea)" class="dm-intrusion-polygon dm-intrusion-polygon-dashed" />
+                <line v-if="currentSettings.countingMode === 'line' && currentSettings.countingLine" :x1="currentSettings.countingLine.from.x * 100" :y1="currentSettings.countingLine.from.y * 100" :x2="currentSettings.countingLine.to.x * 100" :y2="currentSettings.countingLine.to.y * 100" class="dm-counting-line-preview" />
+              </svg>
+              <span class="dm-intrusion-scene-tag">画面抓图</span>
+              <a-button size="small" type="dashed" class="dm-intrusion-reframe" @click="openCountingDraw">
+                {{ (currentSettings.countingMode === 'line' ? currentSettings.countingLine : currentSettings.countingArea) ? '重新' + (currentSettings.countingMode === 'line' ? '绘制' : '框选') : (currentSettings.countingMode === 'line' ? '绘制计数线' : '框选区域') }}
+              </a-button>
+            </div>
+          </div>
+          <!-- 预警阈值 -->
+          <a-divider style="margin:12px 0" />
+          <div class="dm-settings-row">
+            <div class="dm-settings-row-label">
+              <span class="dm-settings-row-title">在数预警阈值</span>
+              <span class="dm-settings-row-hint">区域内人数达到该值时触发预警</span>
+            </div>
+            <div class="dm-settings-row-ctrl">
+              <a-input-number v-model:value="currentSettings.countingInsideThreshold" :min="1" size="small" style="width:120px" addon-after="人" />
+            </div>
+          </div>
+          <a-divider style="margin:12px 0" />
+          <div class="dm-settings-row">
+            <div class="dm-settings-row-label">
+              <span class="dm-settings-row-title">进入/小时阈值</span>
+              <span class="dm-settings-row-hint">每小时进入人数达到该值时触发预警</span>
+            </div>
+            <div class="dm-settings-row-ctrl">
+              <a-input-number v-model:value="currentSettings.countingEnterThreshold" :min="1" size="small" style="width:120px" addon-after="人" />
+            </div>
+          </div>
+          <!-- 报警灯 -->
+          <a-divider style="margin:12px 0" />
+          <div class="dm-settings-row">
+            <div class="dm-settings-row-label">
+              <span class="dm-settings-row-title">报警灯开关</span>
+              <span class="dm-settings-row-hint">触发预警时设备报警灯闪烁</span>
+            </div>
+            <div class="dm-settings-row-ctrl">
+              <a-switch v-model:checked="currentSettings.countingAlarmLight" checked-children="开启" un-checked-children="关闭" />
+            </div>
+          </div>
+          </template>
+        </a-card>
         </template>
       </template>
 
@@ -1851,6 +2193,8 @@ const flipModeOptions = [
 .dm-intrusion-polygon-dashed { stroke-width:1; stroke-dasharray:6 4; }
 .dm-intrusion-polyline { fill:none; stroke:#1890ff; stroke-width:1.5; }
 .dm-intrusion-preview-line { stroke:#1890ff; stroke-width:1.5; stroke-dasharray:6 4; }
+.dm-counting-line { stroke:#52c41a; stroke-width:2; stroke-dasharray:8 4; }
+.dm-counting-line-preview { stroke:#52c41a; stroke-width:1.5; stroke-dasharray:6 4; }
 .dm-intrusion-vertex-hit { fill:rgba(24,144,255,0.14); }
 .dm-intrusion-vertex { fill:#fff; stroke:#1890ff; stroke-width:1.5; }
 .dm-intrusion-vertex-label { text-anchor:middle; dominant-baseline:central; font-size:10px; font-weight:600; pointer-events:none; }

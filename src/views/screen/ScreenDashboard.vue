@@ -31,11 +31,8 @@ const scenarios: ScreenScenario[] = [
   { key: 'store', name: '门店', subName: '连锁门店运营', first: { label: '门店总数', value: 128, unit: '家', extra: '覆盖 12 个区域' }, overview: '门店运营概览', category: '问题类型分布', region: '区域巡检排行' },
   { key: 'factory', name: '厂区', subName: '厂区生产安全', first: { label: '产线数量', value: 46, unit: '条', extra: '覆盖 8 个车间' }, overview: '厂区安全概览', category: '隐患类型分布', region: '车间巡检排行' },
   { key: 'district', name: '园区', subName: '园区综合管理', first: { label: '园区数量', value: 32, unit: '个', extra: '覆盖 6 个城市' }, overview: '园区运营概览', category: '问题类型分布', region: '园区巡检排行' },
-  { key: 'site', name: '站点', subName: '站点运营管理', first: { label: '站点数量', value: 96, unit: '个', extra: '覆盖 9 个区域' }, overview: '站点运营概览', category: '问题类型分布', region: '站点巡检排行' },
   { key: 'warehouse', name: '仓库', subName: '仓储物流管理', first: { label: '仓库数量', value: 54, unit: '个', extra: '覆盖 7 个园区' }, overview: '仓储运营概览', category: '问题类型分布', region: '仓库巡检排行' },
   { key: 'construction', name: '工地', subName: '工地安全监管', first: { label: '在建工地', value: 28, unit: '个', extra: '覆盖 5 个城市' }, overview: '工地安全概览', category: '隐患类型分布', region: '工地巡检排行' },
-  { key: 'school', name: '学校', subName: '校园安全管理', first: { label: '校区数量', value: 40, unit: '个', extra: '覆盖 3 个城市' }, overview: '校园安全概览', category: '问题类型分布', region: '校区巡检排行' },
-  { key: 'project', name: '项目', subName: '项目运营管理', first: { label: '项目数量', value: 67, unit: '个', extra: '覆盖 10 个区域' }, overview: '项目运营概览', category: '问题类型分布', region: '项目巡检排行' },
 ]
 
 const scenarioKey = computed(() => enterpriseStore.screenScenarioKey)
