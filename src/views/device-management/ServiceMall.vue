@@ -8,7 +8,7 @@ import {
   VideoCameraOutlined, HddOutlined,
   AlipayCircleOutlined, WechatOutlined, QrcodeOutlined,
   CheckCircleFilled, ClockCircleOutlined,
-  InfoCircleOutlined,
+  InfoCircleOutlined, HeartFilled,
 } from '@antdv-next/icons'
 
 const router = useRouter()
@@ -16,7 +16,7 @@ const router = useRouter()
 // ==========================================
 // 类型定义
 // ==========================================
-type ServiceCategory = 'cloud_record' | 'ai_algorithm' | 'security'
+type ServiceCategory = 'cloud_record' | 'ai_algorithm' | 'security' | 'eldercare'
 
 interface ServicePackage {
   id: string
@@ -53,6 +53,7 @@ const tabs = [
   { key: 'cloud_record' as ServiceCategory, label: '云存储与录制', icon: CloudServerOutlined },
   { key: 'ai_algorithm' as ServiceCategory, label: 'AI智能算法', icon: BulbOutlined },
   { key: 'security' as ServiceCategory, label: '安全预警', icon: SafetyOutlined },
+  { key: 'eldercare' as ServiceCategory, label: '养老看护', icon: HeartFilled },
 ]
 
 // ==========================================
@@ -87,6 +88,12 @@ const packages: ServicePackage[] = [
   { id: 's3', name: '离岗/睡岗预警-月付', category: 'security', unit: '月', price: 88, serviceType: '安全预警', nvrSupported: false, features: ['离岗检测', '睡岗检测', '多次告警'] },
   { id: 's4', name: '烟火检测预警-年付', category: 'security', unit: '年', price: 1299, originalPrice: 1549, tag: 'hot', serviceType: '安全预警', nvrSupported: false, features: ['烟火识别', '实时告警', '定位上报'] },
   { id: 's5', name: '跌倒检测预警-月付', category: 'security', unit: '月', price: 108, tag: 'useful', serviceType: '安全预警', nvrSupported: false, features: ['跌倒识别', '即时通知', '录像关联'] },
+
+  // ---- 养老看护（GPS 可移动摄像机专属）----
+  { id: 'e1', name: '居家守护包', category: 'eldercare', unit: '月', price: 129, serviceType: '养老看护', nvrSupported: false, features: ['跌倒/SOS/离床识别', '围栏越界走失告警', '7×24 小时告警推送', '智能设备脱戴监测'] },
+  { id: 'e2', name: '社区看护包', category: 'eldercare', unit: '月', price: 259, tag: 'hot', detailUrl: 'https://example.com/service/detail/eldercare-community', serviceType: '养老看护', nvrSupported: false, features: ['含居家守护全部能力', '徘徊/卫生间滞留识别', '护理巡查轨迹考核', '家属端实时查看'] },
+  { id: 'e3', name: '机构专业照护包', category: 'eldercare', unit: '月', price: 499, tag: 'useful', serviceType: '养老看护', nvrSupported: false, features: ['16 项养老算法全覆盖', '告警分级处置', '护理质量周报', '算法效果季度调优'] },
+  { id: 'e4', name: '机构专业照护包-年付', category: 'eldercare', unit: '年', price: 5399, originalPrice: 5988, serviceType: '养老看护', nvrSupported: false, features: ['16 项养老算法全覆盖', '多级告警分级处置', '认知症行为档案', '年付更省心'] },
 ]
 
 const currentPackages = computed(() => packages.filter(p => p.category === tab.value))

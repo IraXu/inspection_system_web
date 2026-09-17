@@ -38,6 +38,10 @@ const router = createRouter({
         { path: 'device/service-mall', name: 'ServiceMall', component: () => import('@/views/device-management/ServiceMall.vue'), meta: { title: '智能服务商城' } },
         { path: 'device/service-records', name: 'ServiceRecords', component: () => import('@/views/system-management/UnderConstruction.vue'), meta: { title: '服务开通记录' } },
         { path: 'device/install-records', name: 'InstallRecords', component: () => import('@/views/device-management/InstallRecords.vue'), meta: { title: '设备装维记录' } },
+        // GPS 定位与养老看护
+        { path: 'gps/location', name: 'GpsDeviceLocation', component: () => import('@/views/gps-location/DeviceMap.vue'), meta: { title: '定位监控' } },
+        { path: 'gps/geofence', name: 'GpsGeofenceConfig', component: () => import('@/views/gps-location/GeofenceConfig.vue'), meta: { title: '电子围栏' } },
+        { path: 'gps/photos', name: 'GpsPhotoRecords', component: () => import('@/views/gps-location/PhotoRecords.vue'), meta: { title: '拍照上报记录' } },
         // 云广播
         { path: 'cloud-broadcast/realtime', name: 'RealTimeBroadcast', component: () => import('@/views/cloud-broadcast/RealTimeBroadcast.vue'), meta: { title: '实时广播' } },
         { path: 'cloud-broadcast/scheduled', name: 'ScheduledBroadcast', component: () => import('@/views/cloud-broadcast/ScheduledBroadcast.vue'), meta: { title: '定时广播' } },

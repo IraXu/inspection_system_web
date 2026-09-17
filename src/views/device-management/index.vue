@@ -6,9 +6,11 @@ import {
   SearchOutlined, PlusOutlined, DeleteOutlined, ReloadOutlined,
   ExclamationCircleOutlined, EnvironmentOutlined, DownloadOutlined, UploadOutlined,
   SyncOutlined, UpOutlined, DownOutlined, LeftOutlined, RightOutlined, MinusOutlined, AimOutlined,
+  InfoCircleOutlined,
 } from '@antdv-next/icons'
 import type { TableColumnsType } from 'antdv-next'
 import type { DevicePackageInfo, CloudStoragePackage, AIAlgorithmPackage } from '@/types'
+import { useGpsStore, GEOFENCE_TYPE_LABELS } from '@/stores/gps'
 
 // ==========================================
 // 类型定义
@@ -24,6 +26,11 @@ interface DeviceCapabilities {
   intrusionDetectTypes?: string[]  // 区域检测管理支持的检测类型，如 human/pet
   peopleCounting?: boolean         // 是否支持人流统计（统计进出人数）
   countingModes?: ('area' | 'line')[]  // 支持的计数模式：area=区域计数，line=跨线计数
+  /** 以下为 GPS 可移动摄像机专属能力 */
+  gps?: boolean           // 是否支持 GPS 定位上报
+  buttonCapture?: boolean // 是否支持设备侧按键触发拍照上报
+  sosButton?: boolean     // 是否支持 SOS 一键求助按键
+  geofence?: boolean      // 是否支持电子围栏
 }
 
 /** NVR 通道（下挂 IPC，作为可播放的最小单元） */
@@ -229,6 +236,10 @@ const mockDevices: DeviceItem[] = [
   { id: 'd16', name: '智能电表-总表', license: 'SN-SG-2024-0001', deviceType: '智能电表', deviceModel: 'DDSU666', firmwareVersion: 'v1.0.2', sdkVersion: '—', orgPath: ['root','huadong','js','nj','xb','xb-wanda'], orgPathLabel: '华东/江苏/南京/新街口商圈/万达苏宁旗舰店', status: 'online', location: '118.7842, 32.0493', platform: '正泰', capabilities: { screen: false, alarm: false, light: false, eventTypes: [] } },
   { id: 'd17', name: '智能电表-冷藏区', license: 'SN-SG-2024-0002', deviceType: '智能电表', deviceModel: 'DTS634', firmwareVersion: 'v1.0.2', sdkVersion: '—', orgPath: ['root','huadong','js','nj','xb','xb-wanda'], orgPathLabel: '华东/江苏/南京/新街口商圈/万达苏宁旗舰店', status: 'online', location: '118.7842, 32.0493', platform: '安科瑞', capabilities: { screen: false, alarm: false, light: false, eventTypes: [] } },
   { id: 'd18', name: '智能电表-总表', license: 'SN-SG-2024-0003', deviceType: '智能电表', deviceModel: 'DDSU666', firmwareVersion: 'v1.0.1', sdkVersion: '—', orgPath: ['root','huanan','gd','sz_city','sz-nanshan','sz-wanxiang'], orgPathLabel: '华南/广东/深圳/南山区/万象天地', status: 'offline', location: '113.9526, 22.5176', platform: '正泰', capabilities: { screen: false, alarm: false, light: false, eventTypes: [] } },
+  // ===== GPS 可移动摄像机 =====
+  { id: 'd19', name: '随身看护机-张爷爷', license: 'GPS-2026-P001', deviceType: 'GPS移动摄像机', deviceModel: 'HM-P100 随身看护机', firmwareVersion: 'v2.1.4', sdkVersion: 'v1.5.2', orgPath: ['root','huadong','js','nj','xb','xb-wanda'], orgPathLabel: '华东/江苏/南京/新街口商圈/万达苏宁旗舰店', status: 'online', location: '118.7852, 32.0494', platform: '鹤梦云', capabilities: { screen: false, alarm: true, light: false, eventTypes: ['motion'], gps: true, buttonCapture: true, sosButton: true, geofence: true } },
+  { id: 'd20', name: '随身看护机-李奶奶', license: 'GPS-2026-P002', deviceType: 'GPS移动摄像机', deviceModel: 'HM-P100 随身看护机', firmwareVersion: 'v2.1.4', sdkVersion: 'v1.5.2', orgPath: ['root','huadong','js','nj','xb','xb-taiyang'], orgPathLabel: '华东/江苏/南京/新街口商圈/21世纪太阳城', status: 'online', location: '118.7876, 32.0512', platform: '鹤梦云', capabilities: { screen: false, alarm: true, light: false, eventTypes: ['motion'], gps: true, buttonCapture: false, sosButton: false, geofence: true } },
+  { id: 'd21', name: '移动布控球-东区走廊', license: 'GPS-2026-M005', deviceType: 'GPS移动摄像机', deviceModel: 'HM-M300 移动布控球', firmwareVersion: 'v3.0.2', sdkVersion: 'v2.0.1', orgPath: ['root','huadong','js','nj','qb','qb-wanda'], orgPathLabel: '华东/江苏/南京/桥北商圈/桥北万象城', status: 'online', location: '118.7844, 32.0523', platform: '鹤梦云', capabilities: { screen: true, alarm: true, light: true, eventTypes: ['motion','human'], gps: true, buttonCapture: false, sosButton: false, geofence: true } },
 ]
 
 // ==========================================
@@ -491,10 +502,15 @@ const addMode = ref<'single' | 'batch'>('single')
 const formTitle = computed(() => formMode.value === 'add' ? '添加设备' : '编辑设备')
 const editingDevice = ref<DeviceItem | null>(null)
 
+/** 编辑对象是否为 GPS 移动摄像机（位置由设备自动上报，不提供地图选点） */
+const isEditingGpsDevice = computed(() => editingDevice.value?.deviceType === 'GPS移动摄像机')
+
 // 模拟云端根据 License 自动识别设备类型（实际由后端识别并返回）
-const detectDeviceTypeByLicense = (license: string): 'NVR' | 'WIFI摄像机' => {
+const detectDeviceTypeByLicense = (license: string): 'NVR' | 'GPS移动摄像机' | 'WIFI摄像机' => {
   const upper = license.toUpperCase()
   if (upper.includes('NVR') || /-N\d/.test(upper)) return 'NVR'
+  // GPS 开头的 License 识别为可移动 GPS 摄像机
+  if (upper.startsWith('GPS')) return 'GPS移动摄像机'
   return 'WIFI摄像机'
 }
 
@@ -524,18 +540,24 @@ const handleFormSubmit = () => {
   const orgLabel = getOrgPathLabel(deviceForm.orgKey)
 
   if (formMode.value === 'add') {
-    const isNvr = detectDeviceTypeByLicense(deviceForm.license.trim()) === 'NVR'
+    const detected = detectDeviceTypeByLicense(deviceForm.license.trim())
+    const isNvr = detected === 'NVR'
+    const isGps = detected === 'GPS移动摄像机'
     allDevices.value.push({
       id: `d${Date.now()}`, name: deviceForm.name.trim(), license: deviceForm.license.trim(),
-      deviceType: isNvr ? 'NVR' : 'WIFI摄像机',
-      deviceModel: isNvr ? '网络硬盘录像机' : '高清网络枪机',
-      firmwareVersion: isNvr ? 'v4.60.10' : 'v5.7.11',
+      deviceType: detected,
+      deviceModel: isNvr ? '网络硬盘录像机' : isGps ? 'HM-P100 随身看护机' : '高清网络枪机',
+      firmwareVersion: isNvr ? 'v4.60.10' : isGps ? 'v2.1.4' : 'v5.7.11',
       sdkVersion: 'v2.3.1', orgPath: [deviceForm.orgKey], orgPathLabel: orgLabel,
-      status: 'offline', location: deviceForm.location || '', platform: '海康威视',
-      capabilities: { screen: !isNvr, alarm: false, light: false, eventTypes: [] },
+      status: 'offline', location: deviceForm.location || '', platform: isGps ? '鹤梦云' : '海康威视',
+      capabilities: isGps
+        ? { screen: false, alarm: true, light: false, eventTypes: ['motion'], gps: true, buttonCapture: true, sosButton: true, geofence: true }
+        : { screen: !isNvr, alarm: false, light: false, eventTypes: [] },
       ...(isNvr ? { channels: [] } : {}),
     })
-    message.success(isNvr ? '添加成功，已自动识别为 NVR 设备' : '添加成功')
+    message.success(isNvr ? '添加成功，已自动识别为 NVR 设备'
+      : isGps ? '添加成功，已自动识别为 GPS 移动摄像机'
+      : '添加成功')
   } else if (formMode.value === 'edit' && editingDevice.value) {
     const dev = allDevices.value.find(d => d.id === editingDevice.value!.id)
     if (dev) {
@@ -779,6 +801,17 @@ interface DeviceSettings {
   countingInsideThreshold: number
   countingEnterThreshold: number
   countingAlarmLight: boolean
+  // GPS 可移动摄像机 — 定位与拍照上报
+  gpsReportEnabled: boolean              // 定位上报开关
+  gpsReportInterval: number              // 定位上报间隔（秒）
+  gpsButtonCapture: boolean              // 设备侧按键拍照上报
+  gpsSosEnabled: boolean                 // SOS 一键求助
+  gpsAutoCapture: boolean                // 定时自动拍照上报
+  gpsCaptureInterval: number             // 自动拍照间隔（分钟）
+  gpsLowBatteryNotify: boolean           // 低电量提醒
+  gpsLowBatteryThreshold: number         // 低电量阈值（%）
+  gpsNoReportNotify: boolean             // 长时未上报提醒
+  gpsNoReportMinutes: number             // 未上报时长（分钟）
 }
 
 /** 人流统计跨线计数线（基于摄像机画面的归一化坐标，两点确定一条线） */
@@ -827,6 +860,17 @@ const getDefaultSettings = (device: DeviceItem): DeviceSettings => {
     countingInsideThreshold: 100,
     countingEnterThreshold: 200,
     countingAlarmLight: false,
+    // GPS 可移动摄像机默认值：按键能力与 SOS 由设备能力决定
+    gpsReportEnabled: !!device.capabilities.gps,
+    gpsReportInterval: 30,
+    gpsButtonCapture: !!device.capabilities.buttonCapture,
+    gpsSosEnabled: !!device.capabilities.sosButton,
+    gpsAutoCapture: true,
+    gpsCaptureInterval: 30,
+    gpsLowBatteryNotify: true,
+    gpsLowBatteryThreshold: 20,
+    gpsNoReportNotify: true,
+    gpsNoReportMinutes: 60,
   }
 }
 
@@ -849,7 +893,7 @@ const currentCapabilities = computed(() => settingsDevice.value?.capabilities ??
 /** 当前设备是否有任何设置项（如果三个能力都为false则无设置项） */
 const hasAnySettings = computed(() => {
   const cap = currentCapabilities.value
-  return cap.screen || cap.alarm || cap.light || cap.intrusion
+  return cap.screen || cap.alarm || cap.light || cap.intrusion || !!cap.gps
     || (SHOW_PEOPLE_COUNTING_SETTINGS && cap.peopleCounting)
 })
 
@@ -858,6 +902,25 @@ const router = useRouter()
 const goToCloudBroadcast = () => {
   settingsVisible.value = false
   router.push('/cloud-broadcast/event')
+}
+
+// ==========================================
+// GPS 可移动摄像机 — 围栏绑定查看与跳转
+// ==========================================
+const gpsStore = useGpsStore()
+
+/** 当前设置设备在 GPS 模块中已绑定的围栏（按 License 关联同型号设备示意） */
+const settingsGeofences = computed(() => {
+  if (!settingsDevice.value || !currentCapabilities.value.geofence) return []
+  const matched = gpsStore.devices.find(d => d.license === settingsDevice.value!.license)
+  if (!matched) return []
+  return gpsStore.geofences.filter(g => matched.geofenceIds.includes(g.id))
+})
+
+/** 跳转到电子围栏模块，携带设备 License 便于快速定位绑定 */
+const goToGeofenceConfig = () => {
+  settingsVisible.value = false
+  router.push({ path: '/gps/geofence', query: { license: settingsDevice.value?.license || '' } })
 }
 
 const handleSettingsSave = () => {
@@ -1417,7 +1480,18 @@ const flipModeOptions = [
           </a-form-item>
 
           <!-- 编辑模式：详细位置 -->
-          <a-row v-if="formMode === 'edit'" :gutter="16">
+          <!-- GPS 移动摄像机：位置由设备自动上报，不可手动选点 -->
+          <a-form-item v-if="formMode === 'edit' && isEditingGpsDevice" label="详细位置">
+            <a-input :value="deviceForm.location || '等待设备上报'" disabled style="background:#f5f5f5">
+              <template #prefix><EnvironmentOutlined style="color:#bfbfbf" /></template>
+            </a-input>
+            <div class="dm-loc-tip">
+              <InfoCircleOutlined />
+              <span>该设备为 GPS 移动摄像机，位置由设备端自动上报且随移动实时变化，无需手动设置。</span>
+            </div>
+          </a-form-item>
+
+          <a-row v-else-if="formMode === 'edit'" :gutter="16">
             <a-col :span="12">
               <a-form-item label="详细位置">
                 <a-input v-model:value="deviceForm.location" placeholder="经纬度坐标">
@@ -1721,6 +1795,162 @@ const flipModeOptions = [
         <a-empty v-if="!hasAnySettings" description="该设备暂无可配置项" />
 
         <template v-else>
+        <!-- GPS 定位与拍照上报（仅 GPS 移动摄像机） -->
+        <a-card v-if="currentCapabilities.gps" title="定位与拍照上报" size="small" class="dm-settings-card" variant="outlined">
+          <template #extra>
+            <span class="dm-settings-card-desc">配置 GPS 定位上报与拍照上报策略</span>
+          </template>
+          <!-- 定位上报开关 -->
+          <div class="dm-settings-row">
+            <div class="dm-settings-row-label">
+              <span class="dm-settings-row-title">定位上报</span>
+              <span class="dm-settings-row-hint">开启后设备将周期上报 GPS 经纬度，照片自动携带拍摄当时的定位</span>
+            </div>
+            <div class="dm-settings-row-ctrl">
+              <a-switch v-model:checked="currentSettings.gpsReportEnabled" checked-children="开启" un-checked-children="关闭" />
+            </div>
+          </div>
+          <template v-if="currentSettings.gpsReportEnabled">
+            <a-divider style="margin:12px 0" />
+            <div class="dm-settings-row">
+              <div class="dm-settings-row-label">
+                <span class="dm-settings-row-title">上报间隔</span>
+                <span class="dm-settings-row-hint">间隔越短定位越精确，但会增加设备功耗</span>
+              </div>
+              <div class="dm-settings-row-ctrl">
+                <a-input-number v-model:value="currentSettings.gpsReportInterval" :min="5" :max="600" :step="5" size="small" style="width:130px" addon-after="秒" />
+              </div>
+            </div>
+          </template>
+
+          <!-- 设备侧按键拍照（能力差异） -->
+          <a-divider style="margin:12px 0" />
+          <div class="dm-settings-row">
+            <div class="dm-settings-row-label">
+              <span class="dm-settings-row-title">设备侧按键拍照上报</span>
+              <span class="dm-settings-row-hint">
+                {{ currentCapabilities.buttonCapture
+                  ? '老人/护理员按下设备按键即可拍照并上报（照片携带 GPS）'
+                  : '该设备型号不支持按键拍照，仅可通过定时或事件触发上报' }}
+              </span>
+            </div>
+            <div class="dm-settings-row-ctrl">
+              <a-switch
+                v-model:checked="currentSettings.gpsButtonCapture"
+                :disabled="!currentCapabilities.buttonCapture"
+                checked-children="开启"
+                un-checked-children="关闭"
+              />
+            </div>
+          </div>
+
+          <!-- SOS 一键求助 -->
+          <a-divider style="margin:12px 0" />
+          <div class="dm-settings-row">
+            <div class="dm-settings-row-label">
+              <span class="dm-settings-row-title">SOS 一键求助</span>
+              <span class="dm-settings-row-hint">
+                {{ currentCapabilities.sosButton
+                  ? '长按 SOS 按键触发紧急求助：自动抓拍现场照片并携带定位，通知护理站与家属'
+                  : '该设备型号无 SOS 按键' }}
+              </span>
+            </div>
+            <div class="dm-settings-row-ctrl">
+              <a-switch
+                v-model:checked="currentSettings.gpsSosEnabled"
+                :disabled="!currentCapabilities.sosButton"
+                checked-children="开启"
+                un-checked-children="关闭"
+              />
+            </div>
+          </div>
+
+          <!-- 定时自动拍照 -->
+          <a-divider style="margin:12px 0" />
+          <div class="dm-settings-row">
+            <div class="dm-settings-row-label">
+              <span class="dm-settings-row-title">定时自动拍照上报</span>
+              <span class="dm-settings-row-hint">按固定间隔自动抓拍并上报，用于在岗/在场核验</span>
+            </div>
+            <div class="dm-settings-row-ctrl">
+              <a-switch v-model:checked="currentSettings.gpsAutoCapture" checked-children="开启" un-checked-children="关闭" />
+            </div>
+          </div>
+          <template v-if="currentSettings.gpsAutoCapture">
+            <a-divider style="margin:12px 0" />
+            <div class="dm-settings-row">
+              <div class="dm-settings-row-label">
+                <span class="dm-settings-row-title">抓拍间隔</span>
+                <span class="dm-settings-row-hint">每次抓拍的照片均携带拍摄当时的 GPS 定位</span>
+              </div>
+              <div class="dm-settings-row-ctrl">
+                <a-input-number v-model:value="currentSettings.gpsCaptureInterval" :min="5" :max="720" :step="5" size="small" style="width:130px" addon-after="分钟" />
+              </div>
+            </div>
+          </template>
+
+          <!-- 低电量提醒 -->
+          <a-divider style="margin:12px 0" />
+          <div class="dm-settings-row">
+            <div class="dm-settings-row-label">
+              <span class="dm-settings-row-title">低电量提醒</span>
+              <span class="dm-settings-row-hint">电量低于阈值时推送提醒，避免设备断电失联</span>
+            </div>
+            <div class="dm-settings-row-ctrl">
+              <a-space :size="8">
+                <a-input-number
+                  v-if="currentSettings.gpsLowBatteryNotify"
+                  v-model:value="currentSettings.gpsLowBatteryThreshold"
+                  :min="5" :max="50" size="small" style="width:110px" addon-after="%"
+                />
+                <a-switch v-model:checked="currentSettings.gpsLowBatteryNotify" checked-children="开启" un-checked-children="关闭" />
+              </a-space>
+            </div>
+          </div>
+
+          <!-- 长时未上报提醒 -->
+          <a-divider style="margin:12px 0" />
+          <div class="dm-settings-row">
+            <div class="dm-settings-row-label">
+              <span class="dm-settings-row-title">长时未上报提醒</span>
+              <span class="dm-settings-row-hint">超过设定时长未收到定位/照片上报时提醒（设备可能被摘下或失联）</span>
+            </div>
+            <div class="dm-settings-row-ctrl">
+              <a-space :size="8">
+                <a-input-number
+                  v-if="currentSettings.gpsNoReportNotify"
+                  v-model:value="currentSettings.gpsNoReportMinutes"
+                  :min="10" :max="1440" :step="10" size="small" style="width:120px" addon-after="分钟"
+                />
+                <a-switch v-model:checked="currentSettings.gpsNoReportNotify" checked-children="开启" un-checked-children="关闭" />
+              </a-space>
+            </div>
+          </div>
+
+          <!-- 电子围栏绑定与跳转 -->
+          <a-divider style="margin:12px 0" />
+          <div class="dm-settings-row">
+            <div class="dm-settings-row-label">
+              <span class="dm-settings-row-title">电子围栏</span>
+              <span class="dm-settings-row-hint">
+                {{ currentCapabilities.geofence
+                  ? `已绑定 ${settingsGeofences.length} 个围栏，围栏只支持在「电子围栏」模块中框选配置`
+                  : '该设备型号不支持电子围栏' }}
+              </span>
+            </div>
+            <div class="dm-settings-row-ctrl">
+              <a-button size="small" :disabled="!currentCapabilities.geofence" @click="goToGeofenceConfig">
+                <template #icon><BorderOutlined /></template>前往配置
+              </a-button>
+            </div>
+          </div>
+          <div v-if="settingsGeofences.length" class="dm-fence-tags">
+            <a-tag v-for="f in settingsGeofences" :key="f.id" :color="f.enabled ? 'green' : 'default'">
+              {{ f.name }}（{{ GEOFENCE_TYPE_LABELS[f.type].label }}）
+            </a-tag>
+          </div>
+        </a-card>
+
         <!-- 画面设置 -->
         <a-card v-if="currentCapabilities.screen" title="画面设置" size="small" class="dm-settings-card" variant="outlined">
           <template #extra>
@@ -2180,6 +2410,10 @@ const flipModeOptions = [
 .dm-settings-row-title { font-size:13px; font-weight:500; color:#333; }
 .dm-settings-row-hint { font-size:12px; color:#bbb; }
 .dm-settings-guide-link { font-size:12px; color:#1890ff; cursor:pointer; }
+.dm-fence-tags { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; padding-top:10px; border-top:1px dashed #f0f0f0; }
+.dm-loc-tip { display:flex; align-items:flex-start; gap:6px; margin-top:6px; padding:8px 10px; background:#f0f7ff; border:1px solid #dbeafe; border-radius:6px; color:#1d4ed8; font-size:12px; line-height:1.55; }
+
+/* ==================== GPS 定位与拍照上报 ==================== */
 .dm-settings-row-ctrl { flex-shrink:0; }
 .dm-settings-time-range { display:flex; align-items:center; gap:6px; }
 .dm-settings-time-sep { color:#999; font-size:12px; }

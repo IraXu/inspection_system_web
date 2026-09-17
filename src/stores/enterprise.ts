@@ -3,7 +3,7 @@ import { defineStore } from 'pinia'
 // ========== 企业应用场景 ==========
 
 /** 应用场景 key（与企业中心"应用场景"选项一致） */
-export type ScenarioKey = 'store' | 'factory' | 'district' | 'warehouse' | 'construction'
+export type ScenarioKey = 'store' | 'factory' | 'district' | 'warehouse' | 'construction' | 'eldercare'
 
 export interface EnterpriseScenario {
   scenarioKey: ScenarioKey
@@ -19,6 +19,7 @@ export const SCENARIO_LABELS: Record<ScenarioKey, string> = {
   district: '园区',
   warehouse: '仓库',
   construction: '工地',
+  eldercare: '养老',
 }
 
 function loadAll(): Record<string, EnterpriseScenario> {

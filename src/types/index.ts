@@ -503,3 +503,116 @@ export interface DevicePackageValidation {
   missingPackages: string[]    // 缺失的套餐名称列表
 }
 
+// ========== GPS 可移动摄像机 ==========
+
+/** 经纬度坐标 */
+export interface GeoPoint {
+  lng: number
+  lat: number
+}
+
+/** GPS 可移动摄像机能力模型 */
+export interface GpsDeviceCapabilities {
+  buttonCapture: boolean   // 设备侧按键触发拍照上报
+  sosButton: boolean       // SOS 一键求助按键
+  autoCapture: boolean     // 定时/事件自动拍照上报
+  geofence: boolean        // 支持电子围栏
+  voiceCall: boolean       // 支持双向语音
+}
+
+/** 设备联网方式：wifi=无线局域网（不显示强度） cellular=移动网络（显示信号强度） */
+export type GpsNetworkType = 'wifi' | 'cellular'
+
+/** GPS 可移动摄像机 */
+export interface GpsDevice {
+  id: string
+  name: string
+  license: string
+  deviceType: string
+  deviceModel: string
+  firmwareVersion: string
+  orgPathLabel: string
+  status: 'online' | 'offline' | 'sleep'
+  battery: number                      // 电量 0-100
+  charging: boolean
+  network: GpsNetworkType              // 联网方式
+  signal: 'strong' | 'medium' | 'weak' // 移动网络信号强度（wifi 时无意义）
+  carrier: string                      // WiFi 名称 / 运营商
+  lng: number
+  lat: number
+  lastReportAt: string
+  wearDetected: boolean                // 是否处于佩戴/在位状态
+  capabilities: GpsDeviceCapabilities
+  geofenceIds: string[]
+}
+
+/** 定位轨迹点 */
+export interface GpsTrailPoint extends GeoPoint {
+  time: string
+}
+
+/** 电子围栏类型：safe=安全区(离开告警) danger=危险区(进入告警) custom=自定义区域(触发规则自行勾选) */
+export type GeofenceType = 'safe' | 'danger' | 'custom'
+
+/** 电子围栏触发规则 */
+export interface GeofenceRule {
+  enter: boolean          // 进入围栏触发
+  exit: boolean           // 离开围栏触发
+  timeStart: string       // HH:mm
+  timeEnd: string         // HH:mm
+  weekdays: number[]      // 1-7
+}
+
+/** 电子围栏 */
+export interface Geofence {
+  id: string
+  name: string
+  type: GeofenceType
+  deviceIds: string[]
+  points: GeoPoint[]
+  enabled: boolean
+  rule: GeofenceRule
+  remark: string
+  createdAt: string
+}
+
+/** 照片存储资源包（按张数购买） */
+export interface PhotoResourcePack {
+  key: string
+  name: string
+  /** 包含的照片张数 */
+  photos: number
+  /** 价格（元） */
+  price: number
+  desc: string
+  recommended: boolean
+}
+
+/** 存储资源包购买记录 */
+export interface PhotoQuotaOrder {
+  id: string
+  orderNo: string        // 订单号
+  buyer: string          // 购买人（操作人）
+  payTime: string        // 支付时间
+  payMethod: string      // 支付方式
+  serviceName: string    // 服务名称
+  amount: number         // 支付金额
+  photos: number         // 到账张数
+}
+
+/** 按键拍照上报记录（照片始终携带拍摄当时的 GPS） */
+export interface GpsPhotoRecord {
+  id: string
+  deviceId: string
+  deviceName: string
+  orgPathLabel: string
+  capturedAt: string
+  lng: number
+  lat: number
+  accuracy: number                                    // 定位精度（米）
+  battery: number
+  imageUrl: string
+  /** 文件大小（KB），用于容量统计与成本核算 */
+  sizeKB: number
+}
+

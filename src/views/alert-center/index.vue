@@ -11,6 +11,7 @@ import {
 } from '@antdv-next/icons'
 import dayjs, { type Dayjs } from 'dayjs'
 import { useSmsStore } from '@/stores/sms'
+import { useGpsStore } from '@/stores/gps'
 
 // ==================== 组织设备树 ====================
 interface TreeNode {
@@ -214,6 +215,11 @@ const eventTypeOptions = [
   { value: 'storage_shortage', label: '存储不足' }, { value: 'device_offline', label: '设备离线' },
   { value: 'temp_high', label: '温度过高' }, { value: 'motion_detect', label: '移动侦测' },
   { value: 'sound_abnormal', label: '声音异常' },
+  // GPS 可移动摄像机 / 养老看护相关告警
+  { value: 'geofence_exit', label: '围栏越界（走失风险）' }, { value: 'sos_button', label: 'SOS 按键求助' },
+  { value: 'button_capture', label: '按键拍照上报' }, { value: 'fall_detect', label: '跌倒识别' },
+  { value: 'low_battery', label: '设备低电量' }, { value: 'no_report', label: '长时未上报' },
+  { value: 'device_removed', label: '设备脱戴' },
 ]
 
 const regionOptions = [
@@ -228,6 +234,12 @@ const regionOptions = [
   { value: 'huabei', label: '华北大区', children: [
     { value: 'beijing', label: '北京市', children: [{ value: 'bj-chaoyang', label: '朝阳商圈' }] },
     { value: 'tianjin', label: '天津市', children: [{ value: 'tj-nankai', label: '南开区' }] },
+  ]},
+  // 养老服务（GPS 可移动摄像机场景）
+  { value: 'elder', label: '鹤梦养老', children: [
+    { value: 'elder-nj', label: '江苏南京', children: [
+      { value: 'elder-xjk', label: '新街口照护中心' }, { value: 'elder-gl', label: '鼓楼照护站' },
+    ]},
   ]},
 ]
 
@@ -275,9 +287,79 @@ const allMockData: AlertRecord[] = (() => {
   return list
 })()
 
+// ==================== GPS 移动摄像机 / 养老看护告警（来源于 GPS 模块实时数据） ====================
+const gpsStore = useGpsStore()
+
+/**
+ * GPS 可移动摄像机的告警生成规则：
+ * 设备上报什么事件，告警中心就产出什么类型的告警，保证两端事件类型一一对应。
+ * 覆盖：围栏越界、SOS 求助、按键拍照上报、移动侦测、跌倒识别、
+ *      设备离线、设备低电量、长时未上报、设备脱戴、定时上报异常
+ */
+const gpsAlertData: AlertRecord[] = (() => {
+  const list: AlertRecord[] = []
+  /** 鹤梦养老/江苏南京/新街口照护中心/3号楼 → 江苏南京/新街口照护中心 */
+  const elderPath = (label: string) => label.replace(/^鹤梦养老\//, '').replace(/\/[^/]+$/, '')
+  const devOf = (id: string) => gpsStore.devices.find(d => d.id === id)
+
+  const push = (
+    key: string, eventType: string, time: string,
+    deviceName: string, license: string, orgLabel: string, image: string,
+  ) => list.push({
+    id: `gps-alert-${key}`,
+    orgPath: elderPath(orgLabel),
+    eventType,
+    deviceName,
+    license,
+    alertTime: time,
+    eventImage: image,
+  })
+
+  const placeholder = (text: string, bg = 'e8edfb', fg = '2f54eb') =>
+    `https://placehold.co/160x120/${bg}/${fg}?text=${encodeURIComponent(text)}`
+
+  // ---------- 1. 基于按键拍照上报记录的事件 ----------
+  // 第一期仅支持设备侧按键拍照，故上报来源统一为「按键拍照上报」；
+  // 是否越界由拍摄坐标与围栏实时判定得出
+  for (const p of gpsStore.photos) {
+    const dev = devOf(p.deviceId)
+    const license = dev?.license ?? '—'
+
+    // 按键拍照上报
+    push(`button-${p.id}`, '按键拍照上报', p.capturedAt, p.deviceName, license, p.orgPathLabel, p.imageUrl)
+
+    // 围栏越界（拍摄时不在任何已启用围栏内）
+    if (!gpsStore.fencesAtPoint({ lng: p.lng, lat: p.lat }).length) {
+      push(`fence-${p.id}`, '围栏越界（走失风险）', p.capturedAt, p.deviceName, license, p.orgPathLabel, p.imageUrl)
+    }
+  }
+
+  // ---------- 2. 基于设备状态的事件 ----------
+  for (const d of gpsStore.devices) {
+    // 设备离线
+    if (d.status === 'offline') {
+      push(`offline-${d.id}`, '设备离线', d.lastReportAt, d.name, d.license, d.orgPathLabel, placeholder('Device Offline', 'feeceb', 'dc2626'))
+    }
+    // 设备低电量
+    if (d.battery < 20) {
+      push(`battery-${d.id}`, '设备低电量', d.lastReportAt, d.name, d.license, d.orgPathLabel, placeholder(`Battery ${d.battery}%`, 'fef3e2', 'fa8c16'))
+    }
+    // 长时未上报（休眠中视为上报中断）
+    if (d.status === 'sleep') {
+      push(`noreport-${d.id}`, '长时未上报', d.lastReportAt, d.name, d.license, d.orgPathLabel, placeholder('No Report'))
+    }
+    // 设备脱戴：设备在线却未检测到佩戴
+    if (d.status === 'online' && !d.wearDetected) {
+      push(`removed-${d.id}`, '设备脱戴', d.lastReportAt, d.name, d.license, d.orgPathLabel, placeholder('Removed', 'fde8f0', 'eb2f96'))
+    }
+  }
+
+  return list.sort((a, b) => b.alertTime.localeCompare(a.alertTime))
+})()
+
 const fetchAlertList = async () => {
   loading.value = true; await new Promise(r => setTimeout(r, 300))
-  let filtered = [...allMockData]
+  let filtered = [...gpsAlertData, ...allMockData]
   if (filterForm.region) {
     const label = getRegionLabel(filterForm.region)
     if (label) filtered = filtered.filter(item => item.orgPath.includes(label))
@@ -292,6 +374,7 @@ const fetchAlertList = async () => {
     const [s, e] = filterForm.alertDateRange
     filtered = filtered.filter(item => item.alertTime >= s.format('YYYY-MM-DD') && item.alertTime <= e.format('YYYY-MM-DD 23:59:59'))
   }
+  filtered.sort((a, b) => b.alertTime.localeCompare(a.alertTime))
   listPagination.total = filtered.length
   alertList.value = filtered.slice((listPagination.current - 1) * listPagination.pageSize, listPagination.current * listPagination.pageSize)
   selectedRowKeys.value = []; loading.value = false
@@ -303,6 +386,7 @@ const getRegionLabel = (key: string): string => {
     'nanjing': '南京', 'shenzhen': '深圳', 'beijing': '北京', 'tianjin': '天津',
     'jiangning-wanda': '江宁万达', 'gulou-wanda': '鼓楼万达', 'qiaobei': '桥北万象城',
     'sz-futian': '福田商圈', 'bj-chaoyang': '朝阳商圈', 'tj-nankai': '南开',
+    'elder': '鹤梦养老', 'elder-nj': '江苏南京', 'elder-xjk': '新街口照护中心', 'elder-gl': '鼓楼照护站',
   }
   return map[key] || ''
 }

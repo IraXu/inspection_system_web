@@ -33,6 +33,7 @@ const scenarios: ScreenScenario[] = [
   { key: 'district', name: '园区', subName: '园区综合管理', first: { label: '园区数量', value: 32, unit: '个', extra: '覆盖 6 个城市' }, overview: '园区运营概览', category: '问题类型分布', region: '园区巡检排行' },
   { key: 'warehouse', name: '仓库', subName: '仓储物流管理', first: { label: '仓库数量', value: 54, unit: '个', extra: '覆盖 7 个园区' }, overview: '仓储运营概览', category: '问题类型分布', region: '仓库巡检排行' },
   { key: 'construction', name: '工地', subName: '工地安全监管', first: { label: '在建工地', value: 28, unit: '个', extra: '覆盖 5 个城市' }, overview: '工地安全概览', category: '隐患类型分布', region: '工地巡检排行' },
+  { key: 'eldercare', name: '养老', subName: '养老看护监管', first: { label: '看护点位', value: 86, unit: '个', extra: '覆盖 4 个照护机构' }, overview: '养老看护概览', category: '看护事件分布', region: '照护机构看护排行' },
 ]
 
 const scenarioKey = computed(() => enterpriseStore.screenScenarioKey)

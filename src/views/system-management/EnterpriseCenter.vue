@@ -6,7 +6,7 @@ import {
   ShopOutlined, BuildOutlined, ApartmentOutlined,
   ToolOutlined, PlusOutlined,
   CheckCircleFilled, ReloadOutlined, SaveOutlined,
-  FileTextOutlined, ContactsOutlined, AppstoreOutlined, BankOutlined,
+  FileTextOutlined, ContactsOutlined, AppstoreOutlined, BankOutlined, HeartOutlined,
 } from '@antdv-next/icons'
 import type { UploadProps } from 'antdv-next'
 import { useEnterpriseStore } from '@/stores/enterprise'
@@ -118,6 +118,7 @@ const scenarios = shallowRef<ScenarioItem[]>([
   { key: 'district', label: '园区', icon: markRaw(ApartmentOutlined) },
   { key: 'warehouse', label: '仓库', icon: markRaw(InboxOutlined) },
   { key: 'construction', label: '工地', icon: markRaw(ToolOutlined) },
+  { key: 'eldercare', label: '养老', icon: markRaw(HeartOutlined) },
 ])
 
 const selectedScenario = ref<string | null>('store')

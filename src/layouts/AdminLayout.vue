@@ -2,7 +2,7 @@
 import { ref, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import type { MenuProps } from 'antdv-next'
-import { DownOutlined, BankOutlined, LogoutOutlined, CheckOutlined, SlackOutlined, XFilled, FundFilled, VideoCameraFilled, CloudServerOutlined, DeploymentUnitOutlined, AlertFilled, NotificationOutlined, GlobalOutlined, RightOutlined, CheckCircleFilled, ThunderboltOutlined, TeamOutlined } from '@antdv-next/icons'
+import { DownOutlined, BankOutlined, LogoutOutlined, CheckOutlined, SlackOutlined, XFilled, FundFilled, VideoCameraFilled, CloudServerOutlined, DeploymentUnitOutlined, AlertFilled, NotificationOutlined, GlobalOutlined, RightOutlined, CheckCircleFilled, ThunderboltOutlined, TeamOutlined, AimOutlined } from '@antdv-next/icons'
 import touxiangImg from '@/assets/touxiang.jpg'
 import { useBrandStore } from '@/stores/brand'
 import { useEnterpriseStore } from '@/stores/enterprise'
@@ -113,6 +113,15 @@ const primaryItems: PrimaryItem[] = [
       { key: '/device/service-mall', label: '智能服务商城', icon: XFilled },
       { key: '/device/service-records', label: '服务开通记录', icon: XFilled },
       { key: '/device/install-records', label: '设备装维记录', icon: XFilled },
+    ],
+  },
+  {
+    key: 'gps-location', icon: AimOutlined, label: '定位看护', routePrefix: '/gps',
+    groups: [],
+    directItems: [
+      { key: '/gps/location', label: '定位监控', icon: XFilled },
+      { key: '/gps/geofence', label: '电子围栏', icon: XFilled },
+      { key: '/gps/photos', label: '拍照上报记录', icon: XFilled },
     ],
   },
   {

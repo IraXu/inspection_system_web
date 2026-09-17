@@ -34,6 +34,7 @@ const SCENARIO_OBJECT: Record<ScenarioKey, string> = {
   district: '人员',
   warehouse: '人员',
   construction: '工人',
+  eldercare: '老人',
 }
 
 const initPoints: CountingPoint[] = [
