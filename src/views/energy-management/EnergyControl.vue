@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { ref, computed, reactive } from 'vue'
 import { message } from 'antdv-next'
-import { PoweroffOutlined, PlayCircleOutlined, SearchOutlined, ReloadOutlined } from '@antdv-next/icons'
+import { PoweroffOutlined, PlayCircleOutlined, SearchOutlined, ReloadOutlined, HistoryOutlined } from '@antdv-next/icons'
 import { useEnergyStore } from '@/stores/energy'
+import type { OperationLog } from '@/stores/energy'
 
 // ========== 类型定义 ==========
 interface Meter {
@@ -168,6 +169,70 @@ const fetchData = async () => {
   loading.value = false
 }
 
+// ========== 操作日志抽屉 ==========
+const logDrawerVisible = ref(false)
+const logActionFilter = ref<string | undefined>(undefined)
+const logKeyword = ref('')
+const logActiveAction = ref<string | undefined>(undefined)
+const logActiveKeyword = ref('')
+
+const logActionMap: Record<OperationLog['action'], string> = {
+  POWER_OFF: '断电',
+  POWER_ON: '启用',
+}
+const logResultMap: Record<OperationLog['result'], { text: string; color: string }> = {
+  SUCCESS: { text: '成功', color: 'green' },
+  FAILED: { text: '失败', color: 'red' },
+  TIMEOUT: { text: '超时', color: 'orange' },
+}
+const logActionOptions = [
+  { value: 'POWER_OFF', label: '断电' },
+  { value: 'POWER_ON', label: '启用' },
+]
+
+const logTableWidth = 1020
+
+const logColumns = [
+  { title: '操作时间', dataIndex: 'time', key: 'time', width: 180 },
+  { title: '操作人', dataIndex: 'operator', key: 'operator', width: 100 },
+  { title: '所属组织路径', dataIndex: 'orgPath', key: 'orgPath', ellipsis: true, width: 250 },
+  { title: '电表', dataIndex: 'meterName', key: 'meterName', width: 110 },
+  { title: '操作类型', dataIndex: 'action', key: 'action', width: 100 },
+  { title: '原因', dataIndex: 'reason', key: 'reason', ellipsis: true, width: 180 },
+  { title: '结果', dataIndex: 'result', key: 'result', width: 100 },
+]
+
+const logData = computed<OperationLog[]>(() => {
+  return energyStore.logs.filter(log => {
+    const actionOk = !logActiveAction.value || log.action === logActiveAction.value
+    const kw = logActiveKeyword.value.trim()
+    const kwOk = !kw || log.orgPath.includes(kw) || log.meterName.includes(kw) || log.operator.includes(kw)
+    return actionOk && kwOk
+  })
+})
+
+const logPagination = reactive({ current: 1, pageSize: 10 })
+const logPagedData = computed(() => {
+  const start = (logPagination.current - 1) * logPagination.pageSize
+  return logData.value.slice(start, start + logPagination.pageSize)
+})
+
+const openLogDrawer = () => {
+  logDrawerVisible.value = true
+}
+const handleLogSearch = () => {
+  logActiveAction.value = logActionFilter.value
+  logActiveKeyword.value = logKeyword.value
+  logPagination.current = 1
+}
+const handleLogReset = () => {
+  logActionFilter.value = undefined
+  logKeyword.value = ''
+  logActiveAction.value = undefined
+  logActiveKeyword.value = ''
+  logPagination.current = 1
+}
+
 fetchData()
 </script>
 
@@ -216,6 +281,9 @@ fetchData()
             <ReloadOutlined /> 重置
           </a-button>
         </a-space>
+        <a-button @click="openLogDrawer">
+          <HistoryOutlined /> 操作日志
+        </a-button>
       </div>
 
       <a-table
@@ -321,6 +389,51 @@ fetchData()
         />
       </div>
     </a-modal>
+
+    <!-- 操作日志抽屉 -->
+    <a-drawer v-model:open="logDrawerVisible" title="操作日志" width="1080px" :body-style="{ paddingBottom: '16px' }">
+      <div class="log-toolbar">
+        <a-space wrap>
+          <a-select v-model:value="logActionFilter" placeholder="操作类型" allow-clear style="width: 140px" :options="logActionOptions" />
+          <a-input-search v-model:value="logKeyword" placeholder="搜索门店/电表/操作人" style="width: 240px" allow-clear />
+          <a-button type="primary" @click="handleLogSearch">
+            <SearchOutlined /> 查询
+          </a-button>
+          <a-button @click="handleLogReset">
+            <ReloadOutlined /> 重置
+          </a-button>
+        </a-space>
+      </div>
+
+      <a-table class="log-table" :columns="logColumns" :data-source="logPagedData" :pagination="false" size="small" :scroll="{ x: logTableWidth }">
+        <template #bodyCell="{ column, record }">
+          <template v-if="column.key === 'action'">
+            <a-tag :color="record.action === 'POWER_OFF' ? 'red' : 'blue'">
+              {{ logActionMap[record.action as OperationLog['action']] }}
+            </a-tag>
+          </template>
+          <template v-if="column.key === 'result'">
+            <a-tag :color="logResultMap[record.result as OperationLog['result']].color">
+              {{ logResultMap[record.result as OperationLog['result']].text }}
+            </a-tag>
+          </template>
+        </template>
+        <template #emptyText>
+          <a-empty description="暂无操作日志" />
+        </template>
+      </a-table>
+      <div class="pagination-wrap">
+        <a-pagination
+          v-model:current="logPagination.current"
+          v-model:pageSize="logPagination.pageSize"
+          :total="logData.length"
+          size="small"
+          show-size-changer
+          :page-size-options="['10','20','50','100']"
+          :show-total="(total: number) => `共 ${total} 条`"
+        />
+      </div>
+    </a-drawer>
   </div>
 </template>
 
@@ -357,5 +470,30 @@ fetchData()
   display: flex;
   justify-content: flex-end;
   margin-top: 16px;
+}
+.log-toolbar {
+  margin-bottom: 16px;
+}
+:deep(.log-table .ant-table-content) > table {
+  width: 100% !important;
+  min-width: 1030px !important;
+  table-layout: fixed !important;
+}
+:deep(.log-table .ant-table-thead > tr > th),
+:deep(.log-table .ant-table-tbody > tr > td) {
+  padding: 10px 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+:deep(.log-table .ant-table-thead > tr > th) {
+  background: #fafafa;
+  font-weight: 600;
+}
+:deep(.log-table .ant-table-tbody > tr > td) {
+  vertical-align: middle;
+}
+:deep(.log-table .ant-table-tbody > tr > td.ant-table-cell-ellipsis) {
+  text-overflow: ellipsis;
 }
 </style>

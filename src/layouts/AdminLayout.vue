@@ -171,7 +171,6 @@ const primaryItems: PrimaryItem[] = [
       { key: '/energy/alerts', label: '异常告警', icon: XFilled },
       { key: '/energy/plan', label: '用电计划', icon: XFilled },
       { key: '/energy/control', label: '远程管控', icon: XFilled },
-      { key: '/energy/logs', label: '操作日志', icon: XFilled },
     ],
   },
   {

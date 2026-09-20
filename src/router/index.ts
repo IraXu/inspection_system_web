@@ -53,7 +53,6 @@ const router = createRouter({
         { path: 'energy/alerts', name: 'EnergyAlerts', component: () => import('@/views/energy-management/EnergyAlerts.vue'), meta: { title: '异常告警' } },
         { path: 'energy/control', name: 'EnergyControl', component: () => import('@/views/energy-management/EnergyControl.vue'), meta: { title: '远程管控' } },
         { path: 'energy/plan', name: 'PowerPlan', component: () => import('@/views/energy-management/PowerPlan.vue'), meta: { title: '用电计划' } },
-        { path: 'energy/logs', name: 'OperationLogs', component: () => import('@/views/energy-management/OperationLogs.vue'), meta: { title: '操作日志' } },
         // 人流统计
         { path: 'traffic/overview', name: 'TrafficOverview', component: () => import('@/views/traffic-statistics/TrafficOverview.vue'), meta: { title: '统计概览' } },
         { path: 'traffic/realtime', name: 'RealtimeTraffic', component: () => import('@/views/traffic-statistics/RealtimeTraffic.vue'), meta: { title: '实时统计' } },
