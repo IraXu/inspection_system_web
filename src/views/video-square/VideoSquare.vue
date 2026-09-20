@@ -16,7 +16,7 @@ import {
   LeftOutlined, RightOutlined, StarOutlined, EditOutlined,
   GlobalOutlined, SyncOutlined, UnorderedListOutlined,
   BankOutlined, ApartmentOutlined, ShopOutlined,
-  CloudServerOutlined, CreditCardOutlined,
+  CloudServerOutlined, CreditCardOutlined, WarningOutlined,
 } from '@antdv-next/icons'
 
 // ========== Tab 状态 ==========
@@ -174,11 +174,19 @@ const rawRegionTree: TreeNode[] = [
                       { key: 'd-nj-18', title: '设备名称C', isDevice:true, online:false, deviceId:'d-nj-18' },
                     ]
                   },
-                  { key: 'nj-jn-s2', title: 'xxx店铺e', count: 3,
+                  { key: 'nj-jn-s2', title: 'xxx店铺e', count: 7,
                     children: [
                       { key: 'd-nj-19', title: '设备名称D', isDevice:true, online:true, deviceId:'d-nj-19' },
                       { key: 'd-nj-20', title: '设备名称E', isDevice:true, online:true, deviceId:'d-nj-20' },
                       { key: 'd-nj-21', title: '设备名称F', isDevice:true, online:true, deviceId:'d-nj-21' },
+                      { key: 'nvr-nj-2', title: 'NVR-3F仓储', count: 4, isNvr:true, online:true,
+                        children: [
+                          { key: 'd-nvr-nj-2-1', title: '通道1-月台', isDevice:true, online:true, deviceId:'d-nvr-nj-2-1' },
+                          { key: 'd-nvr-nj-2-2', title: '通道2-货梯厅', isDevice:true, online:true, deviceId:'d-nvr-nj-2-2' },
+                          { key: 'd-nvr-nj-2-3', title: '通道3-分拣区', isDevice:true, online:true, deviceId:'d-nvr-nj-2-3' },
+                          { key: 'd-nvr-nj-2-4', title: '通道4-消防通道', isDevice:true, online:false, deviceId:'d-nvr-nj-2-4' },
+                        ]
+                      },
                     ]
                   },
                   { key: 'nj-jn-s3', title: 'xxx店铺f', count: 8,
@@ -801,40 +809,91 @@ const cloudServiceEnabledMap: Record<string, boolean> = {
   'd-tj-1': false, 'd-tj-2': false, 'd-tj-3': true,
   'd-nj-1': true, 'd-nj-2': false, 'd-nj-4': true, 'd-nj-16': true, 'd-nj-22': true,
   'd-nvr-nj-1-1': true, 'd-nvr-nj-1-2': true, 'd-nvr-nj-1-3': false, 'd-nvr-nj-1-4': true,
+  'd-nvr-nj-2-1': true, 'd-nvr-nj-2-2': true, 'd-nvr-nj-2-3': true, 'd-nvr-nj-2-4': false,
   'd-gz-1': false,
 }
 const getCloudServiceStatus = (deviceId: string) => {
   // 实际开发时替换为接口：校验当前绑定设备是否开通云存服务
   return !!cloudServiceEnabledMap[deviceId]
 }
+// ========== NVR 子设备 SDK 版本校验 ==========
+// 云录像回放要求所属 NVR 的 SDK 版本不低于该基线版本（8 位数字版本号）
+const MIN_NVR_SDK_VERSION = '03802100'
+// 模拟 NVR 设备 SDK 版本：key 为 NVR 节点 key
+const nvrSdkVersionMap: Record<string, string> = {
+  'nvr-nj-1': '03701200', // NVR-1F机房 —— 低于基线，云录像不可播放
+  'nvr-nj-2': '03802100', // NVR-3F仓储 —— 达到基线，云录像可播放
+}
+// NVR 子设备 → 所属 NVR 映射（deviceId → { key, name }）
+const nvrParentMap = computed(() => {
+  const map: Record<string, { key: string; name: string }> = {}
+  const walk = (nodes: TreeNode[]) => {
+    for (const n of nodes) {
+      if (n.isNvr && n.children) {
+        for (const c of n.children) {
+          if (c.isDevice && c.deviceId) map[c.deviceId] = { key: n.key, name: n.title }
+        }
+      }
+      if (n.children) walk(n.children)
+    }
+  }
+  walk(rawRegionTree)
+  return map
+})
+// 校验设备所属 NVR 的 SDK 版本：非 NVR 子设备返回 null；版本低于基线时 tooLow 为 true
+const checkNvrSdkVersion = (deviceId: string) => {
+  const parent = nvrParentMap.value[deviceId]
+  if (!parent) return null
+  const sdkVersion = nvrSdkVersionMap[parent.key] || ''
+  return { nvrName: parent.name, sdkVersion, tooLow: !!sdkVersion && sdkVersion < MIN_NVR_SDK_VERSION }
+}
+// NVR 子设备 SDK 版本过低：在录像播放框内展示升级引导（屏蔽列表查询与播放）
+const sdkGuideInfo = ref<{ device: Device; nvrName: string; sdkVersion: string } | null>(null)
 const openServiceMall = () => {
   router.push({ name: 'ServiceMall' })
 }
 // 未开通云存服务的设备：在录像播放框内展示购买引导（屏蔽列表查询与播放）
 const cloudGuideDevice = ref<Device | null>(null)
-// 切换回放类型：默认选中「云录像」，未开通云存服务时在播放框内引导购买并屏蔽列表查询/播放
+// 云录像拦截校验：先校验云存服务，再校验 NVR 子设备所属 NVR 的 SDK 版本
+// 返回 true 表示已被拦截（播放框内已展示对应引导）
+const blockCloudPlayback = (device: Device) => {
+  if (!getCloudServiceStatus(device.id)) {
+    cloudGuideDevice.value = device
+    sdkGuideInfo.value = null
+    playbackDevice.value = null
+    return true
+  }
+  const sdk = checkNvrSdkVersion(device.id)
+  if (sdk?.tooLow) {
+    sdkGuideInfo.value = { device, nvrName: sdk.nvrName, sdkVersion: sdk.sdkVersion }
+    cloudGuideDevice.value = null
+    playbackDevice.value = null
+    message.warning(`当前 NVR 设备 SDK 版本号 ${sdk.sdkVersion}＜${MIN_NVR_SDK_VERSION}，请联系设备厂商升级`)
+    return true
+  }
+  cloudGuideDevice.value = null
+  sdkGuideInfo.value = null
+  return false
+}
+// 切换回放类型：默认选中「云录像」，未通过校验时在播放框内引导并屏蔽列表查询/播放
 const switchPlaybackType = (type: PlaybackType) => {
   if (type === playbackType.value) return
   const current = playbackDevice.value
-  if (type === 'cloud' && current && !getCloudServiceStatus(current.id)) {
+  if (type === 'cloud' && current && blockCloudPlayback(current)) {
     playbackType.value = type
-    playbackDevice.value = null
-    cloudGuideDevice.value = current
     return
   }
   playbackType.value = type
   // 切换类型后重置回放设备，避免复用另一类型的回放画面
   playbackDevice.value = null
   cloudGuideDevice.value = null
+  sdkGuideInfo.value = null
 }
 const selectPlaybackDevice = (device:Device) => {
-  // 云录像模式下校验云存服务开通状态，未开通则播放框内引导购买并屏蔽播放
-  if (playbackType.value === 'cloud' && !getCloudServiceStatus(device.id)) {
-    cloudGuideDevice.value = device
-    playbackDevice.value = null
-    return
-  }
+  // 云录像模式下校验云存服务开通状态与所属 NVR 的 SDK 版本，不通过则播放框内引导并屏蔽播放
+  if (playbackType.value === 'cloud' && blockCloudPlayback(device)) return
   cloudGuideDevice.value = null
+  sdkGuideInfo.value = null
   playbackDevice.value=device; playbackPlaying.value=false; playbackRangeStartHour.value=0
 }
 const togglePlayback = () => { playbackPlaying.value=!playbackPlaying.value }
@@ -925,6 +984,9 @@ const deviceRecordingMap: Record<string, Record<string, 'regular'|'event'|'both'
   'd-nj-22': { '2026-05-29': 'regular', '2026-06-01': 'both', '2026-06-03': 'regular' },
   'd-nvr-nj-1-1': { '2026-06-02': 'regular', '2026-06-03': 'event', '2026-06-04': 'both' },
   'd-nvr-nj-1-2': { '2026-06-01': 'regular', '2026-06-04': 'regular' },
+  'd-nvr-nj-2-1': { '2026-06-02': 'both', '2026-06-03': 'regular', '2026-06-04': 'event' },
+  'd-nvr-nj-2-2': { '2026-06-01': 'event', '2026-06-04': 'both' },
+  'd-nvr-nj-2-3': { '2026-06-02': 'regular', '2026-06-04': 'regular' },
 }
 
 const selectedDateKey = computed(() => {
@@ -1387,6 +1449,27 @@ watch(selectedCellIdx, (val) => {
                   <div class="vs-pg-btns">
                     <span class="vs-pg-link" @click="openServiceMall">前往智能服务商城开通 ›</span>
                   </div>
+                </div>
+              </div>
+            </div>
+            <!-- NVR 子设备 SDK 版本过低：画面内沉浸式升级引导 -->
+            <div v-else-if="sdkGuideInfo" class="vs-playback-video-wrap">
+              <div class="vs-playback-video">
+                <div class="vs-mock-video vs-mock-video-dim">
+                  <div class="vs-mock-video-bg">
+                    <span class="vs-mock-icon">📼</span>
+                    <div class="vs-mock-scanline"></div>
+                  </div>
+                  <div class="vs-cell-osd">
+                    <span class="vs-cell-osd-name">{{ sdkGuideInfo.device.name }}</span>
+                    <span class="vs-cell-osd-time">{{ playbackCurrentTime }}</span>
+                    <span class="vs-cell-osd-stream">云录像</span>
+                  </div>
+                </div>
+                <div class="vs-playback-guide">
+                  <div class="vs-pg-icon"><WarningOutlined /></div>
+                  <div class="vs-pg-title">NVR SDK 版本过低</div>
+                  <div class="vs-pg-desc">「{{ sdkGuideInfo.device.name }}」所属「{{ sdkGuideInfo.nvrName }}」当前 SDK 版本号 {{ sdkGuideInfo.sdkVersion }}＜{{ MIN_NVR_SDK_VERSION }}<br />请联系设备厂商升级后回放云录像</div>
                 </div>
               </div>
             </div>
