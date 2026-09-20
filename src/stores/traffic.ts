@@ -30,7 +30,6 @@ export interface CountingPoint {
 /** 场景 → 统计对象称呼（人流统计统一统计「人」） */
 const SCENARIO_OBJECT: Record<ScenarioKey, string> = {
   store: '顾客',
-  factory: '员工',
   district: '人员',
   warehouse: '人员',
   construction: '工人',

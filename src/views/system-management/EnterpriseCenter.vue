@@ -3,7 +3,7 @@ import { ref, reactive, shallowRef, markRaw, computed } from 'vue'
 import { message } from 'antdv-next'
 import {
   CameraOutlined, EnvironmentOutlined, InboxOutlined, CopyOutlined,
-  ShopOutlined, BuildOutlined, ApartmentOutlined,
+  ShopOutlined, ApartmentOutlined,
   ToolOutlined, PlusOutlined,
   CheckCircleFilled, ReloadOutlined, SaveOutlined,
   FileTextOutlined, ContactsOutlined, AppstoreOutlined, BankOutlined, HeartOutlined,
@@ -114,7 +114,6 @@ interface ScenarioItem {
 
 const scenarios = shallowRef<ScenarioItem[]>([
   { key: 'store', label: '门店', icon: markRaw(ShopOutlined) },
-  { key: 'factory', label: '厂区', icon: markRaw(BuildOutlined) },
   { key: 'district', label: '园区', icon: markRaw(ApartmentOutlined) },
   { key: 'warehouse', label: '仓库', icon: markRaw(InboxOutlined) },
   { key: 'construction', label: '工地', icon: markRaw(ToolOutlined) },
