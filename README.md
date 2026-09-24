@@ -1,5 +1,87 @@
-# Vue 3 + TypeScript + Vite
+# 智慧巡检管理系统（Web 原型）
 
-This template should help get you started developing with Vue 3 and TypeScript in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+面向连锁门店 / 养老看护等场景的**智慧巡检管理系统**前端高保真原型。项目以「视频 + AI + IoT 设备」为核心，覆盖从巡检计划编排、执行、问题整改闭环，到设备管理、云广播、能耗管控、人流统计的一体化业务能力。
 
-Learn more about the recommended Project Setup and IDE Support in the [Vue Docs TypeScript Guide](https://vuejs.org/guide/typescript/overview.html#project-setup).
+> 说明：本项目为**纯前端原型**，所有数据由 Pinia Store 中的本地模拟数据提供，不依赖后端接口，可直接运行预览交互效果与视觉方案。
+
+## 功能模块
+
+| 模块 | 主要页面 | 能力说明 |
+| --- | --- | --- |
+| 智能数据大屏 | 数据大屏 | 独立全屏可视化大屏，结合企业行业配置自动匹配展示场景 |
+| 工作台 | 工作台 | 系统首页，聚合核心指标与快捷入口 |
+| 视频广场 | 视频广场 | 多路视频分屏预览、云台/对讲/灯光控制、轮巡方案、本地录制 |
+| 告警中心 | 告警中心、短信通知配置 | 告警汇聚查看与短信推送规则配置 |
+| 设备管理 | 设备管理、设备维护、智能服务商城、服务开通记录、设备装维记录 | 设备台账、运维工单、云存储/AI 算法套餐购买与开通记录 |
+| 定位看护 | 定位监控、电子围栏、拍照上报记录 | GPS 可移动摄像机定位追踪、轨迹回放、安全区/危险区电子围栏、拍照上报与照片资源包管理 |
+| 智慧巡检 | 基础问题库、巡检模板、巡检计划配置、巡检任务清单、在线巡检、视频点检、视频点检记录、AI 巡检任务、AI 分析结果、待办事项 | 巡检项与模板沉淀 → 计划编排（周期/门店/人员）→ 任务下发 → 在线巡检 / 视频点检执行 → AI 自动抓拍分析 → 问题单整改与审核闭环 |
+| 云广播 | 实时广播、定时广播、事件广播、广播记录、媒体资源库 | 音频资源管理，支持实时喊话、定时播放、事件联动触发与广播结果溯源 |
+| 能耗管理 | 能耗概览、异常告警、用电计划、远程管控 | 能耗数据统计、异常用电告警、用电策略配置与设备远程开关 |
+| 人流统计 | 统计概览、实时统计、统计明细 | 客流/人流数据分析与明细查询 |
+| 系统管理 | 组织架构、企业成员、角色管理、系统日志、企业中心、品牌设置、导航管理 | 多企业切换、组织与权限、企业品牌（Logo / 标题 / favicon / 登录页）自定义、导航菜单配置 |
+
+### 业务亮点
+
+- **闭环巡检流程**：问题单包含「发现 → 整改 → 审核」时间轴，支持驳回重改，AI 巡检命中后可自动生成问题单。
+- **多巡检方式**：在线巡检、视频点检、AI 自动巡检三种执行方式共用模板与问题库。
+- **多企业 + 品牌定制**：顶部可切换企业，品牌配置（Logo、标题、favicon）按企业维度加载并全局生效。
+- **纯前端地图渲染**：定位监控基于经纬度与逻辑坐标系的线性映射，用 SVG 绘制平滑轨迹曲线（Catmull-Rom 转贝塞尔），无需地图 SDK。
+
+## 技术栈
+
+| 分类 | 技术 |
+| --- | --- |
+| 框架 | Vue 3（`<script setup>` 组合式 API） |
+| 语言 | TypeScript |
+| 构建工具 | Vite |
+| 路由 | Vue Router 4（Hash 模式） |
+| 状态管理 | Pinia |
+| UI 组件库 | Ant Design Vue（`antdv-next`）+ `@antdv-next/icons`，中文语言包 |
+| 图表 | ECharts |
+| 时间处理 | Day.js |
+| 部署 | GitHub Pages（GitHub Actions 自动构建发布） |
+
+## 目录结构
+
+```
+web-prototype/
+├─ .github/workflows/deploy.yml   # GitHub Pages 自动部署
+├─ public/
+│  ├─ manual/                     # 系统操作手册（含截图）
+│  ├─ logo.png / favicon.svg      # 站点默认品牌资源
+├─ src/
+│  ├─ components/                 # 通用组件（视频/地图/信号/悬浮按钮等）
+│  ├─ layouts/AdminLayout.vue     # 后台主框架（顶部导航 + 多级菜单）
+│  ├─ router/index.ts             # 路由与菜单页面映射
+│  ├─ stores/                     # Pinia：品牌/企业/能耗/GPS/短信/人流
+│  ├─ types/index.ts              # 全局业务类型定义
+│  ├─ views/                      # 按业务模块划分的页面
+│  ├─ App.vue                     # 根组件（全局公告 + 悬浮按钮）
+│  └─ main.ts                     # 应用入口
+├─ index.html
+├─ vite.config.ts                 # 别名 @ → src、base 路径、开发端口
+└─ tsconfig*.json
+```
+
+## 快速开始
+
+环境要求：Node.js（LTS）与 npm。
+
+```bash
+# 安装依赖
+npm install
+
+# 启动开发服务器（默认 http://localhost:5173）
+npm run dev
+
+# 类型检查 + 生产构建，产物输出到 dist/
+npm run build
+
+# 本地预览构建产物
+npm run preview
+```
+
+## 部署说明
+
+- 构建基路径在 [vite.config.ts](vite.config.ts) 中通过 `base: '/inspection_system_web/'` 配置，需与 GitHub Pages 仓库路径保持一致。
+- 推送到 `main` 分支后，[deploy.yml](.github/workflows/deploy.yml) 会自动执行 `npm ci` → `npm run build` → 发布到 GitHub Pages；也可在 Actions 页面手动触发。
