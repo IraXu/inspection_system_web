@@ -59,7 +59,7 @@ const router = createRouter({
         { path: 'traffic/records', name: 'TrafficRecords', component: () => import('@/views/traffic-statistics/TrafficRecords.vue'), meta: { title: '统计明细' } },
         // 系统管理
         { path: 'system/organization', name: 'OrganizationStructure', component: () => import('@/views/system-management/UnderConstruction.vue'), meta: { title: '组织架构' } },
-        { path: 'system/members', name: 'EnterpriseMembers', component: () => import('@/views/system-management/UnderConstruction.vue'), meta: { title: '企业成员' } },
+        { path: 'system/members', name: 'EnterpriseMembers', component: () => import('@/views/system-management/EnterpriseMembers.vue'), meta: { title: '企业成员' } },
         { path: 'system/roles', name: 'RoleManagement', component: () => import('@/views/system-management/UnderConstruction.vue'), meta: { title: '角色管理' } },
         { path: 'system/logs', name: 'SystemLogs', component: () => import('@/views/system-management/UnderConstruction.vue'), meta: { title: '系统日志' } },
         { path: 'system/enterprise-center', name: 'EnterpriseCenter', component: () => import('@/views/system-management/EnterpriseCenter.vue'), meta: { title: '企业中心' } },
